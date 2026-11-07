@@ -52,6 +52,11 @@ function RiderCard({ rider, etaSec, order, canAssign, onAssign }: RiderCardProps
           <span className="rider-card__status">
             {t(STATUS_TEXT[rider.status])}
             {order && ` · ${t('riders.carrying', { number: order.number })}`}
+            {rider.status === 'atKitchen' && rider.trip && (
+              <span className="rider-card__kitchen">
+                {t('riders.kitchenLeft', { seconds: Math.ceil(rider.trip.kitchenLeftSec) })}
+              </span>
+            )}
           </span>
         </span>
         {etaSec !== undefined && (

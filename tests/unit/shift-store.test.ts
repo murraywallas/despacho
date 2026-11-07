@@ -94,3 +94,51 @@ describe('despacho en el estado del turno', () => {
     expect(useShiftStore.getState().selectedOrderId).toBeNull()
   })
 })
+
+describe('viaje durante el turno', () => {
+  beforeEach(() => {
+    const initial = useShiftStore.getInitialState()
+    useShiftStore.setState({
+      clock: createClock(prototype.shift.durationSec),
+      orderQueue: createOrderQueue(orderSettings),
+      riders: initial.riders,
+      selectedOrderId: null,
+    })
+    const { tick, selectOrder, assignSelectedTo } = useShiftStore.getState()
+    tick(interval)
+    selectOrder(useShiftStore.getState().orderQueue.orders[0].id)
+    assignSelectedTo(1)
+  })
+
+  const riderOne = () => useShiftStore.getState().riders[0]
+
+  test('el repartidor asignado se mueve con el reloj', () => {
+    const before = riderOne()
+    useShiftStore.getState().tick(0.5)
+    expect(riderOne().trip?.traveledBlocks).toBeGreaterThan(before.trip?.traveledBlocks ?? 0)
+  })
+
+  test('en pausa no se mueve', () => {
+    const { tick, togglePause } = useShiftStore.getState()
+    togglePause()
+    const before = riderOne()
+    tick(2)
+    expect(riderOne()).toBe(before)
+  })
+
+  test('en 2x recorre el doble', () => {
+    const { tick, toggleSpeed } = useShiftStore.getState()
+    const before = riderOne().trip?.traveledBlocks ?? 0
+    toggleSpeed()
+    tick(0.25)
+    const blocks = (riderOne().trip?.traveledBlocks ?? 0) - before
+    expect(blocks).toBeCloseTo(0.25 * clockBalance.fastSpeed * prototype.riders.speedBlocksPerSec)
+  })
+
+  test('termina entregando y queda libre', () => {
+    const { tick } = useShiftStore.getState()
+    for (let i = 0; i < 400 && riderOne().status !== 'idle'; i++) tick(0.25)
+    expect(riderOne().status).toBe('idle')
+    expect(useShiftStore.getState().orderQueue.orders[0].status).toBe('delivered')
+  })
+})
