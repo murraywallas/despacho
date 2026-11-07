@@ -54,6 +54,19 @@ Si algo de la planilla está mal (un ID repetido, una clave que choca con otra, 
 que no existe), avisa qué pestaña y qué fila revisar, y no cambia el archivo. La planilla tiene que estar
 compartida como "Cualquier persona con el enlace: Lector". La pestaña Léeme explica cómo está armada.
 
+## Calles (OpenStreetMap)
+
+Las calles de cada barrio salen de OpenStreetMap y el juego las lee de `data/streets/<barrio>.json`.
+Para volver a bajarlas (por ejemplo, después de cambiar el área en `scripts/streets/config.json`):
+
+```
+npm run streets
+```
+
+El comando pide las calles del área a la API pública de Overpass (sin registro) y arma el grafo:
+cruces, tramos con su largo en metros, tipo de calle, manos únicas y ciclovías. Si el servidor está
+ocupado, probá de nuevo en unos minutos.
+
 ## Carpetas
 
 | Carpeta | Contenido |
@@ -63,9 +76,9 @@ compartida como "Cualquier persona con el enlace: Lector". La pestaña Léeme ex
 | `src/ui` | Componentes de la interfaz |
 | `src/map` | Dibujo del mapa |
 | `src/i18n` | Textos de la interfaz |
-| `data` | Números del juego (`balance.json`) |
+| `data` | Números del juego (`balance.json`) y calles de cada barrio (`streets/`) |
 | `tests` | Tests de reglas (`unit`) y de navegador (`e2e`) |
 
 ## Créditos
 
-Mapas © OpenStreetMap contributors (a partir de la Fase 3).
+Calles y mapas © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), bajo licencia ODbL.
