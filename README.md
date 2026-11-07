@@ -30,6 +30,14 @@ Necesitás [Node.js](https://nodejs.org) versión 20 o más nueva.
 | `npm run build` | Arma la versión final para publicar (carpeta `dist`) |
 | `npm run preview` | Muestra esa versión final en local |
 | `npm run lint` | Revisa el estilo del código |
+| `npm run test` | Corre los tests de reglas (Vitest, carpeta `tests/unit`) |
+| `npm run test:e2e` | Abre el juego en Chromium a 1440 px y 1024 px de ancho y corre los tests de navegador (Playwright, carpeta `tests/e2e`) |
+
+La primera vez que uses `npm run test:e2e`, instalá el navegador que usa Playwright:
+
+```
+npx playwright install chromium
+```
 
 ## Carpetas
 

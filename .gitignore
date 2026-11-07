@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Tests en el navegador
+test-results
+playwright-report
+blob-report
