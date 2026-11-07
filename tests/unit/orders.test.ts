@@ -77,7 +77,7 @@ describe('pedidos', () => {
 })
 
 describe('urgencia', () => {
-  const order = setup().run(10)[0]
+  const order = setup().run(settings.spawnIntervalSec)[0]
   const urgentBelow = prototype.orders.urgentBelowSec
 
   test('el tiempo restante baja con el reloj y puede quedar negativo', () => {

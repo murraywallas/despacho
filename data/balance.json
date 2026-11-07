@@ -8,22 +8,22 @@
       "durationSec": 300
     },
     "orders": {
-      "spawnIntervalSec": 3,
-      "deadlineSec": 60,
-      "cancelAfterSec": 30,
+      "spawnIntervalSec": 11,
+      "deadlineSec": 75,
+      "cancelAfterSec": 40,
       "urgentBelowSec": 20
     },
     "kitchen": {
-      "cookSec": 15
+      "cookSec": 20
     },
     "riders": {
       "count": 3,
       "vehicle": "bike",
-      "speedBlocksPerSec": 1
+      "speedBlocksPerSec": 0.3
     },
     "heat": {
       "start": 100,
-      "lossPerSec": 1.5,
+      "lossPerSec": 1.2,
       "coldBelow": 40
     },
     "rating": {

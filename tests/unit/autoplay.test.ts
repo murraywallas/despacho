@@ -5,8 +5,8 @@ import { heatOf, isCold } from '../../src/game/rating'
 import { summarizeShift } from '../../src/game/results'
 import { shiftSettingsFrom } from '../../src/game/shift'
 
-// A player who looks at the screen every second; steps as small as the game loop's.
-const options: AutoplayOptions = { reactionSec: 1, stepSec: 0.25 }
+// A person: looks at the screen every 3 s and dispatches one order at a time. Steps as small as the game loop's.
+const options: AutoplayOptions = { reactionSec: 3, picksPerLook: 1, stepSec: 0.25 }
 
 function play(bot: Bot, balance: PrototypeBalance = prototype, seed = prototype.seed) {
   const end = autoplay(balance, shiftSettingsFrom(balance), seed, bot, options)

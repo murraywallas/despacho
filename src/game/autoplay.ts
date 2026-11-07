@@ -51,6 +51,8 @@ export const triageBot: Bot = (shift, settings) => {
 export interface AutoplayOptions {
   /** Game seconds between two looks at the screen (a player doesn't react instantly). */
   readonly reactionSec: number
+  /** Orders dispatched per look. A person picks one order and one rider at a time; a machine, all at once. */
+  readonly picksPerLook: number
   /** Size of each simulation step, in game seconds. */
   readonly stepSec: number
 }
@@ -70,7 +72,9 @@ export function autoplay(
   while (!shift.clock.finished) {
     if (shift.clock.elapsedSec >= nextLookSec) {
       nextLookSec = shift.clock.elapsedSec + options.reactionSec
-      for (let pick = bot(shift, settings); pick; pick = bot(shift, settings)) {
+      for (let picks = 0; picks < options.picksPerLook; picks++) {
+        const pick = bot(shift, settings)
+        if (!pick) break
         const result = dispatchOrder(shift.map, shift.orderQueue, shift.riders, pick.orderId, pick.riderId)
         if (!result) break
         shift = { ...shift, ...result }
