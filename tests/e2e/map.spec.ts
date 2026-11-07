@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test('el mapa de grilla se ve completo y tiene calles y restaurantes dibujados', async ({ page }) => {
   await page.goto('/')
 
-  const map = page.getByRole('img', { name: 'Mapa: grilla de 10 por 10 calles con 4 restaurantes' })
+  const map = page.getByRole('img', { name: /^Mapa: grilla de 10 por 10 calles con 4 restaurantes/ })
   await expect(map).toBeVisible()
 
   // Entra entero en la pantalla y no está aplastado.

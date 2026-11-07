@@ -1,0 +1,30 @@
+import { expect, test } from '@playwright/test'
+
+test('llegan pedidos a la cola con restaurante y cuenta regresiva, y el cliente aparece en el mapa', async ({
+  page,
+}) => {
+  await page.goto('/')
+
+  const panel = page.getByRole('complementary', { name: /Pedidos/ })
+  await expect(panel.getByText('Todavía no hay pedidos')).toBeVisible()
+  await expect(page.getByRole('img', { name: /0 clientes esperando/ })).toBeVisible()
+
+  // A 2x el primer pedido llega a los 5 segundos reales.
+  await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
+  const card = panel.getByTestId('order-card').first()
+  await expect(card).toBeVisible({ timeout: 8000 })
+
+  await expect(card).toContainText('Pedido #1')
+  await expect(card).toContainText(/Restaurante [A-D]/)
+  await expect(card).toContainText('Esperando repartidor')
+  await expect(page.getByRole('img', { name: /1 clientes esperando/ })).toBeVisible()
+
+  // La cuenta regresiva baja mientras el reloj corre y se frena en pausa.
+  const time = card.locator('.order-card__time')
+  const before = await time.textContent()
+  await expect(time).not.toHaveText(before ?? '', { timeout: 3000 })
+  await page.keyboard.press('Space')
+  const paused = await time.textContent()
+  await page.waitForTimeout(1200)
+  await expect(time).toHaveText(paused ?? '')
+})

@@ -10,7 +10,8 @@
     "orders": {
       "spawnIntervalSec": 10,
       "deadlineSec": 120,
-      "cancelAfterSec": 60
+      "cancelAfterSec": 60,
+      "urgentBelowSec": 30
     },
     "kitchen": {
       "waitSec": 5
