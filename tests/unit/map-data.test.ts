@@ -3,7 +3,8 @@ import { assignOrder } from '../../src/game/dispatch'
 import { startTrip } from '../../src/game/movement'
 import type { Order } from '../../src/game/orders'
 import type { Rider } from '../../src/game/riders'
-import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, waitingAt, type MapSelection } from '../../src/map/mapData'
+import { waitingAt } from '../../src/game/orders'
+import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, type MapSelection } from '../../src/map/mapData'
 import { latticeOf, nodeAt, smallCity, smallStreets } from './smallCity'
 
 const map = smallCity([nodeAt(3, 0), nodeAt(0, 4)])

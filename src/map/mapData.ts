@@ -6,7 +6,7 @@ import type { Feature, FeatureCollection, LineString } from 'geojson'
 import { positionOf, type CityMap, type NodeId } from '../game/cityMap'
 import { restaurantOf } from '../game/dispatch'
 import { passedIndex, riderDisplayPosition } from '../game/movement'
-import type { Order, Urgency } from '../game/orders'
+import { waitingAt, type Order, type Urgency } from '../game/orders'
 import type { Rider, RiderStatus } from '../game/riders'
 import { findRoute } from '../game/routing'
 import type { LonLat, StreetGraphFile } from '../game/streetGraph'
@@ -31,13 +31,6 @@ export interface MapMarker {
 }
 
 const URGENCY_RANK: Record<Urgency, number> = { normal: 0, urgent: 1, late: 2 }
-
-/** Orders waiting for a rider at a restaurant, the most urgent first. */
-export function waitingAt(orders: readonly Order[], restaurantId: string): Order[] {
-  return orders
-    .filter((order) => order.status === 'pending' && order.restaurantId === restaurantId)
-    .sort((a, b) => a.deadlineAtSec - b.deadlineAtSec)
-}
 
 export interface MapSelection {
   readonly orderId: string | null

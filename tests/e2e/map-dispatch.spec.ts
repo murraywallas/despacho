@@ -13,25 +13,33 @@ async function firstOrderIn(page: Page) {
   return { map, waiting }
 }
 
-test('primero el repartidor en el mapa, después el restaurante con "!": el pedido queda despachado', async ({ page }) => {
+test('primero el repartidor en el mapa, después el restaurante con "!": sale a buscar el pedido', async ({ page }) => {
   const { map, waiting } = await firstOrderIn(page)
 
   const rider = map.getByRole('button', { name: 'Repartidor 2' })
   await rider.click()
   await expect(rider).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByText('Ahora elegí un pedido')).toBeVisible()
+  await expect(page.getByText('Ahora tocá un restaurante')).toBeVisible()
 
+  // Un toque en el restaurante y ya: sin tarjeta de por medio.
   await waiting.click()
-  const popup = map.getByTestId('map-popup')
-  await expect(popup).toContainText('Elegí el pedido para el repartidor 2.')
-  await popup.getByTestId('popup-order').first().click()
-
   const card = page.getByRole('complementary', { name: /Repartidores/ }).locator('[data-rider-number="2"]')
   await expect(card).toContainText(/Yendo al restaurante|Esperando la cocina/)
   await expect(card).toContainText('pedido #1')
   await expect(map.getByRole('button', { name: /pedidos esperando/ })).toHaveCount(0)
-  // La tarjeta se cierra sola, como una llamada atendida.
-  await expect(popup).toHaveCount(0)
+  await expect(map.getByTestId('map-popup')).toHaveCount(0)
+})
+
+test('con el repartidor elegido, un restaurante sin pedidos abre su tarjeta y el repartidor sigue elegido', async ({
+  page,
+}) => {
+  const { map } = await firstOrderIn(page)
+  const rider = map.getByRole('button', { name: 'Repartidor 1' })
+  await rider.click()
+  const quiet = map.getByTestId('restaurant-marker').filter({ hasNot: page.locator('.map-pin__alert') }).first()
+  await quiet.click()
+  await expect(map.getByTestId('map-popup')).toContainText('Sin pedidos esperando.')
+  await expect(rider).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('primero el pedido en la tarjeta del restaurante, después el repartidor más cercano', async ({ page }) => {

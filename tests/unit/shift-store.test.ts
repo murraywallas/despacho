@@ -100,6 +100,37 @@ describe('despacho en el estado del turno', () => {
     expect(useShiftStore.getState().selectedRiderId).toBeNull()
   })
 
+  test('repartidor y después restaurante: va a buscar el pedido más urgente de ese restaurante', () => {
+    const { pickRider, sendRiderTo } = useShiftStore.getState()
+    const restaurantId = firstOrder().restaurantId
+    const mostUrgent = useShiftStore
+      .getState()
+      .orderQueue.orders.filter((order) => order.restaurantId === restaurantId)
+      .sort((a, b) => a.deadlineAtSec - b.deadlineAtSec)[0]
+    pickRider(3)
+    expect(sendRiderTo(restaurantId)).toBe(true)
+    const state = useShiftStore.getState()
+    expect(state.orderQueue.orders.find((order) => order.id === mostUrgent.id)).toMatchObject({
+      status: 'assigned',
+      riderId: 'k3',
+    })
+    expect(state.riders[2]).toMatchObject({ status: 'toRestaurant', orderId: mostUrgent.id })
+    expect(state).toMatchObject({ selectedOrderId: null, selectedRiderId: null })
+  })
+
+  test('sin repartidor elegido, o en un restaurante sin pedidos, no pasa nada', () => {
+    const { pickRider, sendRiderTo } = useShiftStore.getState()
+    const before = useShiftStore.getState().orderQueue
+    expect(sendRiderTo(firstOrder().restaurantId)).toBe(false)
+    const empty = useShiftStore
+      .getState()
+      .map.restaurants.find((restaurant) => !before.orders.some((order) => order.restaurantId === restaurant.id))
+    pickRider(1)
+    if (empty) expect(sendRiderTo(empty.id)).toBe(false)
+    expect(useShiftStore.getState().orderQueue).toBe(before)
+    expect(useShiftStore.getState().selectedRiderId).toBe('k1')
+  })
+
   test('Esc limpia las dos elecciones', () => {
     const { pickRider, clearSelection, selectOrder } = useShiftStore.getState()
     selectOrder(firstOrder().id)
