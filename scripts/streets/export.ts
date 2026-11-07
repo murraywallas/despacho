@@ -9,7 +9,7 @@ interface AreaConfig {
   id: string
   name: string
   /** [south, west, north, east] */
-  bbox: StreetGraphFile['bbox']
+  bbox: [number, number, number, number]
   output: string
 }
 
@@ -21,7 +21,7 @@ interface StreetsConfig {
 
 const configUrl = new URL('./config.json', import.meta.url)
 
-function overpassQuery(bbox: StreetGraphFile['bbox']): string {
+function overpassQuery(bbox: AreaConfig['bbox']): string {
   return `[out:json][timeout:120];way["highway"](${bbox.join(',')});(._;>;);out body;`
 }
 
@@ -47,7 +47,7 @@ async function download(config: StreetsConfig, area: AreaConfig): Promise<Overpa
 
 /** One node or edge per line: readable diffs without the size of fully indented JSON. */
 function serialize(graph: StreetGraphFile): string {
-  const list = (items: unknown[]) => `[\n${items.map((item) => `    ${JSON.stringify(item)}`).join(',\n')}\n  ]`
+  const list = (items: readonly unknown[]) => `[\n${items.map((item) => `    ${JSON.stringify(item)}`).join(',\n')}\n  ]`
   return [
     '{',
     `  "attribution": ${JSON.stringify(graph.attribution)},`,
@@ -68,6 +68,14 @@ async function main(): Promise<void> {
     const outputUrl = new URL(`../../${area.output}`, import.meta.url)
     await mkdir(new URL('.', outputUrl), { recursive: true })
     const content = serialize(graph)
+    // Same streets, only a newer OSM timestamp: keep the file as it is (no noise in git).
+    const withoutTimestamp = (text: string) =>
+      text.replaceAll('\r\n', '\n').replace(/"osmTimestamp": "[^"]*"/, '')
+    const previous = await readFile(outputUrl, 'utf8').catch(() => '')
+    if (withoutTimestamp(previous) === withoutTimestamp(content)) {
+      console.log(`${area.output} ya estaba al día.`)
+      continue
+    }
     await writeFile(outputUrl, content)
     const sizeKb = Math.round(Buffer.byteLength(content) / 1024)
     console.log(`${area.output}: ${graph.nodes.length} cruces, ${graph.edges.length} tramos, ${sizeKb} KB.`)

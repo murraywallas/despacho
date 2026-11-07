@@ -69,6 +69,11 @@
   "clock": {
     "fastSpeed": 2
   },
+  "routing": {
+    "cycleTrackFactor": 0.7,
+    "majorWithoutTrackFactor": 1.5,
+    "pedestrianFactor": 1.5
+  },
   "vehicles": {
     "bike": {
       "speedKmh": 18,

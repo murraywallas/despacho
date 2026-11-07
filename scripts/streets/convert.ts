@@ -4,6 +4,16 @@
  * The graph keeps every OSM node on a kept way (no simplification), so routes follow the real street shape.
  * Only the largest piece that a bike can ride through is kept: no unreachable corners.
  */
+import {
+  ATTRIBUTION,
+  distanceM,
+  FLAG,
+  STREET_KINDS,
+  type StreetGraphFile,
+  type StreetKind,
+} from '../../src/game/streetGraph.ts'
+
+export { ATTRIBUTION, distanceM, FLAG, STREET_KINDS, type StreetGraphFile }
 
 /** One element of an Overpass `out body` answer. */
 export type OverpassElement =
@@ -14,37 +24,6 @@ export interface OverpassAnswer {
   osm3s?: { timestamp_osm_base?: string }
   elements: OverpassElement[]
 }
-
-/** major: main streets · minor: residential and small streets · cycleway: bike only · foot: pedestrian ways. */
-export const STREET_KINDS = ['major', 'minor', 'cycleway', 'foot'] as const
-export type StreetKind = (typeof STREET_KINDS)[number]
-
-/** Flags of a stretch, as bits. */
-export const FLAG = {
-  bike: 1,
-  car: 2,
-  /** Cars may only go from the first node to the second. */
-  carOneway: 4,
-  /** Bikes may only go from the first node to the second. */
-  bikeOneway: 8,
-  /** Has a cycle track or lane (or is a cycleway). */
-  cycleTrack: 16,
-} as const
-
-export interface StreetGraphFile {
-  attribution: string
-  /** When OpenStreetMap had this data. */
-  osmTimestamp: string
-  /** [south, west, north, east] */
-  bbox: [number, number, number, number]
-  kinds: readonly StreetKind[]
-  /** [lon, lat] per node; the index is the node id. */
-  nodes: [number, number][]
-  /** [from, to, length in meters, kind index, flags] */
-  edges: [number, number, number, number, number][]
-}
-
-export const ATTRIBUTION = '© OpenStreetMap contributors (ODbL), https://www.openstreetmap.org/copyright'
 
 const MAJOR = new Set(['primary', 'primary_link', 'secondary', 'secondary_link', 'tertiary', 'tertiary_link'])
 const MINOR = new Set(['residential', 'unclassified', 'living_street', 'service'])
@@ -94,21 +73,11 @@ export function flagsOf(tags: Record<string, string>): { kind: StreetKind; flags
   return flags === 0 ? undefined : { kind, flags }
 }
 
-const EARTH_RADIUS_M = 6_371_000
-
-/** Distance in meters between two [lon, lat] points. */
-export function distanceM(a: readonly [number, number], b: readonly [number, number]): number {
-  const toRad = Math.PI / 180
-  const dLat = (b[1] - a[1]) * toRad
-  const dLon = (b[0] - a[0]) * toRad
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[1] * toRad) * Math.cos(b[1] * toRad) * Math.sin(dLon / 2) ** 2
-  return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h))
-}
-
 const COORD_DECIMALS = 6
 const round = (value: number, decimals: number) => Number(value.toFixed(decimals))
 
 type Edge = [number, number, number, number, number]
+type Bbox = [number, number, number, number]
 
 /** The largest group of nodes connected by bike stretches, ignoring direction. */
 function largestBikeComponent(nodeCount: number, edges: readonly Edge[]): Set<number> {
@@ -139,7 +108,7 @@ function largestBikeComponent(nodeCount: number, edges: readonly Edge[]): Set<nu
 }
 
 /** Builds the street graph of the area. Throws when the answer has no usable streets. */
-export function buildStreetGraph(answer: OverpassAnswer, bbox: StreetGraphFile['bbox']): StreetGraphFile {
+export function buildStreetGraph(answer: OverpassAnswer, bbox: Bbox): StreetGraphFile {
   const coords = new Map<number, [number, number]>()
   for (const element of answer.elements) {
     if (element.type === 'node') coords.set(element.id, [element.lon, element.lat])

@@ -63,11 +63,22 @@ export interface ShiftBalance {
   readonly maxDurationMin: number
 }
 
+/** How much each kind of stretch costs a route, as a multiple of its length (1 = neutral). */
+export interface RoutingBalance {
+  /** Stretches with a cycle track or lane, for vehicles that use them: below 1 makes them preferred. */
+  readonly cycleTrackFactor: number
+  /** Main streets without a cycle track, by bike. */
+  readonly majorWithoutTrackFactor: number
+  /** Pedestrian ways where bikes are allowed. */
+  readonly pedestrianFactor: number
+}
+
 export interface ClockBalance {
   /** Multiplier of the fast speed button (the "2x"). */
   readonly fastSpeed: number
 }
 
 export const prototype: PrototypeBalance = data.prototype
+export const routing: RoutingBalance = data.routing
 export const shift: ShiftBalance = data.shift
 export const clock: ClockBalance = data.clock
