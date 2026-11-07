@@ -64,6 +64,9 @@
     "tooEasyAbove": 4.8,
     "tooHardBelow": 3
   },
+  "clock": {
+    "fastSpeed": 2
+  },
   "vehicles": {
     "bike": {
       "speedKmh": 18,

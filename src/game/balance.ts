@@ -56,5 +56,11 @@ export interface ShiftBalance {
   readonly maxDurationMin: number
 }
 
+export interface ClockBalance {
+  /** Multiplier of the fast speed button (the "2x"). */
+  readonly fastSpeed: number
+}
+
 export const prototype: PrototypeBalance = data.prototype
 export const shift: ShiftBalance = data.shift
+export const clock: ClockBalance = data.clock
