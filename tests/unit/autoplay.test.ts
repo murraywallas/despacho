@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { autoplay, firstComeBot, triageBot, type AutoplayOptions, type Bot } from '../../src/game/autoplay'
 import { prototype, shift as shiftBalance, type PrototypeBalance } from '../../src/game/balance'
+import { heatOf, isCold } from '../../src/game/rating'
 import { summarizeShift } from '../../src/game/results'
 import { shiftSettingsFrom } from '../../src/game/shift'
 
@@ -45,5 +46,23 @@ describe('pilar 1 con los números de balance.json', () => {
     const average = (bot: Bot) =>
       seeds.reduce((sum, seed) => sum + (play(bot, prototype, seed).average ?? 0), 0) / seeds.length
     expect(average(triageBot) - average(firstComeBot)).toBeGreaterThan(0.5)
+  })
+})
+
+describe('frío con los números de balance.json', () => {
+  const coldDeliveries = (bot: Bot) => {
+    const end = autoplay(prototype, shiftSettingsFrom(prototype), prototype.seed, bot, options)
+    return end.orderQueue.orders.filter(
+      (order) =>
+        order.status === 'delivered' && isCold(heatOf(order, order.deliveredAtSec ?? 0, prototype.heat), prototype.heat),
+    ).length
+  }
+
+  test('despachar sin pensar entrega comida fría', () => {
+    expect(coldDeliveries(firstComeBot)).toBeGreaterThan(0)
+  })
+
+  test('despachar con cuidado entrega menos comida fría', () => {
+    expect(coldDeliveries(triageBot)).toBeLessThan(coldDeliveries(firstComeBot))
   })
 })

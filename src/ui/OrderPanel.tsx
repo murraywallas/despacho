@@ -1,8 +1,10 @@
 import { CircleAlert, Clock, Store, TriangleAlert } from 'lucide-react'
 import { prototype } from '../game/balance'
 import { timeLeftSec, urgencyOf, type Order, type Urgency } from '../game/orders'
+import { isReady } from '../game/rating'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
+import { FoodHeat } from './FoodHeat'
 import { formatClock } from './formatClock'
 
 const ICON_SIZE = 16
@@ -42,6 +44,11 @@ function OrderCard({ order, nowSec, restaurantLabel, selected, onSelect }: Order
         <span className="order-card__restaurant">
           <Store size={ICON_SIZE} aria-hidden />
           {t('orders.restaurant', { label: restaurantLabel })}
+          {isReady(order, nowSec) ? (
+            <FoodHeat order={order} nowSec={nowSec} />
+          ) : (
+            <span className="order-card__cooking">{t('orders.cooking')}</span>
+          )}
         </span>
         <span className="order-card__deadline">
           <DeadlineIcon urgency={urgency} />

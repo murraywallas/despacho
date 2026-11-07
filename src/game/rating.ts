@@ -1,5 +1,6 @@
 /**
- * Food heat and stars. Heat drops from the moment the food leaves the restaurant until it reaches the customer.
+ * Food heat and stars. Heat drops from the moment the kitchen has the food ready until it reaches the customer,
+ * so food waiting for a rider gets cold too.
  * Each delivery gets stars (late and cold cost stars); a cancelled order counts as the cancelled rating. Pure.
  */
 import type { Order } from './orders'
@@ -19,12 +20,16 @@ export interface RatingSettings {
   readonly cancelled: number
 }
 
-/** Heat of the order's food at game second nowSec. Frozen once delivered; full until picked up. */
+/** Heat of the order's food at game second nowSec. Full until it is ready; frozen once delivered. */
 export function heatOf(order: Order, nowSec: number, settings: HeatSettings): number {
-  if (order.pickedUpAtSec === undefined) return settings.start
   const until = order.deliveredAtSec ?? nowSec
-  const travelSec = Math.max(0, until - order.pickedUpAtSec)
-  return Math.max(0, settings.start - settings.lossPerSec * travelSec)
+  const coolingSec = Math.max(0, until - order.readyAtSec)
+  return Math.max(0, settings.start - settings.lossPerSec * coolingSec)
+}
+
+/** True once the kitchen has the food ready. */
+export function isReady(order: Order, nowSec: number): boolean {
+  return nowSec >= order.readyAtSec
 }
 
 export function isCold(heat: number, settings: HeatSettings): boolean {

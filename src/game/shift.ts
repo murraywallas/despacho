@@ -32,11 +32,11 @@ export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
     orders: {
       spawnIntervalSec: balance.orders.spawnIntervalSec,
       deadlineSec: balance.orders.deadlineSec,
+      cookSec: balance.kitchen.cookSec,
       lastSpawnBeforeSec: balance.shift.durationSec,
     },
     movement: {
       speedBlocksPerSec: balance.riders.speedBlocksPerSec,
-      kitchenWaitSec: balance.kitchen.waitSec,
     },
     cancelAfterSec: balance.orders.cancelAfterSec,
   }

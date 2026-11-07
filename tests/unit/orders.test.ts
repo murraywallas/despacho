@@ -15,6 +15,7 @@ import { createRandom } from '../../src/game/random'
 const settings: OrderSettings = {
   spawnIntervalSec: prototype.orders.spawnIntervalSec,
   deadlineSec: prototype.orders.deadlineSec,
+  cookSec: prototype.kitchen.cookSec,
   lastSpawnBeforeSec: prototype.shift.durationSec,
 }
 

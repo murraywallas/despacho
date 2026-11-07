@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { prototype } from '../../src/game/balance'
 import type { Order } from '../../src/game/orders'
-import { averageRating, heatOf, isCold, ratingOf, type HeatSettings, type RatingSettings } from '../../src/game/rating'
+import { averageRating, heatOf, isCold, isReady, ratingOf, type HeatSettings, type RatingSettings } from '../../src/game/rating'
 
 // The values of the GDD, written here so the tests don't move when the balance sheet changes.
 const heat: HeatSettings = { start: 100, lossPerSec: 1, coldBelow: 40 }
@@ -13,28 +13,38 @@ const base: Order = {
   restaurantId: 'r1',
   customer: { x: 1, y: 1 },
   createdAtSec: 0,
+  readyAtSec: 0,
   deadlineAtSec: 120,
   status: 'pending',
 }
 
-/** An order picked up at pickedUpAtSec and delivered at deliveredAtSec. */
-function delivered(pickedUpAtSec: number, deliveredAtSec: number): Order {
-  return { ...base, status: 'delivered', pickedUpAtSec, deliveredAtSec }
+/** An order whose food was ready at readyAtSec and reached the customer at deliveredAtSec. */
+function delivered(readyAtSec: number, deliveredAtSec: number): Order {
+  return { ...base, status: 'delivered', readyAtSec, deliveredAtSec }
 }
 
 describe('temperatura de la comida', () => {
-  test('está al máximo hasta que sale del restaurante', () => {
-    expect(heatOf({ ...base, status: 'assigned' }, 50, heat)).toBe(100)
+  test('está al máximo hasta que la cocina la tiene lista', () => {
+    expect(heatOf({ ...base, readyAtSec: 50 }, 40, heat)).toBe(100)
   })
 
-  test('baja con cada segundo de viaje al cliente', () => {
-    const order: Order = { ...base, status: 'pickedUp', pickedUpAtSec: 30 }
-    expect(heatOf(order, 45, heat)).toBe(85)
+  test('se enfría mientras espera repartidor', () => {
+    expect(heatOf({ ...base, status: 'pending', readyAtSec: 30 }, 45, heat)).toBe(85)
+  })
+
+  test('sigue enfriándose en la cocina y en el viaje al cliente', () => {
+    const order: Order = { ...base, status: 'pickedUp', readyAtSec: 30, pickedUpAtSec: 40 }
+    expect(heatOf(order, 50, heat)).toBe(80)
   })
 
   test('se congela al entregar y nunca baja de 0', () => {
     expect(heatOf(delivered(0, 20), 500, heat)).toBe(80)
-    expect(heatOf({ ...base, status: 'pickedUp', pickedUpAtSec: 0 }, 1000, heat)).toBe(0)
+    expect(heatOf({ ...base, readyAtSec: 0 }, 1000, heat)).toBe(0)
+  })
+
+  test('está lista desde readyAtSec', () => {
+    expect(isReady({ ...base, readyAtSec: 30 }, 29.9)).toBe(false)
+    expect(isReady({ ...base, readyAtSec: 30 }, 30)).toBe(true)
   })
 
   test('está fría por debajo del umbral', () => {

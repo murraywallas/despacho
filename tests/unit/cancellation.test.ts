@@ -11,6 +11,7 @@ const pending: Order = {
   restaurantId: 'r1',
   customer: { x: 4, y: 4 },
   createdAtSec: 0,
+  readyAtSec: 5,
   deadlineAtSec: 120,
   status: 'pending',
 }

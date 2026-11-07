@@ -1,5 +1,6 @@
 /**
- * Riders on the move: riding to the restaurant, waiting for the kitchen, riding to the customer, delivering.
+ * Riders on the move: riding to the restaurant, waiting for the kitchen if the food is not ready yet,
+ * riding to the customer, delivering.
  * Everything advances with game seconds, so pause and fast speed come for free. Pure.
  */
 import type { CityMap } from './cityMap'
@@ -10,7 +11,6 @@ import type { Rider } from './riders'
 
 export interface MovementSettings {
   readonly speedBlocksPerSec: number
-  readonly kitchenWaitSec: number
 }
 
 /** Tolerance for floating-point leftovers when a rider arrives exactly at the end of a step. */
@@ -110,7 +110,8 @@ export function advanceRider(
         ...current,
         position: end,
         status: 'atKitchen',
-        trip: { ...trip, path: [end], traveledBlocks: 0, kitchenLeftSec: settings.kitchenWaitSec },
+        // Food already ready: kitchenLeftSec is 0 and the next pass of the loop picks it up right away.
+        trip: { ...trip, path: [end], traveledBlocks: 0, kitchenLeftSec: Math.max(0, order.readyAtSec - now) },
       }
     } else {
       deliveredAtSec = now

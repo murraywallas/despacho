@@ -8,13 +8,13 @@
       "durationSec": 300
     },
     "orders": {
-      "spawnIntervalSec": 4,
+      "spawnIntervalSec": 3,
       "deadlineSec": 60,
       "cancelAfterSec": 30,
       "urgentBelowSec": 20
     },
     "kitchen": {
-      "waitSec": 5
+      "cookSec": 15
     },
     "riders": {
       "count": 3,
@@ -23,7 +23,7 @@
     },
     "heat": {
       "start": 100,
-      "lossPerSec": 1,
+      "lossPerSec": 1.5,
       "coldBelow": 40
     },
     "rating": {

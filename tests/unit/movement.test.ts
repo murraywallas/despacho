@@ -13,8 +13,9 @@ import type { Order } from '../../src/game/orders'
 import type { Rider } from '../../src/game/riders'
 
 // Restaurant 3 blocks east of the rider, customer 4 blocks south of the restaurant.
+// The food is ready 8 s after dispatch: the rider gets there in 3 s and waits 5 s at the kitchen.
 const map: CityMap = { grid: createGrid(10), restaurants: [{ id: 'r1', label: 'A', position: { x: 3, y: 0 } }] }
-const settings: MovementSettings = { speedBlocksPerSec: 1, kitchenWaitSec: 5 }
+const settings: MovementSettings = { speedBlocksPerSec: 1 }
 const START = 10
 
 const pendingOrder: Order = {
@@ -23,6 +24,7 @@ const pendingOrder: Order = {
   restaurantId: 'r1',
   customer: { x: 3, y: 4 },
   createdAtSec: START,
+  readyAtSec: START + 8,
   deadlineAtSec: START + 120,
   status: 'pending',
 }
@@ -98,10 +100,21 @@ describe('viaje de un pedido', () => {
     }
   })
 
-  test('si ya está en el restaurante, empieza directo por la cocina', () => {
+  test('si ya está en el restaurante, espera lo que le falta a la cocina', () => {
     const { rider } = run(1, 0.1, dispatched({ x: 3, y: 0 }))
     expect(rider.status).toBe('atKitchen')
-    expect(rider.trip?.kitchenLeftSec).toBeCloseTo(4)
+    expect(rider.trip?.kitchenLeftSec).toBeCloseTo(7)
+  })
+
+  test('si la comida ya está lista, la retira sin esperar', () => {
+    const ready = { ...pendingOrder, readyAtSec: START - 30 }
+    const result = assignOrder([ready], [idleRider], 'o1', 'k1')
+    if (!result.ok) throw new Error(result.error)
+    const start = { riders: [startTrip(map, result.riders[0], result.orders[0])], orders: result.orders }
+    const { rider, order } = run(4, 0.1, start)
+    expect(order.pickedUpAtSec).toBeCloseTo(START + 3)
+    expect(rider.status).toBe('toCustomer')
+    expect(riderDisplayPosition(rider).y).toBeCloseTo(1)
   })
 
   test('sin tiempo de juego no se mueve nadie', () => {
