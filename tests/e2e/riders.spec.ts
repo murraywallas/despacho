@@ -13,5 +13,5 @@ test('los 3 repartidores aparecen libres en el panel y en el mapa', async ({ pag
   }
   await expect(panel.getByLabel('3 de 3 repartidores libres')).toBeVisible()
 
-  await expect(page.getByRole('img', { name: /3 repartidores/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: /3 repartidores/ })).toBeVisible()
 })

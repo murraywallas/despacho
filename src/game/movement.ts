@@ -43,7 +43,7 @@ export function startTrip(map: CityMap, rider: Rider, order: Order): Rider {
 }
 
 /** Index of the last crossing passed along the leg. */
-function passedIndex(trip: Trip): number {
+export function passedIndex(trip: Trip): number {
   let index = 0
   while (index + 1 < trip.path.length && trip.pathMeters[index + 1] <= trip.traveledM + EPSILON) index++
   return index
@@ -60,6 +60,18 @@ export function riderDisplayPosition(map: CityMap, rider: Rider): LonLat {
   const stretch = trip.pathMeters[index + 1] - trip.pathMeters[index]
   const fraction = stretch > 0 ? (trip.traveledM - trip.pathMeters[index]) / stretch : 0
   return [from[0] + (to[0] - from[0]) * fraction, from[1] + (to[1] - from[1]) * fraction]
+}
+
+/**
+ * Crossings left of the trip, from the last one the rider passed to the customer. Changes only when the rider
+ * passes a crossing, so whoever draws it doesn't have to redraw every frame.
+ */
+export function remainingCrossings(rider: Rider): NodeId[] {
+  const trip = rider.trip
+  if (!trip) return []
+  if (rider.status === 'atKitchen') return [...trip.toCustomer]
+  const ahead = trip.path.slice(passedIndex(trip))
+  return rider.status === 'toRestaurant' ? [...ahead, ...trip.toCustomer.slice(1)] : ahead
 }
 
 /** What is left of the trip, from where the rider is now to the customer. */

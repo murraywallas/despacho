@@ -8,7 +8,7 @@ test('llegan pedidos a la cola con restaurante y cuenta regresiva, y el cliente 
 
   const panel = page.getByRole('complementary', { name: /Pedidos/ })
   await expect(panel.getByText('Todavía no hay pedidos')).toBeVisible()
-  await expect(page.getByRole('img', { name: /0 clientes esperando/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: /0 clientes esperando/ })).toBeVisible()
 
   // A 2x el primer pedido llega en la mitad del intervalo de balance.json.
   await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
@@ -18,7 +18,9 @@ test('llegan pedidos a la cola con restaurante y cuenta regresiva, y el cliente 
   await expect(card).toContainText('Pedido #1')
   await expect(card).toContainText(/Restaurante [A-D]/)
   await expect(card).toContainText('Esperando repartidor')
-  await expect(page.getByRole('img', { name: /1 clientes esperando/ })).toBeVisible()
+  await expect(page.getByRole('region', { name: /1 clientes esperando/ })).toBeVisible()
+  await expect(page.getByTestId('customer-marker')).toHaveCount(1)
+  await expect(page.getByRole('img', { name: 'Cliente del pedido #1' })).toBeVisible()
 
   // La cuenta regresiva baja mientras el reloj corre y se frena en pausa.
   const time = card.locator('.order-card__time')

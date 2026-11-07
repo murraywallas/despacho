@@ -1,0 +1,66 @@
+/* Marcadores sobre el mapa nocturno. El mapa es oscuro en los dos temas, así que sus colores no cambian con el tema. */
+
+.map-view {
+  --marker-restaurant: #f2b84b;
+  --marker-restaurant-ink: #1a1203;
+  --marker-customer: #a9b8d6;
+  --marker-customer-ink: #0e1a33;
+  --marker-rider: #4fb3ff;
+  --marker-rider-ink: #06213a;
+  --marker-outline: #0e1a33;
+  --marker-selected: #c4a5ff;
+  background: #0e1a33;
+}
+
+.map-marker {
+  display: grid;
+  place-items: center;
+  font: 600 12px/1 system-ui, sans-serif;
+  cursor: default;
+}
+
+.map-marker--restaurant {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: var(--marker-restaurant);
+  color: var(--marker-restaurant-ink);
+  box-shadow: 0 0 0 2px var(--marker-outline);
+  font-size: 13px;
+}
+
+.map-marker--customer {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--marker-customer);
+  color: var(--marker-customer-ink);
+  box-shadow: 0 0 0 2px var(--marker-outline);
+  font-size: 10px;
+}
+
+.map-marker--rider {
+  width: 22px;
+  height: 22px;
+  background: var(--marker-rider);
+  color: var(--marker-rider-ink);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  z-index: 1;
+}
+
+.map-marker--selected {
+  box-shadow:
+    0 0 0 2px var(--marker-outline),
+    0 0 0 5px var(--marker-selected);
+}
+
+/* Atribución y botones de zoom sobre fondo oscuro. */
+.map-view .maplibregl-ctrl-attrib {
+  background: rgb(14 26 51 / 0.8);
+  color: #a9b8d6;
+  font-size: 11px;
+}
+
+.map-view .maplibregl-ctrl-attrib a {
+  color: #cfdaf0;
+}

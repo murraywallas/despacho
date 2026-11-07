@@ -367,6 +367,7 @@ body {
 
 .rider-card__eta {
   margin-left: auto;
+  white-space: nowrap;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -392,6 +393,7 @@ body {
 
 .rider-card__name {
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .rider-card__vehicle {
