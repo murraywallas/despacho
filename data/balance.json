@@ -31,7 +31,8 @@
       "coldPenalty": 1,
       "min": 1,
       "cancelled": 1
-    }
+    },
+    "seed": 2026
   },
   "shift": {
     "winAtLeast": 4,

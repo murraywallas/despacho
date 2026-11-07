@@ -7,5 +7,6 @@
   "topbar.resume": "Seguir",
   "topbar.speedLabel": "Velocidad del reloj",
   "topbar.speedValue": "{speed}x",
-  "shift.mapArea": "Mapa"
+  "shift.mapArea": "Mapa",
+  "map.description": "Mapa: grilla de {size} por {size} calles con {restaurants} restaurantes"
 }

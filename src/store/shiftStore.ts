@@ -1,8 +1,11 @@
 import { create } from 'zustand'
 import { clock as clockBalance, prototype } from '../game/balance'
+import { createCityMap, type CityMap } from '../game/cityMap'
 import { createClock, setSpeed, tick, togglePause, type ShiftClock } from '../game/clock'
+import { createRandom } from '../game/random'
 
 interface ShiftState {
+  map: CityMap
   clock: ShiftClock
   /** Advances the game by dtSec real seconds. */
   tick: (dtSec: number) => void
@@ -14,6 +17,7 @@ interface ShiftState {
 const NORMAL_SPEED = 1
 
 export const useShiftStore = create<ShiftState>()((set) => ({
+  map: createCityMap(prototype.grid.size, prototype.grid.restaurants, createRandom(prototype.seed)),
   clock: createClock(prototype.shift.durationSec),
   tick: (dtSec) =>
     set((state) => {
