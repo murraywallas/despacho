@@ -18,13 +18,13 @@ export default function App() {
   const tick = useShiftStore((state) => state.tick)
   const togglePause = useShiftStore((state) => state.togglePause)
   const selectOrder = useShiftStore((state) => state.selectOrder)
-  const assignSelectedTo = useShiftStore((state) => state.assignSelectedTo)
+  const pickRider = useShiftStore((state) => state.pickRider)
   const cancelSelection = useCallback(() => selectOrder(null), [selectOrder])
 
   useGameLoop(tick)
   useKeyboardShortcuts({
     onTogglePause: togglePause,
-    onPickRider: assignSelectedTo,
+    onPickRider: pickRider,
     onCancelSelection: cancelSelection,
     enabled: !finished,
   })

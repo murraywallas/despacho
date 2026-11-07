@@ -29,19 +29,22 @@ interface RiderCardProps {
   etaSec?: number
   order?: Order
   nowSec: number
-  canAssign: boolean
-  onAssign: (riderNumber: number) => void
+  /** Free riders can be picked; with an order picked, picking one gives it the order. */
+  canPick: boolean
+  selected: boolean
+  onPick: (riderNumber: number) => void
 }
 
-function RiderCard({ rider, etaSec, order, nowSec, canAssign, onAssign }: RiderCardProps) {
+function RiderCard({ rider, etaSec, order, nowSec, canPick, selected, onPick }: RiderCardProps) {
   const vehicleKey = VEHICLE_TEXT[rider.vehicle]
   return (
     <li data-testid="rider-card" data-rider-number={rider.number}>
       <button
         type="button"
-        className={`rider-card rider-card--${rider.status}`}
-        disabled={!canAssign}
-        onClick={() => onAssign(rider.number)}
+        className={`rider-card rider-card--${rider.status}${selected ? ' rider-card--selected' : ''}`}
+        disabled={!canPick}
+        aria-pressed={selected}
+        onClick={() => onPick(rider.number)}
         aria-keyshortcuts={String(rider.number)}
       >
         <span className="rider-card__badge" aria-hidden>
@@ -73,16 +76,17 @@ function RiderCard({ rider, etaSec, order, nowSec, canAssign, onAssign }: RiderC
 }
 
 /**
- * The fleet. With an order selected, free riders are sorted by how soon they reach its restaurant (ETA),
- * and clicking one assigns the order. Busy riders go last and can't be picked.
+ * The fleet. A free rider can be picked first (then an order on the map), or after an order: then free riders
+ * are sorted by how soon they reach its restaurant (ETA) and clicking one assigns the order. Busy riders go last.
  */
 export function RiderPanel() {
   const map = useShiftStore((state) => state.map)
   const riders = useShiftStore((state) => state.riders)
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
+  const selectedRiderId = useShiftStore((state) => state.selectedRiderId)
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
-  const assignSelectedTo = useShiftStore((state) => state.assignSelectedTo)
+  const pickRider = useShiftStore((state) => state.pickRider)
   const selectedOrder = orders.find((order) => order.id === selectedOrderId)
   const idle = riders.filter((rider) => rider.status === 'idle').length
 
@@ -103,7 +107,9 @@ export function RiderPanel() {
           {idle}/{riders.length}
         </span>
       </h2>
-      {selectedOrder && <p className="side-panel__hint">{t('riders.hintByEta')}</p>}
+      <p className="side-panel__hint">
+        {selectedOrder ? t('riders.hintByEta') : selectedRiderId ? t('riders.hintPickedRider') : t('riders.hintPickFirst')}
+      </p>
       <ol className="side-panel__list">
         {ordered.map((rider) => (
           <RiderCard
@@ -112,8 +118,9 @@ export function RiderPanel() {
             etaSec={etaOf.get(rider.id)}
             order={orders.find((order) => order.id === rider.orderId)}
             nowSec={nowSec}
-            canAssign={Boolean(selectedOrder) && rider.status === 'idle'}
-            onAssign={assignSelectedTo}
+            canPick={rider.status === 'idle'}
+            selected={rider.id === selectedRiderId}
+            onPick={pickRider}
           />
         ))}
       </ol>

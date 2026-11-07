@@ -7,5 +7,5 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 
 setWorkerUrl(workerUrl)
 
-export { AttributionControl, Map as MapLibreMap, Marker, NavigationControl } from 'maplibre-gl'
-export type { GeoJSONSource } from 'maplibre-gl'
+export { AttributionControl, Map as MapLibreMap, Marker, NavigationControl, Popup } from 'maplibre-gl'
+export type { GeoJSONSource, PositionAnchor } from 'maplibre-gl'

@@ -1,15 +1,15 @@
-import { CircleAlert, Clock, Store, TriangleAlert } from 'lucide-react'
+import { ChefHat, CircleAlert, Clock, TriangleAlert } from 'lucide-react'
 import { prototype } from '../game/balance'
 import { timeLeftSec, urgencyOf, type Order, type Urgency } from '../game/orders'
 import { isReady } from '../game/rating'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
-import { restaurantName } from './restaurantName'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
+import { restaurantName } from './restaurantName'
 
-const ICON_SIZE = 16
+const ICON_SIZE = 14
 
 function DeadlineIcon({ urgency }: { urgency: Urgency }) {
   if (urgency === 'late') return <CircleAlert size={ICON_SIZE} aria-hidden />
@@ -25,6 +25,7 @@ interface OrderCardProps {
   onSelect: (orderId: string) => void
 }
 
+/** A compact order: number and time left, then restaurant and food heat. */
 function OrderCard({ order, nowSec, restaurantName, selected, onSelect }: OrderCardProps) {
   const urgency = urgencyOf(order, nowSec, prototype.orders.urgentBelowSec)
   const left = timeLeftSec(order, nowSec)
@@ -39,37 +40,41 @@ function OrderCard({ order, nowSec, restaurantName, selected, onSelect }: OrderC
       >
         <span className="order-card__header">
           <span className="order-card__number">{t('orders.number', { number: order.number })}</span>
-          <span className="order-card__status">
-            {selected ? t('orders.status.selected') : t('orders.status.pending')}
+          <span className="order-card__deadline">
+            <DeadlineIcon urgency={urgency} />
+            <span className="order-card__time">
+              {left > 0 ? t('orders.minutesLeft', { minutes: gameMinutes(left, gameTime) }) : t('orders.late')}
+            </span>
           </span>
         </span>
         <span className="order-card__restaurant">
-          <Store size={ICON_SIZE} aria-hidden />
-          {restaurantName}
+          <span className="order-card__name">{restaurantName}</span>
           {isReady(order, nowSec) ? (
             <FoodHeat order={order} nowSec={nowSec} />
           ) : (
-            <span className="order-card__cooking">{t('orders.cooking')}</span>
+            <span className="order-card__cooking" role="img" aria-label={t('orders.cooking')} title={t('orders.cooking')}>
+              <ChefHat size={ICON_SIZE} aria-hidden />
+            </span>
           )}
-        </span>
-        <span className="order-card__deadline">
-          <DeadlineIcon urgency={urgency} />
-          <span className="order-card__time">{left > 0 ? t('orders.minutesLeft', { minutes: gameMinutes(left, gameTime) }) : t('orders.late')}</span>
-          {urgency === 'urgent' && <span className="order-card__tag">{t('orders.urgent')}</span>}
         </span>
       </button>
     </li>
   )
 }
 
-/** Orders waiting for a rider. Clicking one selects it; then a rider gets it (RiderPanel or keys 1–9). */
+/**
+ * A slim strip with the orders waiting for a rider, the most urgent first. Dispatching happens on the map; this
+ * is the backup: clicking an order picks it, like tapping it on the map.
+ */
 export function OrderPanel() {
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const restaurants = useShiftStore((state) => state.map.restaurants)
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
   const selectOrder = useShiftStore((state) => state.selectOrder)
-  const pending = orders.filter((order) => order.status === 'pending')
+  const pending = orders
+    .filter((order) => order.status === 'pending')
+    .sort((a, b) => a.deadlineAtSec - b.deadlineAtSec)
   const delivered = orders.filter((order) => order.status === 'delivered').length
   const cancelled = orders.filter((order) => order.status === 'cancelled').length
   const nameOf = (id: string) => {
@@ -78,7 +83,7 @@ export function OrderPanel() {
   }
 
   return (
-    <aside className="side-panel" aria-labelledby="order-panel-title">
+    <aside className="side-panel side-panel--slim" aria-labelledby="order-panel-title">
       <h2 className="side-panel__title" id="order-panel-title">
         {t('orders.title')}
         <span className="side-panel__count" aria-label={t('orders.count', { count: pending.length })}>
@@ -94,21 +99,18 @@ export function OrderPanel() {
       {pending.length === 0 ? (
         <p className="side-panel__empty">{orders.length === 0 ? t('orders.empty') : t('orders.allAssigned')}</p>
       ) : (
-        <>
-          <p className="side-panel__hint">{selectedOrderId ? t('orders.hintPickRider') : t('orders.hintPickOrder')}</p>
-          <ol className="side-panel__list">
-            {pending.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                nowSec={nowSec}
-                restaurantName={nameOf(order.restaurantId)}
-                selected={order.id === selectedOrderId}
-                onSelect={selectOrder}
-              />
-            ))}
-          </ol>
-        </>
+        <ol className="side-panel__list">
+          {pending.map((order) => (
+            <OrderCard
+              key={order.id}
+              order={order}
+              nowSec={nowSec}
+              restaurantName={nameOf(order.restaurantId)}
+              selected={order.id === selectedOrderId}
+              onSelect={selectOrder}
+            />
+          ))}
+        </ol>
       )}
     </aside>
   )

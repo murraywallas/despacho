@@ -46,6 +46,7 @@ describe('despacho en el estado del turno', () => {
       orderQueue: createOrderQueue(orderSettings),
       riders: initial.riders,
       selectedOrderId: null,
+      selectedRiderId: null,
     })
     useShiftStore.getState().tick(interval * 2)
   })
@@ -53,36 +54,76 @@ describe('despacho en el estado del turno', () => {
   const firstOrder = () => useShiftStore.getState().orderQueue.orders[0]
 
   test('elegir un pedido y después un repartidor lo asigna y limpia la selección', () => {
-    const { selectOrder, assignSelectedTo } = useShiftStore.getState()
+    const { selectOrder, pickRider } = useShiftStore.getState()
     selectOrder(firstOrder().id)
     expect(useShiftStore.getState().selectedOrderId).toBe(firstOrder().id)
-    assignSelectedTo(2)
+    pickRider(2)
     const state = useShiftStore.getState()
     expect(firstOrder()).toMatchObject({ status: 'assigned', riderId: 'k2' })
     expect(state.riders[1]).toMatchObject({ status: 'toRestaurant', orderId: firstOrder().id })
     expect(state.selectedOrderId).toBeNull()
   })
 
-  test('sin pedido elegido, una tecla de repartidor no hace nada', () => {
-    useShiftStore.getState().assignSelectedTo(1)
-    expect(useShiftStore.getState().riders.every((rider) => rider.status === 'idle')).toBe(true)
+  test('sin pedido elegido, elegir un repartidor libre lo deja elegido y no lo manda a ningún lado', () => {
+    useShiftStore.getState().pickRider(1)
+    const state = useShiftStore.getState()
+    expect(state.riders.every((rider) => rider.status === 'idle')).toBe(true)
+    expect(state.selectedRiderId).toBe('k1')
+  })
+
+  test('repartidor primero y pedido después: el pedido queda asignado y se limpia todo', () => {
+    const { pickRider, selectOrder } = useShiftStore.getState()
+    pickRider(2)
+    selectOrder(firstOrder().id)
+    const state = useShiftStore.getState()
+    expect(firstOrder()).toMatchObject({ status: 'assigned', riderId: 'k2' })
+    expect(state.riders[1]).toMatchObject({ status: 'toRestaurant', orderId: firstOrder().id })
+    expect(state.selectedRiderId).toBeNull()
+    expect(state.selectedOrderId).toBeNull()
+  })
+
+  test('volver a elegir el mismo repartidor lo deselecciona; elegir otro lo cambia', () => {
+    const { pickRider } = useShiftStore.getState()
+    pickRider(1)
+    pickRider(1)
+    expect(useShiftStore.getState().selectedRiderId).toBeNull()
+    pickRider(1)
+    pickRider(3)
+    expect(useShiftStore.getState().selectedRiderId).toBe('k3')
+  })
+
+  test('un repartidor ocupado no queda elegido', () => {
+    const { pickRider, selectOrder } = useShiftStore.getState()
+    selectOrder(firstOrder().id)
+    pickRider(1)
+    pickRider(1)
+    expect(useShiftStore.getState().selectedRiderId).toBeNull()
+  })
+
+  test('Esc limpia las dos elecciones', () => {
+    const { pickRider, clearSelection, selectOrder } = useShiftStore.getState()
+    selectOrder(firstOrder().id)
+    clearSelection()
+    pickRider(1)
+    clearSelection()
+    expect(useShiftStore.getState()).toMatchObject({ selectedOrderId: null, selectedRiderId: null })
   })
 
   test('un repartidor ocupado no recibe otro pedido y la selección se mantiene', () => {
-    const { selectOrder, assignSelectedTo } = useShiftStore.getState()
+    const { selectOrder, pickRider } = useShiftStore.getState()
     selectOrder(firstOrder().id)
-    assignSelectedTo(1)
+    pickRider(1)
     const second = useShiftStore.getState().orderQueue.orders[1]
     selectOrder(second.id)
-    assignSelectedTo(1)
+    pickRider(1)
     expect(useShiftStore.getState().orderQueue.orders[1].status).toBe('pending')
     expect(useShiftStore.getState().selectedOrderId).toBe(second.id)
   })
 
   test('un pedido ya asignado no se puede volver a elegir', () => {
-    const { selectOrder, assignSelectedTo } = useShiftStore.getState()
+    const { selectOrder, pickRider } = useShiftStore.getState()
     selectOrder(firstOrder().id)
-    assignSelectedTo(1)
+    pickRider(1)
     selectOrder(firstOrder().id)
     expect(useShiftStore.getState().selectedOrderId).toBeNull()
   })
@@ -103,11 +144,12 @@ describe('viaje durante el turno', () => {
       orderQueue: createOrderQueue(orderSettings),
       riders: initial.riders,
       selectedOrderId: null,
+      selectedRiderId: null,
     })
-    const { tick, selectOrder, assignSelectedTo } = useShiftStore.getState()
+    const { tick, selectOrder, pickRider } = useShiftStore.getState()
     tick(interval)
     selectOrder(useShiftStore.getState().orderQueue.orders[0].id)
-    assignSelectedTo(1)
+    pickRider(1)
   })
 
   const riderOne = () => useShiftStore.getState().riders[0]
@@ -153,6 +195,7 @@ describe('cancelación durante el turno', () => {
       orderQueue: createOrderQueue(orderSettings),
       riders: initial.riders,
       selectedOrderId: null,
+      selectedRiderId: null,
     })
   })
 
@@ -182,10 +225,10 @@ describe('jugar otra vez', () => {
     restartShift()
     const fresh = useShiftStore.getState()
 
-    const { tick, selectOrder, assignSelectedTo, toggleSpeed } = fresh
+    const { tick, selectOrder, pickRider, toggleSpeed } = fresh
     tick(interval)
     selectOrder(useShiftStore.getState().orderQueue.orders[0].id)
-    assignSelectedTo(1)
+    pickRider(1)
     toggleSpeed()
     for (let i = 0; i < 2000 && !useShiftStore.getState().clock.finished; i++) tick(0.25)
     const ended = useShiftStore.getState()

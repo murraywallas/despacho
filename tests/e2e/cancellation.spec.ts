@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { prototype } from './balance.ts'
 
+test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
+
 test('un pedido que nadie atiende se cancela, sale de la cola y cuenta como 1 estrella', async ({ page }) => {
   await page.clock.install()
   await page.goto('/')

@@ -5,10 +5,10 @@ test('la comida de un pedido sin repartidor se enfría desde que la cocina la ti
   await page.clock.install()
   await page.goto('/')
   const { spawnIntervalSec } = prototype.orders
-  const firstOrder = page.getByTestId('order-card').filter({ hasText: /^Pedido #1\D/ })
+  const firstOrder = page.getByTestId('order-card').filter({ has: page.getByText('Pedido #1', { exact: true }) })
 
   await page.clock.runFor(spawnIntervalSec * 1000 + 500)
-  await expect(firstOrder).toContainText('En la cocina')
+  await expect(firstOrder.getByRole('img', { name: 'En la cocina' })).toBeVisible()
   await expect(firstOrder.getByTestId('food-heat')).toHaveCount(0)
 
   // Lista: aparece la temperatura y baja mientras espera repartidor.

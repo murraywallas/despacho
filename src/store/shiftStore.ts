@@ -17,17 +17,28 @@ interface ShiftState {
   togglePause: () => void
   /** Switches between normal speed and the fast speed from balance.json. */
   toggleSpeed: () => void
-  /** Pending order the player picked (first click). */
+  /** Pending order the player picked, waiting for a rider. */
   selectedOrderId: string | null
-  /** Selects a pending order, or clears the selection with null. Clicking the selected one again clears it. */
+  /** Free rider the player picked, waiting for an order. */
+  selectedRiderId: string | null
+  /**
+   * The player picks an order (on the map, in the list). With a rider already picked, the order goes to that
+   * rider; otherwise the order stays picked. Picking it again, or null, drops the selection.
+   */
   selectOrder: (orderId: string | null) => void
-  /** Gives the selected order to a rider (second click, or keys 1–9). Works while paused too. */
-  assignSelectedTo: (riderNumber: number) => void
+  /**
+   * The player picks a rider (on the map, in the bar or with keys 1–9). With an order already picked, the rider
+   * gets it; otherwise a free rider stays picked. Works while paused too.
+   */
+  pickRider: (riderNumber: number) => void
+  /** Drops both selections (Esc). */
+  clearSelection: () => void
   /** "Jugar otra vez": starts the shift over (clock, orders, riders and stars). */
   restartShift: () => void
 }
 
 const NORMAL_SPEED = 1
+const NOTHING_SELECTED = { selectedOrderId: null, selectedRiderId: null }
 
 export const settings = shiftSettingsFrom(prototype)
 export const orderSettings: OrderSettings = settings.orders
@@ -35,13 +46,13 @@ export const orderSettings: OrderSettings = settings.orders
 // The random stream of the current shift (orders keep drawing from it as they appear).
 let random: Random
 
-type ShiftData = Pick<ShiftState, 'map' | 'riders' | 'clock' | 'orderQueue' | 'selectedOrderId'>
+type ShiftData = Pick<ShiftState, 'map' | 'riders' | 'clock' | 'orderQueue' | 'selectedOrderId' | 'selectedRiderId'>
 
 /** A fresh shift: clock at the start, no orders, riders at their starting spots. */
 function newShift(): ShiftData {
   const fresh = createShift(prototype, prototype.seed)
   random = fresh.random
-  return { ...fresh.shift, selectedOrderId: null }
+  return { ...fresh.shift, selectedOrderId: null, selectedRiderId: null }
 }
 
 export const useShiftStore = create<ShiftState>()((set) => ({
@@ -51,12 +62,14 @@ export const useShiftStore = create<ShiftState>()((set) => ({
     set((state) => {
       const next = advanceShift(state, dtSec, random, settings)
       if (next === state) return state
-      const selected = next.orderQueue.orders.find((order) => order.id === state.selectedOrderId)
+      const order = next.orderQueue.orders.find((candidate) => candidate.id === state.selectedOrderId)
+      const rider = next.riders.find((candidate) => candidate.id === state.selectedRiderId)
       return {
         clock: next.clock,
         riders: next.riders,
         orderQueue: next.orderQueue,
-        selectedOrderId: selected?.status === 'pending' ? state.selectedOrderId : null,
+        selectedOrderId: order?.status === 'pending' ? state.selectedOrderId : null,
+        selectedRiderId: rider?.status === 'idle' ? state.selectedRiderId : null,
       }
     }),
   togglePause: () => set((state) => ({ clock: togglePause(state.clock) })),
@@ -67,15 +80,26 @@ export const useShiftStore = create<ShiftState>()((set) => ({
     }),
   selectOrder: (orderId) =>
     set((state) => {
-      if (orderId === null || orderId === state.selectedOrderId) return { selectedOrderId: null }
+      if (orderId === null) return NOTHING_SELECTED
+      if (orderId === state.selectedOrderId) return { selectedOrderId: null }
       const order = state.orderQueue.orders.find((candidate) => candidate.id === orderId)
-      return order?.status === 'pending' && !state.clock.finished ? { selectedOrderId: orderId } : state
+      if (order?.status !== 'pending' || state.clock.finished) return state
+      if (state.selectedRiderId) {
+        const result = dispatchOrder(state.map, state.orderQueue, state.riders, orderId, state.selectedRiderId)
+        return result ? { ...result, ...NOTHING_SELECTED } : state
+      }
+      return { selectedOrderId: orderId }
     }),
-  assignSelectedTo: (riderNumber) =>
+  pickRider: (riderNumber) =>
     set((state) => {
       const rider = state.riders.find((candidate) => candidate.number === riderNumber)
-      if (!state.selectedOrderId || !rider || state.clock.finished) return state
-      const result = dispatchOrder(state.map, state.orderQueue, state.riders, state.selectedOrderId, rider.id)
-      return result ? { ...result, selectedOrderId: null } : state
+      if (!rider || state.clock.finished) return state
+      if (state.selectedOrderId) {
+        const result = dispatchOrder(state.map, state.orderQueue, state.riders, state.selectedOrderId, rider.id)
+        return result ? { ...result, ...NOTHING_SELECTED } : state
+      }
+      if (rider.status !== 'idle') return state
+      return { selectedRiderId: rider.id === state.selectedRiderId ? null : rider.id }
     }),
+  clearSelection: () => set(NOTHING_SELECTED),
 }))
