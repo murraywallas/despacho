@@ -29,7 +29,7 @@ interface ShiftState {
 
 const NORMAL_SPEED = 1
 
-const settings = shiftSettingsFrom(prototype)
+export const settings = shiftSettingsFrom(prototype)
 export const orderSettings: OrderSettings = settings.orders
 
 // The random stream of the current shift (orders keep drawing from it as they appear).

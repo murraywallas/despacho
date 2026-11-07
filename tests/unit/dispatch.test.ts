@@ -1,20 +1,21 @@
 import { describe, expect, test } from 'vitest'
-import type { CityMap } from '../../src/game/cityMap'
-import { assignOrder, plannedRoute, rankRiders, travelTimeSec } from '../../src/game/dispatch'
-import { createGrid } from '../../src/game/grid'
+import { assignOrder, rankRiders, travelTimeSec } from '../../src/game/dispatch'
 import type { Order } from '../../src/game/orders'
 import type { Rider } from '../../src/game/riders'
+import { BLOCK_M, nodeAt as latticeNode, smallCity } from './smallCity'
 
-const map: CityMap = {
-  grid: createGrid(10),
-  restaurants: [{ id: 'r1', label: 'A', position: { x: 3, y: 4 } }],
-}
+// A 10 × 10 lattice of 100 m blocks, the restaurant at crossing (3, 4).
+const SIZE = 10
+const nodeAt = (x: number, y: number) => latticeNode(x, y, SIZE)
+const map = smallCity([nodeAt(3, 4)], SIZE)
+/** One block per second, so ETAs read as blocks. */
+const BLOCK_PER_SEC = BLOCK_M
 
 const order: Order = {
   id: 'o1',
   number: 1,
   restaurantId: 'r1',
-  customer: { x: 3, y: 9 },
+  customer: nodeAt(3, 9),
   readyAtSec: 5,
   createdAtSec: 10,
   deadlineAtSec: 130,
@@ -22,41 +23,35 @@ const order: Order = {
 }
 
 function rider(number: number, x: number, y: number, status: Rider['status'] = 'idle'): Rider {
-  return { id: `k${number}`, number, vehicle: 'bike', position: { x, y }, status }
+  return { id: `k${number}`, number, vehicle: 'bike', node: nodeAt(x, y), status }
 }
 
 describe('ETA', () => {
-  test('cuadras hasta el restaurante dividido la velocidad', () => {
-    expect(travelTimeSec(map, { x: 0, y: 0 }, { x: 3, y: 4 }, 1)).toBe(7)
-    expect(travelTimeSec(map, { x: 0, y: 0 }, { x: 3, y: 4 }, 2)).toBe(3.5)
+  test('metros de la ruta hasta el restaurante dividido la velocidad', () => {
+    expect(travelTimeSec(map, nodeAt(0, 0), nodeAt(3, 4), BLOCK_PER_SEC)).toBe(7)
+    expect(travelTimeSec(map, nodeAt(0, 0), nodeAt(3, 4), 2 * BLOCK_PER_SEC)).toBe(3.5)
   })
 
   test('ya en el restaurante: cero', () => {
-    expect(travelTimeSec(map, { x: 3, y: 4 }, { x: 3, y: 4 }, 1)).toBe(0)
+    expect(travelTimeSec(map, nodeAt(3, 4), nodeAt(3, 4), BLOCK_PER_SEC)).toBe(0)
+  })
+
+  test('sin ruta posible: infinito', () => {
+    expect(travelTimeSec(map, nodeAt(0, 0), 999, BLOCK_PER_SEC)).toBe(Infinity)
   })
 })
 
 describe('ranking de repartidores', () => {
   test('ordena a los libres por ETA y deja afuera a los ocupados', () => {
     const riders = [rider(1, 9, 9), rider(2, 3, 5), rider(3, 3, 4, 'toRestaurant'), rider(4, 0, 0)]
-    const ranked = rankRiders(map, riders, order, 1)
+    const ranked = rankRiders(map, riders, order, BLOCK_PER_SEC)
     expect(ranked.map((entry) => entry.rider.number)).toEqual([2, 4, 1])
     expect(ranked.map((entry) => entry.etaSec)).toEqual([1, 7, 11])
   })
 
   test('con la misma ETA va primero el número más bajo', () => {
-    const ranked = rankRiders(map, [rider(2, 3, 3), rider(1, 3, 5)], order, 1)
+    const ranked = rankRiders(map, [rider(2, 3, 3), rider(1, 3, 5)], order, BLOCK_PER_SEC)
     expect(ranked.map((entry) => entry.rider.number)).toEqual([1, 2])
-  })
-})
-
-describe('ruta planeada', () => {
-  test('va del repartidor al restaurante y de ahí al cliente, sin repetir el restaurante', () => {
-    const route = plannedRoute(map, rider(1, 3, 2), order)
-    expect(route[0]).toEqual({ x: 3, y: 2 })
-    expect(route).toContainEqual({ x: 3, y: 4 })
-    expect(route.at(-1)).toEqual({ x: 3, y: 9 })
-    expect(route).toHaveLength(2 + 5 + 1)
   })
 })
 

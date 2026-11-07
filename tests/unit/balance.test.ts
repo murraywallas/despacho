@@ -11,7 +11,7 @@ function numbersIn(value: unknown, path = ''): [string, number][] {
 
 describe('balance', () => {
   test('carga los números del prototipo desde balance.json', () => {
-    expect(prototype.grid.size).toBe(data.prototype.grid.size)
+    expect(prototype.restaurants.count).toBe(data.prototype.restaurants.count)
     expect(prototype.orders.deadlineSec).toBe(data.prototype.orders.deadlineSec)
     expect(shift.winAtLeast).toBe(data.shift.winAtLeast)
   })

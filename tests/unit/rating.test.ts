@@ -11,7 +11,7 @@ const base: Order = {
   id: 'o1',
   number: 1,
   restaurantId: 'r1',
-  customer: { x: 1, y: 1 },
+  customer: 6,
   createdAtSec: 0,
   readyAtSec: 0,
   deadlineAtSec: 120,

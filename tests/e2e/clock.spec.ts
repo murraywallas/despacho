@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
+import { gameMinuteMs } from './balance.ts'
 
 test('el reloj baja y la barra espaciadora lo pausa y lo reanuda', async ({ page }) => {
   await page.goto('/')
   const time = page.getByTestId('shift-time')
 
   const start = await time.textContent()
-  await expect(time).not.toHaveText(start ?? '', { timeout: 3000 })
+  await expect(time).not.toHaveText(start ?? '', { timeout: gameMinuteMs + 2000 })
 
   await page.keyboard.press('Space')
   await expect(page.getByRole('status')).toHaveText('En pausa')
@@ -15,7 +16,7 @@ test('el reloj baja y la barra espaciadora lo pausa y lo reanuda', async ({ page
 
   await page.keyboard.press('Space')
   await expect(page.getByRole('status')).toHaveCount(0)
-  await expect(time).not.toHaveText(paused ?? '', { timeout: 3000 })
+  await expect(time).not.toHaveText(paused ?? '', { timeout: gameMinuteMs + 2000 })
 })
 
 test('el botón de pausa y el de 2x funcionan, y la barra espaciadora sigue pausando', async ({ page }) => {

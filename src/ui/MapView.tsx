@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import type { CityMap } from '../game/cityMap'
+import { positionOf, type CityMap } from '../game/cityMap'
 import { restaurantOf } from '../game/dispatch'
 import { remainingRoute, riderDisplayPosition } from '../game/movement'
 import type { Order } from '../game/orders'
@@ -32,19 +32,16 @@ interface MapViewProps {
 
 function buildScene(map: CityMap, orders: readonly Order[], riders: readonly Rider[], selectedId: string | null) {
   const selected = orders.find((order) => order.id === selectedId)
-  const routes = riders.flatMap((rider) => {
-    const order = orders.find((candidate) => candidate.id === rider.orderId)
-    return order ? [remainingRoute(map, rider, order)] : []
-  })
+  const routes = riders.filter((rider) => rider.trip).map((rider) => remainingRoute(map, rider))
   return {
     map,
     customers: orders
       .filter((order) => order.status !== 'delivered' && order.status !== 'cancelled')
-      .map((order) => ({ position: order.customer, label: String(order.number) })),
-    riders: riders.map((rider) => ({ position: riderDisplayPosition(rider), label: String(rider.number) })),
+      .map((order) => ({ position: positionOf(map, order.customer), label: String(order.number) })),
+    riders: riders.map((rider) => ({ position: riderDisplayPosition(map, rider), label: String(rider.number) })),
     routes,
     highlight: selected
-      ? { restaurant: restaurantOf(map, selected).position, customer: selected.customer }
+      ? { restaurant: positionOf(map, restaurantOf(map, selected).node), customer: positionOf(map, selected.customer) }
       : undefined,
   } satisfies MapScene
 }
@@ -68,7 +65,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
       canvas.width = Math.round(width * ratio)
       canvas.height = Math.round(height * ratio)
       context.setTransform(ratio, 0, 0, ratio, 0, 0)
-      drawCityMap(context, scene, width, height, readColors(canvas))
+      drawCityMap(context, scene, { width, height, ratio }, readColors(canvas))
     }
 
     draw()
@@ -88,7 +85,6 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
       className="map-view"
       role="img"
       aria-label={t('map.description', {
-        size: map.grid.size,
         restaurants: map.restaurants.length,
         riders: scene.riders.length,
         customers: scene.customers.length,

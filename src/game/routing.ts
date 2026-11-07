@@ -88,8 +88,28 @@ export interface StreetRoute {
   readonly lengthM: number
 }
 
+// Routes already found, per network. The game asks for the same few routes over and over
+// (riders to restaurants, restaurants to customers); a cache keeps that cheap. It never changes a result.
+const routeCache = new WeakMap<StreetNetwork, Map<number, StreetRoute | null>>()
+const ROUTE_CACHE_LIMIT = 50_000
+
 /** The cheapest route between two crossings, or undefined when this vehicle can't get there. */
 export function findRoute(network: StreetNetwork, from: number, to: number): StreetRoute | undefined {
+  let cache = routeCache.get(network)
+  if (!cache) {
+    cache = new Map()
+    routeCache.set(network, cache)
+  }
+  const key = from * network.streets.nodes.length + to
+  const cached = cache.get(key)
+  if (cached !== undefined) return cached ?? undefined
+  const route = searchRoute(network, from, to)
+  if (cache.size >= ROUTE_CACHE_LIMIT) cache.clear()
+  cache.set(key, route ?? null)
+  return route
+}
+
+function searchRoute(network: StreetNetwork, from: number, to: number): StreetRoute | undefined {
   const { graph } = network
   if (!graph.hasNode(from) || !graph.hasNode(to)) return undefined
   if (from === to) return { nodes: [from], lengthM: 0 }
@@ -131,4 +151,39 @@ export function nearestNode(network: StreetNetwork, point: LonLat): number {
   })
   if (best < 0) throw new Error('La red de calles está vacía.')
   return best
+}
+
+/** Meters from the start of a route to each of its crossings: [0, first stretch, first two stretches, …]. */
+export function cumulativeMeters(network: StreetNetwork, nodes: readonly number[]): number[] {
+  const meters = [0]
+  for (const stretch of stretchesOf(network, nodes)) meters.push(meters[meters.length - 1] + stretch.lengthM)
+  return meters
+}
+
+/**
+ * Crossings that can reach the seed and be reached from it, respecting one-ways: between any two of them
+ * there is always a route, both ways.
+ */
+export function mutuallyReachable(network: StreetNetwork, seed: number): Set<number> {
+  const walk = (forward: boolean) => {
+    const seen = new Set([seed])
+    const queue = [seed]
+    for (let i = 0; i < queue.length; i++) {
+      const current = queue[i]
+      network.graph.forEachLinkedNode(
+        current,
+        (other, link) => {
+          const goesOut = link.fromId === current
+          if (goesOut !== forward || seen.has(other.id as number)) return
+          seen.add(other.id as number)
+          queue.push(other.id as number)
+        },
+        false,
+      )
+    }
+    return seen
+  }
+  const reached = walk(true)
+  const reaching = walk(false)
+  return new Set([...reached].filter((node) => reaching.has(node)))
 }

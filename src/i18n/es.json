@@ -1,6 +1,5 @@
 {
   "app.title": "Despacho",
-  "topbar.timeLeft": "Tiempo restante del turno",
   "topbar.paused": "En pausa",
   "topbar.finished": "Turno terminado",
   "topbar.pause": "Pausar",
@@ -8,7 +7,7 @@
   "topbar.speedLabel": "Velocidad del reloj",
   "topbar.speedValue": "{speed}x",
   "shift.mapArea": "Mapa",
-  "map.description": "Mapa: grilla de {size} por {size} calles con {restaurants} restaurantes, {riders} repartidores y {customers} clientes esperando",
+  "map.description": "Mapa de Nørrebro con {restaurants} restaurantes, {riders} repartidores y {customers} clientes esperando",
   "orders.title": "Pedidos",
   "orders.count": "{count} pedidos",
   "orders.empty": "Todavía no hay pedidos. El primero llega en unos segundos.",
@@ -30,10 +29,10 @@
   "orders.hintPickRider": "Ahora elegí un repartidor (clic o teclas 1–9). Esc cancela.",
   "orders.status.selected": "Elegido",
   "riders.hintByEta": "Ordenados por llegada al restaurante.",
-  "riders.eta": "{seconds} s",
+  "riders.eta": "{minutes} min",
   "riders.carrying": "pedido #{number}",
   "orders.delivered": "Entregados: {count}",
-  "riders.kitchenLeft": " ({seconds} s)",
+  "riders.kitchenLeft": " ({minutes} min)",
   "riders.heat": "{heat}°",
   "riders.heatLabel": "Temperatura de la comida: {heat} de {max}",
   "riders.heatCold": "Temperatura de la comida: {heat} de {max}, fría",
@@ -51,5 +50,9 @@
   "results.delivered": "Entregados",
   "results.late": "Llegaron tarde",
   "results.cancelled": "Cancelados",
-  "results.playAgain": "Jugar otra vez"
+  "results.playAgain": "Jugar otra vez",
+  "topbar.timeLabel": "Hora del juego: {time}. El turno termina a las {end}",
+  "topbar.endsAt": "Termina {end}",
+  "orders.minutesLeft": "{minutes} min",
+  "topbar.gameTime": "Hora"
 }

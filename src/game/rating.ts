@@ -20,7 +20,7 @@ export interface RatingSettings {
   readonly cancelled: number
 }
 
-/** Heat of the order's food at game second nowSec. Full until it is ready; frozen once delivered. */
+/** Heat of the order's food at second of the shift nowSec. Full until it is ready; frozen once delivered. */
 export function heatOf(order: Order, nowSec: number, settings: HeatSettings): number {
   const until = order.deliveredAtSec ?? nowSec
   const coolingSec = Math.max(0, until - order.readyAtSec)

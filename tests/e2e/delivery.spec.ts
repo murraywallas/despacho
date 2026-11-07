@@ -10,7 +10,7 @@ async function runUntil(page: Page, locator: Locator, text: string, maxMs: numbe
   await expect(locator).toContainText(text)
 }
 
-test('el repartidor va al restaurante, espera la cocina, entrega y queda libre', async ({ page }) => {
+test('el repartidor va al restaurante por las calles, retira la comida, entrega y queda libre', async ({ page }) => {
   await page.clock.install()
   await page.goto('/')
   await page.clock.runFor(prototype.orders.spawnIntervalSec * 1000 + 500)
@@ -24,27 +24,35 @@ test('el repartidor va al restaurante, espera la cocina, entrega y queda libre',
   const rider = riderPanel.locator(`[data-rider-number="${closest}"]`)
   await expect(rider).toContainText(/Yendo al restaurante|Esperando la cocina/)
 
-  // En el turno de la semilla del juego, el repartidor más cercano llega antes de que la comida esté lista.
-  await runUntil(page, rider, 'Esperando la cocina', longestRideMs)
-  await expect(rider).toContainText(/\(\d+ s\)/)
-
-  // En pausa no avanza: el tiempo de cocina queda igual.
+  // Llega al restaurante. Si la comida no está lista, espera y muestra los minutos de cocina que faltan
+  // (esperar la cocina en detalle lo prueban los tests de reglas).
+  for (let waited = 0; waited <= longestRideMs; waited += 250) {
+    if (!(await rider.textContent())?.includes('Yendo al restaurante')) break
+    await page.clock.runFor(250)
+  }
   await page.keyboard.press('Space')
-  const kitchen = await rider.textContent()
-  await page.clock.runFor(2000)
-  await expect(rider).toHaveText(kitchen ?? '')
+  const atRestaurant = (await rider.textContent()) ?? ''
+  expect(atRestaurant).toMatch(/Esperando la cocina · pedido #\d+ \(\d+ min\)|Yendo al cliente/)
+
+  // En pausa no avanza nada: ni el reloj ni el repartidor.
+  const time = await page.getByTestId('shift-time').textContent()
+  await page.clock.runFor(4000)
+  await expect(rider).toHaveText(atRestaurant)
+  await expect(page.getByTestId('shift-time')).toHaveText(time ?? '')
   await page.keyboard.press('Space')
 
   await expect(page.getByTestId('shift-rating')).toHaveText('–')
   await runUntil(page, rider, 'Yendo al cliente', prototype.kitchen.cookSec * 1000 + 2000)
 
-  // La comida viaja todavía caliente (cómo se enfría lo prueban los tests de reglas).
+  // La comida viaja todavía caliente (cómo se enfría lo prueban los tests de reglas). En pausa, para leerla quieta.
+  await page.keyboard.press('Space')
   const heat = rider.getByTestId('food-heat')
   await expect(heat).toHaveText(/^\d+°$/)
   const value = parseInt((await heat.textContent()) ?? '', 10)
   expect(value).toBeGreaterThan(40)
   expect(value).toBeLessThanOrEqual(100)
   await expect(heat).toHaveAttribute('aria-label', `Temperatura de la comida: ${value} de 100`)
+  await page.keyboard.press('Space')
 
   await runUntil(page, rider, 'Libre', longestRideMs + 2000)
   await expect(rider.getByTestId('food-heat')).toHaveCount(0)
