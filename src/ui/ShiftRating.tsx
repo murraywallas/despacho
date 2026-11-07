@@ -3,15 +3,15 @@ import { prototype } from '../game/balance'
 import { averageRating } from '../game/rating'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
+import { formatRating } from './formatRating'
 
 const ICON_SIZE = 18
-const ratingFormat = new Intl.NumberFormat('es', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 /** Average stars of the shift so far, for the top bar. A dash until the first order is delivered or cancelled. */
 export function ShiftRating() {
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const average = averageRating(orders, prototype.heat, prototype.rating)
-  const text = average === undefined ? '–' : ratingFormat.format(average)
+  const text = formatRating(average)
   const label =
     average === undefined
       ? t('topbar.ratingNone')

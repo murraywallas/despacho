@@ -175,3 +175,39 @@ describe('cancelación durante el turno', () => {
     expect(useShiftStore.getState().selectedOrderId).not.toBe(firstOrder().id)
   })
 })
+
+describe('jugar otra vez', () => {
+  test('reinicia reloj, pedidos, repartidores y estrellas', () => {
+    const { restartShift } = useShiftStore.getState()
+    restartShift()
+    const fresh = useShiftStore.getState()
+
+    const { tick, selectOrder, assignSelectedTo, toggleSpeed } = fresh
+    tick(interval)
+    selectOrder(useShiftStore.getState().orderQueue.orders[0].id)
+    assignSelectedTo(1)
+    toggleSpeed()
+    for (let i = 0; i < 2000 && !useShiftStore.getState().clock.finished; i++) tick(0.25)
+    const ended = useShiftStore.getState()
+    expect(ended.clock.finished).toBe(true)
+    expect(ended.orderQueue.orders.some((order) => order.status === 'delivered')).toBe(true)
+
+    useShiftStore.getState().restartShift()
+    const again = useShiftStore.getState()
+    expect(again.clock).toEqual(createClock(prototype.shift.durationSec))
+    expect(again.orderQueue).toEqual(createOrderQueue(orderSettings))
+    expect(again.riders).toEqual(fresh.riders)
+    expect(again.map).toEqual(fresh.map)
+    expect(again.selectedOrderId).toBeNull()
+  })
+
+  test('mismo turno otra vez: los pedidos llegan igual que la primera vez', () => {
+    const { restartShift } = useShiftStore.getState()
+    restartShift()
+    useShiftStore.getState().tick(interval * 3)
+    const first = useShiftStore.getState().orderQueue.orders
+    restartShift()
+    useShiftStore.getState().tick(interval * 3)
+    expect(useShiftStore.getState().orderQueue.orders).toEqual(first)
+  })
+})
