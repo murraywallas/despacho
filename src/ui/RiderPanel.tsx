@@ -1,8 +1,9 @@
-import { Bike } from 'lucide-react'
+import { Bike, Snowflake, Thermometer } from 'lucide-react'
 import { useMemo } from 'react'
 import { prototype } from '../game/balance'
 import { rankRiders } from '../game/dispatch'
 import type { Order } from '../game/orders'
+import { heatOf, isCold } from '../game/rating'
 import type { Rider, RiderStatus } from '../game/riders'
 import { t, type TextKey } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
@@ -25,11 +26,31 @@ interface RiderCardProps {
   /** Seconds to the selected order's restaurant; undefined when nothing is selected or the rider is busy. */
   etaSec?: number
   order?: Order
+  nowSec: number
   canAssign: boolean
   onAssign: (riderNumber: number) => void
 }
 
-function RiderCard({ rider, etaSec, order, canAssign, onAssign }: RiderCardProps) {
+/** Heat of the food the rider carries: a number and a thermometer, or a snowflake once it is cold. */
+function FoodHeat({ order, nowSec }: { order: Order; nowSec: number }) {
+  const heat = Math.round(heatOf(order, nowSec, prototype.heat))
+  const cold = isCold(heat, prototype.heat)
+  const label = t(cold ? 'riders.heatCold' : 'riders.heatLabel', { heat, max: prototype.heat.start })
+  return (
+    <span
+      className={`rider-card__heat${cold ? ' rider-card__heat--cold' : ''}`}
+      data-testid="food-heat"
+      role="img"
+      aria-label={label}
+      title={label}
+    >
+      {cold ? <Snowflake size={ICON_SIZE} aria-hidden /> : <Thermometer size={ICON_SIZE} aria-hidden />}
+      {t('riders.heat', { heat })}
+    </span>
+  )
+}
+
+function RiderCard({ rider, etaSec, order, nowSec, canAssign, onAssign }: RiderCardProps) {
   const vehicleKey = VEHICLE_TEXT[rider.vehicle]
   return (
     <li data-testid="rider-card" data-rider-number={rider.number}>
@@ -58,6 +79,7 @@ function RiderCard({ rider, etaSec, order, canAssign, onAssign }: RiderCardProps
               </span>
             )}
           </span>
+          {rider.status === 'toCustomer' && order && <FoodHeat order={order} nowSec={nowSec} />}
         </span>
         {etaSec !== undefined && (
           <span className="rider-card__eta">{t('riders.eta', { seconds: Math.ceil(etaSec) })}</span>
@@ -76,6 +98,7 @@ export function RiderPanel() {
   const riders = useShiftStore((state) => state.riders)
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
+  const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const assignSelectedTo = useShiftStore((state) => state.assignSelectedTo)
   const selectedOrder = orders.find((order) => order.id === selectedOrderId)
   const idle = riders.filter((rider) => rider.status === 'idle').length
@@ -105,6 +128,7 @@ export function RiderPanel() {
             rider={rider}
             etaSec={etaOf.get(rider.id)}
             order={orders.find((order) => order.id === rider.orderId)}
+            nowSec={nowSec}
             canAssign={Boolean(selectedOrder) && rider.status === 'idle'}
             onAssign={assignSelectedTo}
           />

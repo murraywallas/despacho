@@ -39,7 +39,7 @@ function buildScene(map: CityMap, orders: readonly Order[], riders: readonly Rid
   return {
     map,
     customers: orders
-      .filter((order) => order.status !== 'delivered')
+      .filter((order) => order.status !== 'delivered' && order.status !== 'cancelled')
       .map((order) => ({ position: order.customer, label: String(order.number) })),
     riders: riders.map((rider) => ({ position: riderDisplayPosition(rider), label: String(rider.number) })),
     routes,

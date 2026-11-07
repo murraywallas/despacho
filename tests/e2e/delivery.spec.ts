@@ -34,9 +34,23 @@ test('el repartidor va al restaurante, espera la cocina, entrega y queda libre',
   await expect(rider).toHaveText(kitchen ?? '')
   await page.keyboard.press('Space')
 
+  await expect(page.getByTestId('shift-rating')).toHaveText('–')
   await runUntil(page, rider, 'Yendo al cliente', 10_000)
+
+  // Recién salida del restaurante, la comida está caliente (cómo se enfría lo prueban los tests de reglas).
+  const heat = rider.getByTestId('food-heat')
+  await expect(heat).toHaveText(/^\d+°$/)
+  const value = parseInt((await heat.textContent()) ?? '', 10)
+  expect(value).toBeGreaterThanOrEqual(95)
+  expect(value).toBeLessThanOrEqual(100)
+  await expect(heat).toHaveAttribute('aria-label', `Temperatura de la comida: ${value} de 100`)
+
   await runUntil(page, rider, 'Libre', 25_000)
+  await expect(rider.getByTestId('food-heat')).toHaveCount(0)
 
   await expect(orderPanel.getByTestId('delivered-count')).toHaveText('Entregados: 1')
   await expect(riderPanel.getByLabel('3 de 3 repartidores libres')).toBeVisible()
+  // A tiempo y caliente: 5 estrellas de promedio.
+  await expect(page.getByTestId('shift-rating')).toHaveText('5,0')
+  await expect(page.getByLabel('Promedio del turno: 5,0 de 5 estrellas')).toBeVisible()
 })

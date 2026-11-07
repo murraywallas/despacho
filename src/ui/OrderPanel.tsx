@@ -62,6 +62,7 @@ export function OrderPanel() {
   const selectOrder = useShiftStore((state) => state.selectOrder)
   const pending = orders.filter((order) => order.status === 'pending')
   const delivered = orders.filter((order) => order.status === 'delivered').length
+  const cancelled = orders.filter((order) => order.status === 'cancelled').length
   const labelOf = (id: string) => restaurants.find((restaurant) => restaurant.id === id)?.label ?? '?'
 
   return (
@@ -72,9 +73,10 @@ export function OrderPanel() {
           {pending.length}
         </span>
       </h2>
-      {delivered > 0 && (
-        <p className="side-panel__meta" data-testid="delivered-count">
-          {t('orders.delivered', { count: delivered })}
+      {(delivered > 0 || cancelled > 0) && (
+        <p className="side-panel__meta">
+          {delivered > 0 && <span data-testid="delivered-count">{t('orders.delivered', { count: delivered })}</span>}
+          {cancelled > 0 && <span data-testid="cancelled-count">{t('orders.cancelled', { count: cancelled })}</span>}
         </p>
       )}
       {pending.length === 0 ? (
