@@ -69,7 +69,8 @@ async function main(): Promise<void> {
   const outputUrl = new URL(`../../${config.output}`, import.meta.url)
   const content = `${JSON.stringify(balance, null, 2)}\n`
   const previous = await readFile(outputUrl, 'utf8').catch(() => '')
-  if (previous === content) {
+  // Git on Windows may check the file out with CRLF line endings: compare ignoring them.
+  if (previous.replaceAll('\r\n', '\n') === content) {
     console.log(`${config.output} ya estaba al día.`)
     return
   }
