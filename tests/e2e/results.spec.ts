@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { prototype } from './balance.ts'
+import { prototype, shiftEndsAt, shiftStartsAt } from './balance.ts'
 
 // El turno de 5 minutos se acorta con el reloj falso de Playwright: corre en 2x y se adelanta de golpe.
 test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia todo', async ({ page }) => {
@@ -20,14 +20,14 @@ test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia t
   await expect(results.getByTestId('results-late').locator('dd')).toHaveText('0')
   await expect(results.getByTestId('results-cancelled').locator('dd')).toHaveText(/^[1-9]\d*$/)
   await expect(results.getByText('Se gana con 4,0 estrellas o más; con menos de 3,0, se pierde.')).toBeVisible()
-  await expect(page.getByTestId('shift-time')).toHaveText('00:00')
+  await expect(page.getByTestId('shift-time')).toHaveText(shiftEndsAt)
 
   // El botón tiene el foco: Enter alcanza para volver a jugar.
   await expect(results.getByRole('button', { name: 'Jugar otra vez' })).toBeFocused()
   await page.keyboard.press('Enter')
 
   await expect(page.getByRole('dialog')).toHaveCount(0)
-  await expect(page.getByTestId('shift-time')).toHaveText('05:00')
+  await expect(page.getByTestId('shift-time')).toHaveText(shiftStartsAt)
   await expect(page.getByTestId('shift-rating')).toHaveText('–')
   await expect(page.getByRole('button', { name: 'Velocidad del reloj' })).toHaveText('1x')
   await expect(page.getByText('Todavía no hay pedidos. El primero llega en unos segundos.')).toBeVisible()

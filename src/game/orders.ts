@@ -1,9 +1,8 @@
 /**
- * Orders: they appear every few seconds of game time, each from a restaurant to a customer
- * somewhere on the grid, with a deadline. Pure: functions return new values.
+ * Orders: they appear every few seconds, each from a restaurant to a customer somewhere in the area,
+ * with a deadline. Pure: functions return new values.
  */
-import type { CityMap } from './cityMap'
-import { samePoint, type Point } from './grid'
+import { randomAddress, type CityMap, type NodeId } from './cityMap'
 import { randomInt, type Random } from './random'
 
 /**
@@ -19,27 +18,28 @@ export interface Order {
   /** Number shown to the player: 1, 2, 3… */
   readonly number: number
   readonly restaurantId: string
-  readonly customer: Point
-  /** Game second when the order appeared. */
+  /** Crossing where the customer lives. */
+  readonly customer: NodeId
+  /** Second of the shift when the order appeared. */
   readonly createdAtSec: number
-  /** Game second when the kitchen has the food ready (and it starts getting cold). */
+  /** Second of the shift when the kitchen has the food ready (and it starts getting cold). */
   readonly readyAtSec: number
-  /** Game second when it should be delivered. */
+  /** Second of the shift when it should be delivered. */
   readonly deadlineAtSec: number
   readonly status: OrderStatus
   /** Rider carrying the order, once assigned. */
   readonly riderId?: string
-  /** Game second when the food left the restaurant. */
+  /** Second of the shift when the food left the restaurant. */
   readonly pickedUpAtSec?: number
-  /** Game second when it reached the customer. */
+  /** Second of the shift when it reached the customer. */
   readonly deliveredAtSec?: number
-  /** Game second when it was cancelled. */
+  /** Second of the shift when it was cancelled. */
   readonly cancelledAtSec?: number
 }
 
 export interface OrderQueue {
   readonly orders: readonly Order[]
-  /** Game second when the next order appears. */
+  /** Second of the shift when the next order appears. */
   readonly nextSpawnAtSec: number
 }
 
@@ -48,7 +48,9 @@ export interface OrderSettings {
   readonly deadlineSec: number
   /** Seconds the kitchen needs to have the food ready. */
   readonly cookSec: number
-  /** No orders appear at or after this game second (the end of the shift). */
+  /** Customers live at least this far from the restaurant, in meters. */
+  readonly minCustomerDistanceM: number
+  /** No orders appear at or after this second of the shift (the end of the shift). */
   readonly lastSpawnBeforeSec: number
 }
 
@@ -56,14 +58,7 @@ export function createOrderQueue(settings: OrderSettings): OrderQueue {
   return { orders: [], nextSpawnAtSec: settings.spawnIntervalSec }
 }
 
-function randomCustomer(map: CityMap, restaurant: Point, random: Random): Point {
-  for (;;) {
-    const spot = { x: randomInt(random, map.grid.size), y: randomInt(random, map.grid.size) }
-    if (!samePoint(spot, restaurant)) return spot
-  }
-}
-
-/** Adds every order due up to game second nowSec. Returns the same queue when nothing is due. */
+/** Adds every order due up to second of the shift nowSec. Returns the same queue when nothing is due. */
 export function spawnOrders(
   queue: OrderQueue,
   nowSec: number,
@@ -82,7 +77,7 @@ export function spawnOrders(
       id: `o${number}`,
       number,
       restaurantId: restaurant.id,
-      customer: randomCustomer(map, restaurant.position, random),
+      customer: randomAddress(map, random, restaurant.node, settings.minCustomerDistanceM),
       createdAtSec: nextSpawnAtSec,
       readyAtSec: nextSpawnAtSec + settings.cookSec,
       deadlineAtSec: nextSpawnAtSec + settings.deadlineSec,
@@ -94,7 +89,7 @@ export function spawnOrders(
   return { orders, nextSpawnAtSec }
 }
 
-/** Game seconds left until the deadline. Negative when the order is late. */
+/** Seconds of play left until the deadline. Negative when the order is late. */
 export function timeLeftSec(order: Order, nowSec: number): number {
   return order.deadlineAtSec - nowSec
 }

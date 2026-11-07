@@ -1,25 +1,25 @@
 {
   "prototype": {
-    "grid": {
-      "size": 10,
-      "restaurants": 4
-    },
     "shift": {
+      "startHour": 18,
       "durationSec": 300
     },
+    "restaurants": {
+      "count": 4
+    },
     "orders": {
-      "spawnIntervalSec": 11,
+      "spawnIntervalSec": 9,
       "deadlineSec": 75,
       "cancelAfterSec": 40,
-      "urgentBelowSec": 20
+      "urgentBelowSec": 20,
+      "minCustomerDistanceM": 400
     },
     "kitchen": {
       "cookSec": 20
     },
     "riders": {
       "count": 3,
-      "vehicle": "bike",
-      "speedBlocksPerSec": 0.3
+      "vehicle": "bike"
     },
     "heat": {
       "start": 100,
@@ -34,6 +34,10 @@
       "cancelled": 1
     },
     "seed": 2026
+  },
+  "clock": {
+    "gameSecondsPerRealSecond": 20,
+    "fastSpeed": 2
   },
   "shift": {
     "winAtLeast": 4,
@@ -65,9 +69,6 @@
     "botShiftsPerLevel": 100,
     "tooEasyAbove": 4.8,
     "tooHardBelow": 3
-  },
-  "clock": {
-    "fastSpeed": 2
   },
   "routing": {
     "cycleTrackFactor": 0.7,

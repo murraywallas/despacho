@@ -1,12 +1,13 @@
 import { Bike } from 'lucide-react'
 import { useMemo } from 'react'
-import { prototype } from '../game/balance'
 import { rankRiders } from '../game/dispatch'
 import type { Order } from '../game/orders'
 import { isReady } from '../game/rating'
 import type { Rider, RiderStatus } from '../game/riders'
 import { t, type TextKey } from '../i18n'
-import { useShiftStore } from '../store/shiftStore'
+import { settings, useShiftStore } from '../store/shiftStore'
+import { gameMinutes } from './formatClock'
+import { gameTime } from './gameTime'
 import { FoodHeat } from './FoodHeat'
 
 const ICON_SIZE = 16
@@ -57,14 +58,14 @@ function RiderCard({ rider, etaSec, order, nowSec, canAssign, onAssign }: RiderC
             {order && ` · ${t('riders.carrying', { number: order.number })}`}
             {rider.status === 'atKitchen' && rider.trip && (
               <span className="rider-card__kitchen">
-                {t('riders.kitchenLeft', { seconds: Math.ceil(rider.trip.kitchenLeftSec) })}
+                {t('riders.kitchenLeft', { minutes: gameMinutes(rider.trip.kitchenLeftSec, gameTime) })}
               </span>
             )}
           </span>
           {order && isReady(order, nowSec) && <FoodHeat order={order} nowSec={nowSec} />}
         </span>
         {etaSec !== undefined && (
-          <span className="rider-card__eta">{t('riders.eta', { seconds: Math.ceil(etaSec) })}</span>
+          <span className="rider-card__eta">{t('riders.eta', { minutes: gameMinutes(etaSec, gameTime) })}</span>
         )}
       </button>
     </li>
@@ -86,7 +87,7 @@ export function RiderPanel() {
   const idle = riders.filter((rider) => rider.status === 'idle').length
 
   const ranked = useMemo(
-    () => (selectedOrder ? rankRiders(map, riders, selectedOrder, prototype.riders.speedBlocksPerSec) : []),
+    () => (selectedOrder ? rankRiders(map, riders, selectedOrder, settings.movement.metersPerSec) : []),
     [map, riders, selectedOrder],
   )
   const etaOf = new Map(ranked.map((entry) => [entry.rider.id, entry.etaSec]))

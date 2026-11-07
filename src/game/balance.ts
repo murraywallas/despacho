@@ -3,21 +3,24 @@
  * The interfaces below are the contract with the spreadsheet: if a key is missing or has the wrong type,
  * `npm run build` fails here.
  *
- * Only the groups the prototype uses are typed. The rest (vehicles, neighborhoods, events…) get typed
+ * Only the groups and fields the game uses are typed. The rest (neighborhoods, events…) get typed
  * when a task needs them.
+ *
+ * Times are in real seconds of play. The clock on screen shows game time: clock.gameSecondsPerRealSecond
+ * converts one into the other.
  */
 import data from '../../data/balance.json'
 
 export interface PrototypeBalance {
   /** Seed for everything random in the prototype (restaurant spots, orders). Same seed, same game. */
   readonly seed: number
-  readonly grid: {
-    /** Streets per side of the grid. */
-    readonly size: number
-    readonly restaurants: number
-  }
   readonly shift: {
+    /** Hour of the game clock when the shift starts (18 = 18:00). */
+    readonly startHour: number
     readonly durationSec: number
+  }
+  readonly restaurants: {
+    readonly count: number
   }
   readonly orders: {
     readonly spawnIntervalSec: number
@@ -26,6 +29,8 @@ export interface PrototypeBalance {
     readonly cancelAfterSec: number
     /** An order is shown as urgent when it has less than this left. */
     readonly urgentBelowSec: number
+    /** Customers live at least this far from the restaurant, in meters. */
+    readonly minCustomerDistanceM: number
   }
   readonly kitchen: {
     /** Seconds the kitchen needs from the moment an order comes in until the food is ready. */
@@ -35,8 +40,6 @@ export interface PrototypeBalance {
     readonly count: number
     /** Vehicle id from the Vehículos tab. */
     readonly vehicle: string
-    /** Speed on the prototype grid, in blocks per second. */
-    readonly speedBlocksPerSec: number
   }
   readonly heat: {
     /** Heat of the food when the kitchen has it ready. */
@@ -76,9 +79,17 @@ export interface RoutingBalance {
 export interface ClockBalance {
   /** Multiplier of the fast speed button (the "2x"). */
   readonly fastSpeed: number
+  /** Game seconds that pass in one real second of play. */
+  readonly gameSecondsPerRealSecond: number
+}
+
+/** A row of the Vehículos tab (only what the game uses so far). */
+export interface VehicleBalance {
+  readonly speedKmh: number
 }
 
 export const prototype: PrototypeBalance = data.prototype
 export const routing: RoutingBalance = data.routing
 export const shift: ShiftBalance = data.shift
 export const clock: ClockBalance = data.clock
+export const vehicles: Readonly<Record<string, VehicleBalance>> = data.vehicles

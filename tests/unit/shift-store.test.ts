@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from 'vitest'
 import { clock as clockBalance, prototype } from '../../src/game/balance'
 import { createClock } from '../../src/game/clock'
 import { createOrderQueue } from '../../src/game/orders'
-import { orderSettings, useShiftStore } from '../../src/store/shiftStore'
+import { orderSettings, settings, useShiftStore } from '../../src/store/shiftStore'
 
 const interval = prototype.orders.spawnIntervalSec
 const orderCount = () => useShiftStore.getState().orderQueue.orders.length
@@ -115,7 +115,7 @@ describe('viaje durante el turno', () => {
   test('el repartidor asignado se mueve con el reloj', () => {
     const before = riderOne()
     useShiftStore.getState().tick(0.5)
-    expect(riderOne().trip?.traveledBlocks).toBeGreaterThan(before.trip?.traveledBlocks ?? 0)
+    expect(riderOne().trip?.traveledM).toBeGreaterThan(before.trip?.traveledM ?? 0)
   })
 
   test('en pausa no se mueve', () => {
@@ -128,11 +128,11 @@ describe('viaje durante el turno', () => {
 
   test('en 2x recorre el doble', () => {
     const { tick, toggleSpeed } = useShiftStore.getState()
-    const before = riderOne().trip?.traveledBlocks ?? 0
+    const before = riderOne().trip?.traveledM ?? 0
     toggleSpeed()
     tick(0.25)
-    const blocks = (riderOne().trip?.traveledBlocks ?? 0) - before
-    expect(blocks).toBeCloseTo(0.25 * clockBalance.fastSpeed * prototype.riders.speedBlocksPerSec)
+    const meters = (riderOne().trip?.traveledM ?? 0) - before
+    expect(meters).toBeCloseTo(0.25 * clockBalance.fastSpeed * settings.movement.metersPerSec)
   })
 
   test('termina entregando y queda libre', () => {

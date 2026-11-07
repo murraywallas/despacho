@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { prototype } from '../../src/game/balance'
-import { createCityMap, type CityMap } from '../../src/game/cityMap'
-import { samePoint } from '../../src/game/grid'
+import { createCityMap, positionOf, type CityMap } from '../../src/game/cityMap'
+import { norrebroBikeNetwork } from '../../src/game/norrebro'
 import {
   createOrderQueue,
   spawnOrders,
@@ -11,17 +11,19 @@ import {
   type OrderSettings,
 } from '../../src/game/orders'
 import { createRandom } from '../../src/game/random'
+import { distanceM } from '../../src/game/streetGraph'
 
 const settings: OrderSettings = {
   spawnIntervalSec: prototype.orders.spawnIntervalSec,
   deadlineSec: prototype.orders.deadlineSec,
   cookSec: prototype.kitchen.cookSec,
   lastSpawnBeforeSec: prototype.shift.durationSec,
+  minCustomerDistanceM: prototype.orders.minCustomerDistanceM,
 }
 
 function setup(seed = prototype.seed): { map: CityMap; run: (nowSec: number) => readonly Order[] } {
   const random = createRandom(seed)
-  const map = createCityMap(prototype.grid.size, prototype.grid.restaurants, random)
+  const map = createCityMap(norrebroBikeNetwork(), prototype.restaurants.count, random)
   let queue = createOrderQueue(settings)
   return {
     map,
@@ -50,15 +52,15 @@ describe('pedidos', () => {
     expect(stepByStep.run(60)).toEqual(setup().run(60))
   })
 
-  test('cada pedido tiene plazo, restaurante del mapa y cliente en otra esquina', () => {
+  test('cada pedido tiene plazo, restaurante del mapa y un cliente en una dirección lejos del restaurante', () => {
     const { map, run } = setup()
     for (const order of run(120)) {
       expect(order.deadlineAtSec - order.createdAtSec).toBe(settings.deadlineSec)
       const restaurant = map.restaurants.find((r) => r.id === order.restaurantId)
       expect(restaurant).toBeDefined()
-      expect(samePoint(order.customer, restaurant!.position)).toBe(false)
-      expect(order.customer.x).toBeLessThan(map.grid.size)
-      expect(order.customer.y).toBeLessThan(map.grid.size)
+      expect(map.addresses).toContain(order.customer)
+      const distance = distanceM(positionOf(map, order.customer), positionOf(map, restaurant!.node))
+      expect(distance).toBeGreaterThanOrEqual(settings.minCustomerDistanceM)
       expect(order.status).toBe('pending')
     }
   })

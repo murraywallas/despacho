@@ -9,13 +9,13 @@ function isOpen(order: Order): boolean {
   return order.status !== 'delivered' && order.status !== 'cancelled'
 }
 
-/** Game second when an undelivered order gets cancelled. */
+/** Second of the shift when an undelivered order gets cancelled. */
 export function cancelAtSec(order: Order, cancelAfterSec: number): number {
   return order.deadlineAtSec + cancelAfterSec
 }
 
 /**
- * Cancels every open order whose cancel time has come by game second nowSec, and frees its rider.
+ * Cancels every open order whose cancel time has come by second of the shift nowSec, and frees its rider.
  * Returns the same arrays when nothing was cancelled.
  */
 export function cancelExpired(

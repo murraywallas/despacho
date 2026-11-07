@@ -5,7 +5,8 @@ import { isReady } from '../game/rating'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
 import { FoodHeat } from './FoodHeat'
-import { formatClock } from './formatClock'
+import { gameMinutes } from './formatClock'
+import { gameTime } from './gameTime'
 
 const ICON_SIZE = 16
 
@@ -52,7 +53,7 @@ function OrderCard({ order, nowSec, restaurantLabel, selected, onSelect }: Order
         </span>
         <span className="order-card__deadline">
           <DeadlineIcon urgency={urgency} />
-          <span className="order-card__time">{left > 0 ? formatClock(left) : t('orders.late')}</span>
+          <span className="order-card__time">{left > 0 ? t('orders.minutesLeft', { minutes: gameMinutes(left, gameTime) }) : t('orders.late')}</span>
           {urgency === 'urgent' && <span className="order-card__tag">{t('orders.urgent')}</span>}
         </span>
       </button>

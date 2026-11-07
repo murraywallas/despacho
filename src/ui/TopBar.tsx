@@ -1,7 +1,7 @@
-import { remainingSec } from '../game/clock'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
-import { formatClock } from './formatClock'
+import { formatGameTime } from './formatClock'
+import { gameTime } from './gameTime'
 import { ShiftRating } from './ShiftRating'
 
 export function TopBar() {
@@ -10,6 +10,8 @@ export function TopBar() {
   const toggleSpeed = useShiftStore((state) => state.toggleSpeed)
 
   const status = clock.finished ? t('topbar.finished') : clock.paused ? t('topbar.paused') : null
+  const now = formatGameTime(clock.elapsedSec, gameTime)
+  const end = formatGameTime(clock.durationSec, gameTime)
 
   return (
     <header className="top-bar">
@@ -19,14 +21,21 @@ export function TopBar() {
       </div>
 
       <div className="top-bar__clock">
-        <span className="top-bar__label">{t('topbar.timeLeft')}</span>
-        <span className="top-bar__time" role="timer" aria-label={t('topbar.timeLeft')} data-testid="shift-time">
-          {formatClock(remainingSec(clock))}
+        <span className="top-bar__label">{t('topbar.gameTime')}</span>
+        <span
+          className="top-bar__time"
+          role="timer"
+          aria-label={t('topbar.timeLabel', { time: now, end })}
+          data-testid="shift-time"
+        >
+          {now}
         </span>
-        {status && (
+        {status ? (
           <span className="top-bar__status" role="status">
             {status}
           </span>
+        ) : (
+          <span className="top-bar__label">{t('topbar.endsAt', { end })}</span>
         )}
       </div>
 

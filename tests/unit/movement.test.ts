@@ -1,37 +1,31 @@
 import { describe, expect, test } from 'vitest'
-import type { CityMap } from '../../src/game/cityMap'
 import { assignOrder } from '../../src/game/dispatch'
-import { createGrid } from '../../src/game/grid'
-import {
-  advanceFleet,
-  remainingRoute,
-  riderDisplayPosition,
-  startTrip,
-  type MovementSettings,
-} from '../../src/game/movement'
+import { advanceFleet, remainingRoute, riderDisplayPosition, startTrip, type MovementSettings } from '../../src/game/movement'
 import type { Order } from '../../src/game/orders'
 import type { Rider } from '../../src/game/riders'
+import type { LonLat } from '../../src/game/streetGraph'
+import { BLOCK_M, latticeOf, nodeAt, smallCity } from './smallCity'
 
-// Restaurant 3 blocks east of the rider, customer 4 blocks south of the restaurant.
+// Restaurant 3 blocks east of the rider, customer 4 blocks south of the restaurant. One block per second.
 // The food is ready 8 s after dispatch: the rider gets there in 3 s and waits 5 s at the kitchen.
-const map: CityMap = { grid: createGrid(10), restaurants: [{ id: 'r1', label: 'A', position: { x: 3, y: 0 } }] }
-const settings: MovementSettings = { speedBlocksPerSec: 1 }
+const map = smallCity([nodeAt(3, 0)])
+const settings: MovementSettings = { metersPerSec: BLOCK_M }
 const START = 10
 
 const pendingOrder: Order = {
   id: 'o1',
   number: 1,
   restaurantId: 'r1',
-  customer: { x: 3, y: 4 },
+  customer: nodeAt(3, 4),
   createdAtSec: START,
   readyAtSec: START + 8,
   deadlineAtSec: START + 120,
   status: 'pending',
 }
-const idleRider: Rider = { id: 'k1', number: 1, vehicle: 'bike', position: { x: 0, y: 0 }, status: 'idle' }
+const idleRider: Rider = { id: 'k1', number: 1, vehicle: 'bike', node: nodeAt(0, 0), status: 'idle' }
 
-function dispatched(riderAt = idleRider.position) {
-  const result = assignOrder([pendingOrder], [{ ...idleRider, position: riderAt }], 'o1', 'k1')
+function dispatched(riderAt = idleRider.node, order = pendingOrder) {
+  const result = assignOrder([order], [{ ...idleRider, node: riderAt }], 'o1', 'k1')
   if (!result.ok) throw new Error(result.error)
   return { riders: [startTrip(map, result.riders[0], result.orders[0])], orders: result.orders }
 }
@@ -49,18 +43,30 @@ function run(seconds: number, step = 0.1, start = dispatched()) {
   return { rider: riders[0], order: orders[0] }
 }
 
+/** Where the rider is drawn, in blocks of the lattice. */
+function drawnAt(rider: Rider) {
+  return latticeOf(riderDisplayPosition(map, rider))
+}
+
+function expectLattice(point: LonLat, x: number, y: number) {
+  const lattice = latticeOf(point)
+  expect(lattice.x).toBeCloseTo(x, 3)
+  expect(lattice.y).toBeCloseTo(y, 3)
+}
+
 describe('viaje de un pedido', () => {
-  test('va por las calles hasta el restaurante a la velocidad de balance', () => {
+  test('va por las calles hasta el restaurante a la velocidad del vehículo', () => {
     const { rider } = run(1.5)
     expect(rider.status).toBe('toRestaurant')
-    expect(riderDisplayPosition(rider)).toEqual({ x: 1.5, y: 0 })
-    expect(rider.position).toEqual({ x: 1, y: 0 })
+    expect(drawnAt(rider).x).toBeCloseTo(1.5, 3)
+    expect(drawnAt(rider).y).toBeCloseTo(0, 3)
+    expect(rider.node).toBe(nodeAt(1, 0))
   })
 
   test('espera la cocina en el restaurante', () => {
     const { rider, order } = run(3 + 2)
     expect(rider.status).toBe('atKitchen')
-    expect(rider.position).toEqual({ x: 3, y: 0 })
+    expect(rider.node).toBe(nodeAt(3, 0))
     expect(rider.trip?.kitchenLeftSec).toBeCloseTo(3)
     expect(order.status).toBe('assigned')
   })
@@ -70,8 +76,8 @@ describe('viaje de un pedido', () => {
     expect(rider.status).toBe('toCustomer')
     expect(order.status).toBe('pickedUp')
     expect(order.pickedUpAtSec).toBeCloseTo(START + 8)
-    expect(riderDisplayPosition(rider).x).toBeCloseTo(3)
-    expect(riderDisplayPosition(rider).y).toBeCloseTo(1)
+    expect(drawnAt(rider).x).toBeCloseTo(3, 3)
+    expect(drawnAt(rider).y).toBeCloseTo(1, 3)
   })
 
   test('un viaje conocido tarda 3 + 5 + 4 = 12 s y el repartidor queda libre donde entregó', () => {
@@ -81,7 +87,7 @@ describe('viaje de un pedido', () => {
     const { rider, order } = run(12)
     expect(order.status).toBe('delivered')
     expect(order.deliveredAtSec).toBeCloseTo(START + 12)
-    expect(rider).toMatchObject({ status: 'idle', position: { x: 3, y: 4 } })
+    expect(rider).toMatchObject({ status: 'idle', node: nodeAt(3, 4) })
     expect(rider.trip).toBeUndefined()
     expect(rider.orderId).toBeUndefined()
   })
@@ -89,32 +95,29 @@ describe('viaje de un pedido', () => {
   test('avanzar de golpe da el mismo resultado que de a poco', () => {
     const { rider, order } = run(20, 20)
     expect(order.deliveredAtSec).toBeCloseTo(START + 12)
-    expect(rider.position).toEqual({ x: 3, y: 4 })
+    expect(rider.node).toBe(nodeAt(3, 4))
   })
 
-  test('nunca va en diagonal: siempre está sobre una calle', () => {
+  test('nunca corta camino: siempre está sobre una calle', () => {
     for (let seconds = 0.25; seconds <= 12; seconds += 0.25) {
-      const position = riderDisplayPosition(run(seconds).rider)
-      const onStreet = Number.isInteger(+position.x.toFixed(9)) || Number.isInteger(+position.y.toFixed(9))
-      expect(onStreet, `${seconds} s: ${position.x}, ${position.y}`).toBe(true)
+      const { x, y } = drawnAt(run(seconds).rider)
+      const onStreet = Number.isInteger(+x.toFixed(6)) || Number.isInteger(+y.toFixed(6))
+      expect(onStreet, `${seconds} s: ${x}, ${y}`).toBe(true)
     }
   })
 
   test('si ya está en el restaurante, espera lo que le falta a la cocina', () => {
-    const { rider } = run(1, 0.1, dispatched({ x: 3, y: 0 }))
+    const { rider } = run(1, 0.1, dispatched(nodeAt(3, 0)))
     expect(rider.status).toBe('atKitchen')
     expect(rider.trip?.kitchenLeftSec).toBeCloseTo(7)
   })
 
   test('si la comida ya está lista, la retira sin esperar', () => {
     const ready = { ...pendingOrder, readyAtSec: START - 30 }
-    const result = assignOrder([ready], [idleRider], 'o1', 'k1')
-    if (!result.ok) throw new Error(result.error)
-    const start = { riders: [startTrip(map, result.riders[0], result.orders[0])], orders: result.orders }
-    const { rider, order } = run(4, 0.1, start)
+    const { rider, order } = run(4, 0.1, dispatched(idleRider.node, ready))
     expect(order.pickedUpAtSec).toBeCloseTo(START + 3)
     expect(rider.status).toBe('toCustomer')
-    expect(riderDisplayPosition(rider).y).toBeCloseTo(1)
+    expect(drawnAt(rider).y).toBeCloseTo(1, 3)
   })
 
   test('sin tiempo de juego no se mueve nadie', () => {
@@ -127,17 +130,25 @@ describe('viaje de un pedido', () => {
 
 describe('ruta que falta', () => {
   test('mientras va al restaurante incluye el tramo hasta el cliente', () => {
-    const { rider, order } = run(1.5)
-    const route = remainingRoute(map, rider, order)
-    expect(route[0]).toEqual({ x: 1.5, y: 0 })
-    expect(route.at(-1)).toEqual({ x: 3, y: 4 })
+    const route = remainingRoute(map, run(1.5).rider)
+    expectLattice(route[0], 1.5, 0)
+    expectLattice(route[route.length - 1], 3, 4)
+  })
+
+  test('esperando la cocina, la ruta es la del restaurante al cliente', () => {
+    const route = remainingRoute(map, run(5).rider)
+    expectLattice(route[0], 3, 0)
+    expect(route).toHaveLength(5)
   })
 
   test('mientras lleva la comida, solo lo que falta hasta el cliente', () => {
-    const { rider, order } = run(10)
-    const route = remainingRoute(map, rider, order)
-    expect(route[0].y).toBeCloseTo(2)
-    expect(route.at(-1)).toEqual({ x: 3, y: 4 })
-    expect(route).not.toContainEqual({ x: 0, y: 0 })
+    const route = remainingRoute(map, run(10).rider)
+    expectLattice(route[0], 3, 2)
+    expectLattice(route[route.length - 1], 3, 4)
+    expect(route.every((point) => latticeOf(point).y >= 2 - 1e-6)).toBe(true)
+  })
+
+  test('libre: no hay ruta', () => {
+    expect(remainingRoute(map, idleRider)).toEqual([])
   })
 })

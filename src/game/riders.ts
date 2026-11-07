@@ -2,8 +2,7 @@
  * Riders: the people the player sends to pick up and deliver orders.
  * A rider stays wherever their last delivery ended, so where the fleet is matters.
  */
-import type { CityMap } from './cityMap'
-import { samePoint, type Point } from './grid'
+import type { CityMap, NodeId } from './cityMap'
 import { randomInt, type Random } from './random'
 
 /** What a rider is doing. */
@@ -12,12 +11,16 @@ export type RiderStatus = 'idle' | 'toRestaurant' | 'atKitchen' | 'toCustomer'
 /** The leg of an order the rider is on. */
 export interface Trip {
   readonly orderId: string
-  /** Intersections of the current leg, from where it started to where it ends. */
-  readonly path: readonly Point[]
-  /** Blocks already ridden along `path` (can be fractional). */
-  readonly traveledBlocks: number
-  /** Game seconds left at the kitchen (only while "atKitchen"). */
+  /** Crossings of the current leg, from where it started to where it ends. */
+  readonly path: readonly NodeId[]
+  /** Meters from the start of the leg to each crossing of `path`. */
+  readonly pathMeters: readonly number[]
+  /** Meters already ridden along `path`. */
+  readonly traveledM: number
+  /** Seconds left at the kitchen (only while "atKitchen"). */
   readonly kitchenLeftSec: number
+  /** Route from the restaurant to the customer, planned when the order was assigned. */
+  readonly toCustomer: readonly NodeId[]
 }
 
 export interface Rider {
@@ -27,8 +30,8 @@ export interface Rider {
   readonly number: number
   /** Vehicle id from the Vehículos tab, e.g. "bike". */
   readonly vehicle: string
-  /** Last intersection the rider was at. While riding, see riderDisplayPosition for where they are now. */
-  readonly position: Point
+  /** Last crossing the rider was at. While riding, see riderDisplayPosition for where they are now. */
+  readonly node: NodeId
   readonly status: RiderStatus
   /** Order the rider is working on, when not idle. */
   readonly orderId?: string
@@ -36,20 +39,17 @@ export interface Rider {
   readonly trip?: Trip
 }
 
-/** Places `count` riders on different intersections, none of them on a restaurant. */
+/** Places `count` riders on different addresses, none of them on a restaurant. */
 export function createRiders(map: CityMap, count: number, vehicle: string, random: Random): Rider[] {
-  const freeSpots = map.grid.size * map.grid.size - map.restaurants.length
-  if (count > freeSpots) {
-    throw new Error(`No entran ${count} repartidores en una grilla de ${map.grid.size}×${map.grid.size}.`)
-  }
-  const taken: Point[] = map.restaurants.map((restaurant) => restaurant.position)
+  const taken = new Set(map.restaurants.map((restaurant) => restaurant.node))
+  if (count > map.addresses.length - taken.size) throw new Error(`No entran ${count} repartidores en el barrio.`)
   const riders: Rider[] = []
   while (riders.length < count) {
-    const position = { x: randomInt(random, map.grid.size), y: randomInt(random, map.grid.size) }
-    if (taken.some((spot) => samePoint(spot, position))) continue
-    taken.push(position)
+    const node = map.addresses[randomInt(random, map.addresses.length)]
+    if (taken.has(node)) continue
+    taken.add(node)
     const number = riders.length + 1
-    riders.push({ id: `k${number}`, number, vehicle, position, status: 'idle' })
+    riders.push({ id: `k${number}`, number, vehicle, node, status: 'idle' })
   }
   return riders
 }

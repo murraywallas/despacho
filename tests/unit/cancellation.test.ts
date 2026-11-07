@@ -9,13 +9,13 @@ const pending: Order = {
   id: 'o1',
   number: 1,
   restaurantId: 'r1',
-  customer: { x: 4, y: 4 },
+  customer: 24,
   createdAtSec: 0,
   readyAtSec: 5,
   deadlineAtSec: 120,
   status: 'pending',
 }
-const idle: Rider = { id: 'k1', number: 1, vehicle: 'bike', position: { x: 2, y: 3 }, status: 'idle' }
+const idle: Rider = { id: 'k1', number: 1, vehicle: 'bike', node: 17, status: 'idle' }
 
 describe('cancelación de pedidos vencidos', () => {
   test('antes del margen no pasa nada y devuelve los mismos arreglos', () => {
@@ -37,12 +37,12 @@ describe('cancelación de pedidos vencidos', () => {
       ...idle,
       status: 'toCustomer',
       orderId: 'o1',
-      trip: { orderId: 'o1', path: [{ x: 2, y: 3 }, { x: 3, y: 3 }], traveledBlocks: 0.5, kitchenLeftSec: 0 },
+      trip: { orderId: 'o1', path: [17, 18], pathMeters: [0, 100], traveledM: 50, kitchenLeftSec: 0, toCustomer: [] },
     }
     const other: Rider = { ...idle, id: 'k2', number: 2 }
     const result = cancelExpired([carrying], [busy, other], 200, CANCEL_AFTER)
     expect(result.orders[0].status).toBe('cancelled')
-    expect(result.riders[0]).toMatchObject({ status: 'idle', position: { x: 2, y: 3 } })
+    expect(result.riders[0]).toMatchObject({ status: 'idle', node: 17 })
     expect(result.riders[0].trip).toBeUndefined()
     expect(result.riders[0].orderId).toBeUndefined()
     expect(result.riders[1]).toBe(other)

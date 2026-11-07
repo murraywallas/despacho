@@ -1,56 +1,76 @@
 /**
- * Riders on the move: riding to the restaurant, waiting for the kitchen if the food is not ready yet,
- * riding to the customer, delivering.
- * Everything advances with game seconds, so pause and fast speed come for free. Pure.
+ * Riders on the move along real streets: riding to the restaurant, waiting for the kitchen if the food is not
+ * ready yet, riding to the customer, delivering.
+ * Everything advances with seconds of play, so pause and fast speed come for free. Pure.
  */
-import type { CityMap } from './cityMap'
+import { positionOf, type CityMap, type NodeId } from './cityMap'
 import { restaurantOf } from './dispatch'
-import { shortestRoute, type Point } from './grid'
 import type { Order } from './orders'
-import type { Rider } from './riders'
+import type { Rider, Trip } from './riders'
+import { cumulativeMeters, findRoute } from './routing'
+import type { LonLat } from './streetGraph'
 
 export interface MovementSettings {
-  readonly speedBlocksPerSec: number
+  /** How fast riders go, in meters per second of play (vehicle speed × game time per real second). */
+  readonly metersPerSec: number
 }
 
 /** Tolerance for floating-point leftovers when a rider arrives exactly at the end of a step. */
 const EPSILON = 1e-9
 
-/** Starts the first leg (to the restaurant) of a rider who just got an order. */
+function routeNodes(map: CityMap, from: NodeId, to: NodeId): NodeId[] {
+  const route = findRoute(map.network, from, to)
+  if (!route) throw new Error(`No hay ruta de ${from} a ${to}.`)
+  return [...route.nodes]
+}
+
+function leg(map: CityMap, path: readonly NodeId[]): Pick<Trip, 'path' | 'pathMeters' | 'traveledM'> {
+  return { path, pathMeters: cumulativeMeters(map.network, path), traveledM: 0 }
+}
+
+/** Starts the first leg (to the restaurant) of a rider who just got an order, and plans the second one. */
 export function startTrip(map: CityMap, rider: Rider, order: Order): Rider {
-  const restaurant = restaurantOf(map, order).position
+  const restaurant = restaurantOf(map, order).node
   return {
     ...rider,
     trip: {
       orderId: order.id,
-      path: shortestRoute(map.grid, rider.position, restaurant).points,
-      traveledBlocks: 0,
+      ...leg(map, routeNodes(map, rider.node, restaurant)),
       kitchenLeftSec: 0,
+      toCustomer: routeNodes(map, restaurant, order.customer),
     },
   }
 }
 
-/** Where the rider is drawn: between two intersections while riding. */
-export function riderDisplayPosition(rider: Rider): Point {
+/** Index of the last crossing passed along the leg. */
+function passedIndex(trip: Trip): number {
+  let index = 0
+  while (index + 1 < trip.path.length && trip.pathMeters[index + 1] <= trip.traveledM + EPSILON) index++
+  return index
+}
+
+/** Where the rider is drawn: between two crossings while riding. */
+export function riderDisplayPosition(map: CityMap, rider: Rider): LonLat {
   const trip = rider.trip
-  if (!trip || (rider.status !== 'toRestaurant' && rider.status !== 'toCustomer')) return rider.position
-  const index = Math.min(Math.floor(trip.traveledBlocks), trip.path.length - 1)
-  const from = trip.path[index]
-  const to = trip.path[Math.min(index + 1, trip.path.length - 1)]
-  const fraction = trip.traveledBlocks - index
-  return { x: from.x + (to.x - from.x) * fraction, y: from.y + (to.y - from.y) * fraction }
+  if (!trip || (rider.status !== 'toRestaurant' && rider.status !== 'toCustomer')) return positionOf(map, rider.node)
+  const index = passedIndex(trip)
+  const from = positionOf(map, trip.path[index])
+  if (index + 1 >= trip.path.length) return from
+  const to = positionOf(map, trip.path[index + 1])
+  const stretch = trip.pathMeters[index + 1] - trip.pathMeters[index]
+  const fraction = stretch > 0 ? (trip.traveledM - trip.pathMeters[index]) / stretch : 0
+  return [from[0] + (to[0] - from[0]) * fraction, from[1] + (to[1] - from[1]) * fraction]
 }
 
 /** What is left of the trip, from where the rider is now to the customer. */
-export function remainingRoute(map: CityMap, rider: Rider, order: Order): Point[] {
+export function remainingRoute(map: CityMap, rider: Rider): LonLat[] {
   const trip = rider.trip
   if (!trip) return []
-  const restaurant = restaurantOf(map, order).position
-  const ahead = trip.path.slice(Math.floor(trip.traveledBlocks) + 1)
-  const here = riderDisplayPosition(rider)
-  const toCustomer = shortestRoute(map.grid, restaurant, order.customer).points
+  const toCustomer = trip.toCustomer.map((node) => positionOf(map, node))
+  if (rider.status === 'atKitchen') return toCustomer
+  const ahead = trip.path.slice(passedIndex(trip) + 1).map((node) => positionOf(map, node))
+  const here = riderDisplayPosition(map, rider)
   if (rider.status === 'toRestaurant') return [here, ...ahead, ...toCustomer.slice(1)]
-  if (rider.status === 'atKitchen') return [...toCustomer]
   return [here, ...ahead]
 }
 
@@ -60,7 +80,7 @@ interface RiderStep {
   readonly deliveredAtSec?: number
 }
 
-/** Moves one rider forward by dtSec game seconds, starting at game second startSec. */
+/** Moves one rider forward by dtSec seconds of play, starting at second startSec of the shift. */
 export function advanceRider(
   map: CityMap,
   rider: Rider,
@@ -76,7 +96,7 @@ export function advanceRider(
   let deliveredAtSec: number | undefined
 
   while (current.trip && left > EPSILON) {
-    const trip: NonNullable<Rider['trip']> = current.trip
+    const trip: Trip = current.trip
 
     if (current.status === 'atKitchen') {
       if (left < trip.kitchenLeftSec) {
@@ -87,17 +107,15 @@ export function advanceRider(
       left -= trip.kitchenLeftSec
       now += trip.kitchenLeftSec
       pickedUpAtSec = now
-      const path = shortestRoute(map.grid, current.position, order.customer).points
-      current = { ...current, status: 'toCustomer', trip: { ...trip, path, traveledBlocks: 0, kitchenLeftSec: 0 } }
+      current = { ...current, status: 'toCustomer', trip: { ...trip, ...leg(map, trip.toCustomer), kitchenLeftSec: 0 } }
       continue
     }
 
-    const remainingBlocks = trip.path.length - 1 - trip.traveledBlocks
-    const timeToEnd = remainingBlocks / settings.speedBlocksPerSec
+    const remainingM = trip.pathMeters[trip.pathMeters.length - 1] - trip.traveledM
+    const timeToEnd = remainingM / settings.metersPerSec
     if (left < timeToEnd - EPSILON) {
-      const traveledBlocks = trip.traveledBlocks + left * settings.speedBlocksPerSec
-      const position = trip.path[Math.min(Math.floor(traveledBlocks + EPSILON), trip.path.length - 1)]
-      current = { ...current, position, trip: { ...trip, traveledBlocks } }
+      const moved = { ...trip, traveledM: trip.traveledM + left * settings.metersPerSec }
+      current = { ...current, node: moved.path[passedIndex(moved)], trip: moved }
       left = 0
       break
     }
@@ -108,14 +126,14 @@ export function advanceRider(
     if (current.status === 'toRestaurant') {
       current = {
         ...current,
-        position: end,
+        node: end,
         status: 'atKitchen',
         // Food already ready: kitchenLeftSec is 0 and the next pass of the loop picks it up right away.
-        trip: { ...trip, path: [end], traveledBlocks: 0, kitchenLeftSec: Math.max(0, order.readyAtSec - now) },
+        trip: { ...trip, ...leg(map, [end]), kitchenLeftSec: Math.max(0, order.readyAtSec - now) },
       }
     } else {
       deliveredAtSec = now
-      current = { ...current, position: end, status: 'idle', orderId: undefined, trip: undefined }
+      current = { ...current, node: end, status: 'idle', orderId: undefined, trip: undefined }
     }
   }
 

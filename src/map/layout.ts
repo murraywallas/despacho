@@ -1,29 +1,45 @@
-import type { Point } from '../game/grid'
+import type { LonLat, StreetGraphFile } from '../game/streetGraph'
 
-/** Where the grid sits inside the canvas, in CSS pixels. */
+/** Where the area sits inside the canvas, in CSS pixels. */
 export interface MapLayout {
-  /** Distance between two neighbouring intersections. Same on both axes, so the map never stretches. */
-  readonly spacing: number
-  /** Position of intersection (0, 0). */
+  /** Pixels per degree of longitude and of latitude: different, so a meter is the same length both ways. */
+  readonly pxPerLon: number
+  readonly pxPerLat: number
+  /** Canvas position of the area's north-west corner. */
   readonly originX: number
   readonly originY: number
+  readonly west: number
+  readonly north: number
 }
 
-/** Fits a square grid of `gridSize` streets per side in the middle of the canvas, leaving `padding` around it. */
-export function computeLayout(width: number, height: number, gridSize: number, padding: number): MapLayout {
-  const side = Math.max(0, Math.min(width, height) - 2 * padding)
-  const spacing = gridSize > 1 ? side / (gridSize - 1) : 0
+/** Fits the area's box in the middle of the canvas, leaving `padding` around it, without stretching it. */
+export function computeLayout(
+  width: number,
+  height: number,
+  bbox: StreetGraphFile['bbox'],
+  padding: number,
+): MapLayout {
+  const [south, west, north, east] = bbox
+  // A degree of longitude is shorter than one of latitude, by the cosine of the latitude.
+  const lonShrink = Math.cos((((south + north) / 2) * Math.PI) / 180)
+  const spanX = (east - west) * lonShrink
+  const spanY = north - south
+  const pxPerLat = Math.max(0, Math.min((width - 2 * padding) / spanX, (height - 2 * padding) / spanY))
+  const pxPerLon = pxPerLat * lonShrink
   return {
-    spacing,
-    originX: (width - side) / 2,
-    originY: (height - side) / 2,
+    pxPerLon,
+    pxPerLat,
+    originX: (width - (east - west) * pxPerLon) / 2,
+    originY: (height - spanY * pxPerLat) / 2,
+    west,
+    north,
   }
 }
 
-/** Canvas position of an intersection. */
-export function toCanvas(layout: MapLayout, point: Point): { x: number; y: number } {
+/** Canvas position of a point of the map. */
+export function toCanvas(layout: MapLayout, [lon, lat]: LonLat): { x: number; y: number } {
   return {
-    x: layout.originX + point.x * layout.spacing,
-    y: layout.originY + point.y * layout.spacing,
+    x: layout.originX + (lon - layout.west) * layout.pxPerLon,
+    y: layout.originY + (layout.north - lat) * layout.pxPerLat,
   }
 }

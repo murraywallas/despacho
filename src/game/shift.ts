@@ -2,7 +2,7 @@
  * One step of a shift: the clock, the riders, the cancellations and the new orders, in that order.
  * The store and the balance bots (autoplay.ts) both play through these functions, so they follow the same rules. Pure.
  */
-import type { PrototypeBalance } from './balance'
+import { clock as clockBalance, vehicles, type PrototypeBalance } from './balance'
 import { cancelExpired } from './cancellation'
 import { createCityMap, type CityMap } from './cityMap'
 import { createClock, tick, type ShiftClock } from './clock'
@@ -10,7 +10,9 @@ import { assignOrder } from './dispatch'
 import { advanceFleet, startTrip, type MovementSettings } from './movement'
 import { createOrderQueue, spawnOrders, type OrderQueue, type OrderSettings } from './orders'
 import { createRandom, type Random } from './random'
+import { norrebroBikeNetwork } from './norrebro'
 import { createRiders, type Rider } from './riders'
+import type { StreetNetwork } from './routing'
 
 export interface ShiftSettings {
   readonly orders: OrderSettings
@@ -26,6 +28,16 @@ export interface ShiftSnapshot {
   readonly orderQueue: OrderQueue
 }
 
+const SECONDS_PER_HOUR = 3600
+const METERS_PER_KM = 1000
+
+/** Meters a vehicle covers per second of play: its real speed, sped up like the game clock. */
+export function metersPerSecOf(vehicle: string, gameSecondsPerRealSecond = clockBalance.gameSecondsPerRealSecond): number {
+  const row = vehicles[vehicle]
+  if (!row) throw new Error(`El vehículo ${vehicle} no está en la hoja Vehículos.`)
+  return ((row.speedKmh * METERS_PER_KM) / SECONDS_PER_HOUR) * gameSecondsPerRealSecond
+}
+
 /** The rules of a prototype shift, from balance.json. */
 export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
   return {
@@ -34,9 +46,10 @@ export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
       deadlineSec: balance.orders.deadlineSec,
       cookSec: balance.kitchen.cookSec,
       lastSpawnBeforeSec: balance.shift.durationSec,
+      minCustomerDistanceM: balance.orders.minCustomerDistanceM,
     },
     movement: {
-      speedBlocksPerSec: balance.riders.speedBlocksPerSec,
+      metersPerSec: metersPerSecOf(balance.riders.vehicle),
     },
     cancelAfterSec: balance.orders.cancelAfterSec,
   }
@@ -46,9 +59,13 @@ export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
  * A fresh shift and its random stream. One stream per shift: first the map, then the riders, then the orders.
  * Same seed, same shift.
  */
-export function createShift(balance: PrototypeBalance, seed: number): { shift: ShiftSnapshot; random: Random } {
+export function createShift(
+  balance: PrototypeBalance,
+  seed: number,
+  network: StreetNetwork = norrebroBikeNetwork(),
+): { shift: ShiftSnapshot; random: Random } {
   const random = createRandom(seed)
-  const map = createCityMap(balance.grid.size, balance.grid.restaurants, random)
+  const map = createCityMap(network, balance.restaurants.count, random)
   return {
     random,
     shift: {
@@ -72,7 +89,7 @@ export function advanceShift(
 ): ShiftSnapshot {
   const clock = tick(shift.clock, dtSec)
   if (clock === shift.clock) return shift
-  // Game seconds that really passed: 0 in pause, double at 2x, cut at the end of the shift.
+  // Seconds of play that really passed: 0 in pause, double at 2x, cut at the end of the shift.
   const gameDtSec = clock.elapsedSec - shift.clock.elapsedSec
   const fleet = advanceFleet(
     shift.map,

@@ -4,12 +4,12 @@
  */
 
 export interface ShiftClock {
-  /** Length of the shift, in game seconds. */
+  /** Length of the shift, in seconds of play. */
   readonly durationSec: number
-  /** Game seconds played so far. */
+  /** Seconds played so far. */
   readonly elapsedSec: number
   readonly paused: boolean
-  /** Game seconds per real second (1 at normal speed). */
+  /** Seconds of play per real second (1 at normal speed). */
   readonly speed: number
   readonly finished: boolean
 }

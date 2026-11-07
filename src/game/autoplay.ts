@@ -31,13 +31,13 @@ export const firstComeBot: Bot = (shift) => {
  */
 export const triageBot: Bot = (shift, settings) => {
   const now = shift.clock.elapsedSec
-  const speed = settings.movement.speedBlocksPerSec
+  const speed = settings.movement.metersPerSec
   let best: { pick: BotPick; savable: boolean; etaSec: number } | undefined
 
   for (const order of pendingOrders(shift)) {
     const closest = rankRiders(shift.map, shift.riders, order, speed)[0]
     if (!closest) return undefined
-    const ride = travelTimeSec(shift.map, restaurantOf(shift.map, order).position, order.customer, speed)
+    const ride = travelTimeSec(shift.map, restaurantOf(shift.map, order).node, order.customer, speed)
     const pickUpAtSec = Math.max(now + closest.etaSec, order.readyAtSec)
     const arrivesAtSec = pickUpAtSec + ride
     const savable = arrivesAtSec <= order.deadlineAtSec
@@ -49,11 +49,11 @@ export const triageBot: Bot = (shift, settings) => {
 }
 
 export interface AutoplayOptions {
-  /** Game seconds between two looks at the screen (a player doesn't react instantly). */
+  /** Seconds of play between two looks at the screen (a player doesn't react instantly). */
   readonly reactionSec: number
   /** Orders dispatched per look. A person picks one order and one rider at a time; a machine, all at once. */
   readonly picksPerLook: number
-  /** Size of each simulation step, in game seconds. */
+  /** Size of each simulation step, in seconds of play. */
   readonly stepSec: number
 }
 
