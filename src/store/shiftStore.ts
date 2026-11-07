@@ -25,6 +25,8 @@ interface ShiftState {
   selectOrder: (orderId: string | null) => void
   /** Gives the selected order to a rider (second click, or keys 1–9). Works while paused too. */
   assignSelectedTo: (riderNumber: number) => void
+  /** "Jugar otra vez": starts the shift over (clock, orders, riders and stars). */
+  restartShift: () => void
 }
 
 const NORMAL_SPEED = 1
@@ -40,16 +42,28 @@ const movementSettings: MovementSettings = {
   kitchenWaitSec: prototype.kitchen.waitSec,
 }
 
-// One random stream for the whole shift: first the map, then the riders, then the orders.
+// One random stream per shift: first the map, then the riders, then the orders.
 // Same seed, same shift.
-const random = createRandom(prototype.seed)
-const map = createCityMap(prototype.grid.size, prototype.grid.restaurants, random)
+let random = createRandom(prototype.seed)
+
+type ShiftData = Pick<ShiftState, 'map' | 'riders' | 'clock' | 'orderQueue' | 'selectedOrderId'>
+
+/** A fresh shift: clock at the start, no orders, riders at their starting spots. */
+function newShift(): ShiftData {
+  random = createRandom(prototype.seed)
+  const map = createCityMap(prototype.grid.size, prototype.grid.restaurants, random)
+  return {
+    map,
+    riders: createRiders(map, prototype.riders.count, prototype.riders.vehicle, random),
+    clock: createClock(prototype.shift.durationSec),
+    orderQueue: createOrderQueue(orderSettings),
+    selectedOrderId: null,
+  }
+}
 
 export const useShiftStore = create<ShiftState>()((set) => ({
-  map,
-  riders: createRiders(map, prototype.riders.count, prototype.riders.vehicle, random),
-  clock: createClock(prototype.shift.durationSec),
-  orderQueue: createOrderQueue(orderSettings),
+  ...newShift(),
+  restartShift: () => set(newShift()),
   tick: (dtSec) =>
     set((state) => {
       const clock = tick(state.clock, dtSec)
@@ -79,7 +93,6 @@ export const useShiftStore = create<ShiftState>()((set) => ({
       const speed = state.clock.speed === NORMAL_SPEED ? clockBalance.fastSpeed : NORMAL_SPEED
       return { clock: setSpeed(state.clock, speed) }
     }),
-  selectedOrderId: null,
   selectOrder: (orderId) =>
     set((state) => {
       if (orderId === null || orderId === state.selectedOrderId) return { selectedOrderId: null }

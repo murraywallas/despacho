@@ -1,0 +1,37 @@
+import { expect, test } from '@playwright/test'
+
+// El turno de 5 minutos se acorta con el reloj falso de Playwright: corre en 2x y se adelanta de golpe.
+test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia todo', async ({ page }) => {
+  await page.clock.install()
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
+
+  await page.clock.runFor(140_000)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await page.clock.runFor(12_000)
+
+  // Nadie despachó nada: todo lo que terminó fue cancelado, 1 estrella, turno perdido.
+  const results = page.getByRole('dialog', { name: 'Perdiste el turno' })
+  await expect(results).toBeVisible()
+  await expect(results.getByTestId('results-rating')).toHaveText('1,0')
+  await expect(results.getByTestId('results-delivered').locator('dd')).toHaveText('0')
+  await expect(results.getByTestId('results-late').locator('dd')).toHaveText('0')
+  await expect(results.getByTestId('results-cancelled').locator('dd')).toHaveText(/^[1-9]\d*$/)
+  await expect(results.getByText('Se gana con 4,0 estrellas o más; con menos de 3,0, se pierde.')).toBeVisible()
+  await expect(page.getByTestId('shift-time')).toHaveText('00:00')
+
+  // El botón tiene el foco: Enter alcanza para volver a jugar.
+  await expect(results.getByRole('button', { name: 'Jugar otra vez' })).toBeFocused()
+  await page.keyboard.press('Enter')
+
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByTestId('shift-time')).toHaveText('05:00')
+  await expect(page.getByTestId('shift-rating')).toHaveText('–')
+  await expect(page.getByRole('button', { name: 'Velocidad del reloj' })).toHaveText('1x')
+  await expect(page.getByText('Todavía no hay pedidos. El primero llega en unos segundos.')).toBeVisible()
+  await expect(page.getByLabel('3 de 3 repartidores libres')).toBeVisible()
+
+  // Y el turno nuevo arranca de verdad.
+  await page.clock.runFor(10_500)
+  await expect(page.getByTestId('order-card')).toHaveCount(1)
+})

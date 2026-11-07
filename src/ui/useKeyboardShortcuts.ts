@@ -6,6 +6,8 @@ interface Shortcuts {
   onPickRider: (riderNumber: number) => void
   /** Escape drops the selected order. */
   onCancelSelection: () => void
+  /** Off while the results screen is up, so Space and Enter reach its button. */
+  enabled?: boolean
 }
 
 function isTextField(target: EventTarget | null): boolean {
@@ -24,8 +26,9 @@ const RIDER_KEY = /^(?:Digit|Numpad)([1-9])$/
  * Space pauses and resumes (even when a button has focus), 1–9 pick a rider, Escape drops the selection.
  * Typing in a text field is left alone.
  */
-export function useKeyboardShortcuts({ onTogglePause, onPickRider, onCancelSelection }: Shortcuts): void {
+export function useKeyboardShortcuts({ onTogglePause, onPickRider, onCancelSelection, enabled = true }: Shortcuts): void {
   useEffect(() => {
+    if (!enabled) return
     const onKeyDown = (event: KeyboardEvent) => {
       if (isTextField(event.target) || event.ctrlKey || event.metaKey || event.altKey) return
 
@@ -51,5 +54,5 @@ export function useKeyboardShortcuts({ onTogglePause, onPickRider, onCancelSelec
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
     }
-  }, [onTogglePause, onPickRider, onCancelSelection])
+  }, [onTogglePause, onPickRider, onCancelSelection, enabled])
 }

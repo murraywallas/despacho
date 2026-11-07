@@ -22,6 +22,8 @@
   --star: #b7791f;
   --heat: #b4461c;
   --cold: #2563a8;
+  --win: #2f7d32;
+  --backdrop: rgb(20 26 34 / 0.45);
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   color: var(--ink);
@@ -54,6 +56,8 @@
     --star: #f2c14e;
     --heat: #f29a6b;
     --cold: #8cb8f0;
+    --win: #7fd18a;
+    --backdrop: rgb(0 0 0 / 0.6);
   }
 }
 
