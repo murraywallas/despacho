@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
 
-test('el mapa de Nørrebro se ve completo y tiene calles y restaurantes dibujados', async ({ page }) => {
+test('el mapa de Nørrebro se ve completo, con restaurantes, repartidores y la atribución', async ({ page }) => {
   await page.goto('/')
 
-  const map = page.getByRole('img', { name: /^Mapa de Nørrebro con 4 restaurantes/ })
+  const map = page.getByRole('region', { name: /^Mapa de Nørrebro con 4 restaurantes, 3 repartidores/ })
   await expect(map).toBeVisible()
 
   // Entra entero en la pantalla y no está aplastado.
@@ -18,14 +18,52 @@ test('el mapa de Nørrebro se ve completo y tiene calles y restaurantes dibujado
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height)
   expect(Math.min(box.width, box.height)).toBeGreaterThan(300)
 
-  // Hay al menos tres colores distintos: fondo, calles y restaurantes.
-  const colors = await map.evaluate((canvas: HTMLCanvasElement) => {
-    const context = canvas.getContext('2d')
-    if (!context) return 0
-    const { data } = context.getImageData(0, 0, canvas.width, canvas.height)
-    const seen = new Set<string>()
-    for (let i = 0; i < data.length; i += 4 * 97) seen.add(`${data[i]},${data[i + 1]},${data[i + 2]}`)
-    return seen.size
-  })
-  expect(colors).toBeGreaterThanOrEqual(3)
+  // Marcadores: los 4 restaurantes y los 3 repartidores, con nombre para lectores de pantalla.
+  await expect(map.getByTestId('restaurant-marker')).toHaveCount(4)
+  await expect(map.getByTestId('rider-marker')).toHaveCount(3)
+  await expect(map.getByRole('img', { name: 'Restaurante A' })).toBeVisible()
+  await expect(map.getByRole('img', { name: 'Repartidor 1' })).toBeVisible()
+
+  // Los restaurantes caen dentro del mapa visible.
+  for (const marker of await map.getByTestId('restaurant-marker').all()) {
+    const spot = await marker.boundingBox()
+    expect(spot).not.toBeNull()
+    if (!spot) continue
+    expect(spot.x).toBeGreaterThanOrEqual(box.x - 1)
+    expect(spot.x + spot.width).toBeLessThanOrEqual(box.x + box.width + 1)
+    expect(spot.y).toBeGreaterThanOrEqual(box.y - 1)
+    expect(spot.y + spot.height).toBeLessThanOrEqual(box.y + box.height + 1)
+  }
+
+  // Atribución obligatoria de OpenStreetMap, siempre visible.
+  await expect(map.getByText('OpenStreetMap contributors')).toBeVisible()
+})
+
+test('el mapa no deja irse lejos del barrio y se puede acercar', async ({ page }) => {
+  await page.goto('/')
+  const map = page.getByRole('region', { name: /^Mapa de Nørrebro/ })
+  await expect(map.getByTestId('restaurant-marker')).toHaveCount(4)
+  const box = await map.boundingBox()
+  if (!box) throw new Error('El mapa no tiene tamaño.')
+
+  // Arrastrar muy lejos: el barrio sigue a la vista.
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2 + 3000, box.y + box.height / 2 + 3000, { steps: 10 })
+  await page.mouse.up()
+  const visible = await map.getByTestId('restaurant-marker').evaluateAll(
+    (markers, area) =>
+      markers.filter((marker) => {
+        const spot = marker.getBoundingClientRect()
+        return spot.right > area.x && spot.left < area.x + area.width && spot.bottom > area.y && spot.top < area.y + area.height
+      }).length,
+    box,
+  )
+  expect(visible).toBeGreaterThan(0)
+
+  // El botón de acercar mueve los marcadores (el mapa se agranda).
+  const restaurant = map.getByRole('img', { name: 'Restaurante A' })
+  const before = await restaurant.boundingBox()
+  await page.getByRole('button', { name: 'Zoom in' }).click()
+  await expect.poll(async () => (await restaurant.boundingBox())?.x).not.toBe(before?.x)
 })

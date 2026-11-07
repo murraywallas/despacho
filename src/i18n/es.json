@@ -54,5 +54,6 @@
   "topbar.timeLabel": "Hora del juego: {time}. El turno termina a las {end}",
   "topbar.endsAt": "Termina {end}",
   "orders.minutesLeft": "{minutes} min",
-  "topbar.gameTime": "Hora"
+  "topbar.gameTime": "Hora",
+  "map.customer": "Cliente del pedido #{number}"
 }
