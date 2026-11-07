@@ -1,0 +1,16 @@
+{
+  "spreadsheetId": "1ZPT-ptHHiV7kb4wClP_K82nu-DZU7dMXFIwtwAohwHs",
+  "output": "data/balance.json",
+  "rules": { "name": "Reglas", "gid": 1 },
+  "tables": [
+    { "key": "vehicles", "name": "Vehículos", "gid": 2 },
+    {
+      "key": "neighborhoods",
+      "name": "Barrios",
+      "gid": 3,
+      "listColumns": ["vehicles"],
+      "references": { "vehicles": "vehicles" }
+    },
+    { "key": "events", "name": "Eventos", "gid": 4 }
+  ]
+}
