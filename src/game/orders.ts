@@ -6,8 +6,8 @@ import type { CityMap } from './cityMap'
 import { samePoint, type Point } from './grid'
 import { randomInt, type Random } from './random'
 
-/** For now every order waits for a rider. Later: assigned, delivered, cancelled. */
-export type OrderStatus = 'pending'
+/** pending: waiting for a rider. assigned: a rider is on it. Later: delivered, cancelled. */
+export type OrderStatus = 'pending' | 'assigned'
 
 export interface Order {
   readonly id: string
@@ -20,6 +20,8 @@ export interface Order {
   /** Game second when it should be delivered. */
   readonly deadlineAtSec: number
   readonly status: OrderStatus
+  /** Rider carrying the order, once assigned. */
+  readonly riderId?: string
 }
 
 export interface OrderQueue {

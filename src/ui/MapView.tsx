@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { CityMap } from '../game/cityMap'
+import { plannedRoute, restaurantOf } from '../game/dispatch'
 import type { Order } from '../game/orders'
 import type { Rider } from '../game/riders'
 import { t } from '../i18n'
@@ -17,6 +18,7 @@ function readColors(element: HTMLElement): MapColors {
     customerInk: color('--map-customer-ink'),
     rider: color('--map-rider'),
     riderInk: color('--map-rider-ink'),
+    selected: color('--selected'),
   }
 }
 
@@ -24,18 +26,32 @@ interface MapViewProps {
   map: CityMap
   orders: readonly Order[]
   riders: readonly Rider[]
+  selectedOrderId: string | null
+}
+
+function buildScene(map: CityMap, orders: readonly Order[], riders: readonly Rider[], selectedId: string | null) {
+  const selected = orders.find((order) => order.id === selectedId)
+  const routes = riders.flatMap((rider) => {
+    const order = orders.find((candidate) => candidate.id === rider.orderId)
+    return order ? [plannedRoute(map, rider, order)] : []
+  })
+  return {
+    map,
+    customers: orders.map((order) => ({ position: order.customer, label: String(order.number) })),
+    riders: riders.map((rider) => ({ position: rider.position, label: String(rider.number) })),
+    routes,
+    highlight: selected
+      ? { restaurant: restaurantOf(map, selected).position, customer: selected.customer }
+      : undefined,
+  } satisfies MapScene
 }
 
 /** The map canvas. Fills its container and redraws when what it shows, its size or the color theme change. */
-export function MapView({ map, orders, riders }: MapViewProps) {
+export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const scene = useMemo<MapScene>(
-    () => ({
-      map,
-      customers: orders.map((order) => ({ position: order.customer, label: String(order.number) })),
-      riders: riders.map((rider) => ({ position: rider.position, label: String(rider.number) })),
-    }),
-    [map, orders, riders],
+  const scene = useMemo(
+    () => buildScene(map, orders, riders, selectedOrderId),
+    [map, orders, riders, selectedOrderId],
   )
 
   useEffect(() => {

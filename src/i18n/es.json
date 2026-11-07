@@ -24,5 +24,12 @@
   "riders.status.toRestaurant": "Yendo al restaurante",
   "riders.status.atKitchen": "Esperando la cocina",
   "riders.status.toCustomer": "Yendo al cliente",
-  "vehicles.bike": "Bicicleta"
+  "vehicles.bike": "Bicicleta",
+  "orders.allAssigned": "Todos los pedidos tienen repartidor.",
+  "orders.hintPickOrder": "Elegí un pedido.",
+  "orders.hintPickRider": "Ahora elegí un repartidor (clic o teclas 1–9). Esc cancela.",
+  "orders.status.selected": "Elegido",
+  "riders.hintByEta": "Ordenados por llegada al restaurante.",
+  "riders.eta": "{seconds} s",
+  "riders.carrying": "pedido #{number}"
 }
