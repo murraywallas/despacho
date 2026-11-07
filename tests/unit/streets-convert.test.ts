@@ -7,10 +7,9 @@ import {
   flagsOf,
   STREET_KINDS,
   type OverpassAnswer,
-  type StreetGraphFile,
 } from '../../scripts/streets/convert.ts'
 
-const BBOX: StreetGraphFile['bbox'] = [55.68, 12.53, 55.71, 12.57]
+const BBOX: [number, number, number, number] = [55.68, 12.53, 55.71, 12.57]
 
 // A tiny piece of city: a main street (1-2-3), a one-way side street (3-4), a cycleway (1-5),
 // a sidewalk (2-6, dropped), a private road (4-7, dropped) and a lonely street far away (8-9, dropped).
