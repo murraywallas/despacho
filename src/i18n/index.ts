@@ -11,3 +11,8 @@ export function t(key: TextKey, params?: Record<string, string | number>): strin
   if (!params) return text
   return text.replace(/\{(\w+)\}/g, (match, name: string) => (name in params ? String(params[name]) : match))
 }
+
+/** True when there is a visible text for this key (for texts chosen at run time, like a restaurant's name). */
+export function hasText(key: string): key is TextKey {
+  return Object.hasOwn(es, key)
+}

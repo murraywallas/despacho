@@ -16,7 +16,7 @@ test('llegan pedidos a la cola con restaurante y cuenta regresiva, y el cliente 
   await expect(card).toBeVisible({ timeout: 8000 })
 
   await expect(card).toContainText('Pedido #1')
-  await expect(card).toContainText(/Restaurante [A-D]/)
+  await expect(card).toContainText(/[A-D] · \S+/)
   await expect(card).toContainText('Esperando repartidor')
   await expect(page.getByRole('region', { name: /1 clientes esperando/ })).toBeVisible()
   await expect(page.getByTestId('customer-marker')).toHaveCount(1)

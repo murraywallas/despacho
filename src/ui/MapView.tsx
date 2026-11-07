@@ -1,13 +1,17 @@
-import { AttributionControl, MapLibreMap, Marker, NavigationControl, type GeoJSONSource } from '../map/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { CityMap } from '../game/cityMap'
 import type { Order } from '../game/orders'
-import type { Rider } from '../game/riders'
 import { t } from '../i18n'
 import '../map/mapMarkers.css'
-import { areaBounds, buildMarkers, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
+import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
+import { AttributionControl, MapLibreMap, Marker, NavigationControl, type GeoJSONSource } from '../map/maplibre'
 import { FALLBACK_STYLE, loadNightStyle } from '../map/nightStyle'
+import { addRouteLayers, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
+import type { Rider } from '../game/riders'
+import { MapMarkerContent } from './MapMarkerContent'
+import { restaurantName } from './restaurantName'
 
 interface MapViewProps {
   map: CityMap
@@ -16,17 +20,20 @@ interface MapViewProps {
   selectedOrderId: string | null
 }
 
-const ROUTES = 'routes'
 /** Space around the area when the map opens, in CSS pixels. */
-const FIT_PADDING = 16
+const FIT_PADDING = 24
 /** How far past the area the player can drag the map, as a share of its size. */
 const DRAG_MARGIN = 0.25
 // The game's own streets come from OpenStreetMap too, so the credit stays even without the base map
 // (the base map adds its own: OpenFreeMap, OpenMapTiles).
-const ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>'
+const ATTRIBUTION =
+  '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>'
 
-function markerText(marker: MapMarker): string {
-  if (marker.kind === 'restaurant') return t('orders.restaurant', { label: marker.label })
+function markerText(map: CityMap, marker: MapMarker): string {
+  if (marker.kind === 'restaurant') {
+    const restaurant = map.restaurants.find((candidate) => candidate.label === marker.label)
+    return restaurant ? restaurantName(restaurant) : t('orders.restaurant', { label: marker.label })
+  }
   if (marker.kind === 'customer') return t('map.customer', { number: marker.label })
   return t('riders.name', { number: marker.label })
 }
@@ -36,40 +43,20 @@ function createMarkerElement(marker: MapMarker): HTMLElement {
   element.className = `map-marker map-marker--${marker.kind}`
   element.dataset.testid = `${marker.kind}-marker`
   element.setAttribute('role', 'img')
-  const label = document.createElement('span')
-  label.className = 'map-marker__label'
-  element.append(label)
   return element
 }
 
-function updateMarkerElement(element: HTMLElement, marker: MapMarker) {
-  element.classList.toggle('map-marker--selected', marker.selected)
-  element.setAttribute('aria-label', markerText(marker))
-  const label = element.firstElementChild
-  if (label && label.textContent !== marker.label) label.textContent = marker.label
-}
-
-function addGameLayers(instance: MapLibreMap) {
-  if (instance.getSource(ROUTES)) return
-  instance.addSource(ROUTES, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
-  instance.addLayer({
-    id: ROUTES,
-    type: 'line',
-    source: ROUTES,
-    layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#4fb3ff', 'line-width': 3, 'line-dasharray': [1.5, 1.5] },
-  })
-}
-
 /**
- * The map of the area: MapLibre with the night style, the trips in progress as lines and everything else as
- * markers. Starts fitted to the area and doesn't let the player drag it far away.
+ * The map of the area: MapLibre with the night style, glowing routes for the trips in progress and cards for
+ * restaurants and riders. Starts fitted to the area and doesn't let the player drag it far away.
  */
 export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const instanceRef = useRef<MapLibreMap | null>(null)
-  const markersRef = useRef(new Map<string, Marker>())
-  // Bumped every time a style finishes loading: the game layers have to be added again on top of it.
+  const placedRef = useRef(new Map<string, Marker>())
+  // Marker elements React draws into (with portals). Changes only when markers come or go.
+  const [elements, setElements] = useState<ReadonlyMap<string, HTMLElement>>(new Map())
+  // Bumped every time a style finishes loading: the route layers have to be added again on top of it.
   const [styleVersion, setStyleVersion] = useState(0)
   const streets = map.network.streets
 
@@ -77,7 +64,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     const container = containerRef.current
     if (!container) return
     let cancelled = false
-    const markers = markersRef.current
+    const placed = placedRef.current
     const instance = new MapLibreMap({
       container,
       style: FALLBACK_STYLE,
@@ -93,7 +80,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     instance.addControl(new AttributionControl({ compact: false, customAttribution: ATTRIBUTION }))
     instance.addControl(new NavigationControl({ showCompass: false }), 'top-right')
     instance.on('style.load', () => {
-      addGameLayers(instance)
+      addRouteLayers(instance)
       setStyleVersion((version) => version + 1)
     })
     instanceRef.current = instance
@@ -102,8 +89,9 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     })
     return () => {
       cancelled = true
-      for (const marker of markers.values()) marker.remove()
-      markers.clear()
+      for (const marker of placed.values()) marker.remove()
+      placed.clear()
+      setElements(new Map())
       instance.remove()
       instanceRef.current = null
     }
@@ -113,39 +101,57 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     () => buildMarkers(map, orders, riders, selectedOrderId),
     [map, orders, riders, selectedOrderId],
   )
-  // Riders move every frame, but their routes only change when they pass a crossing: the key says when,
-  // so the map gets new route data a few times per trip instead of every frame.
-  const routeKey = routesKey(riders)
-  const routes = useMemo(() => routesGeoJson(map, riders), [map, routeKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const instance = instanceRef.current
     if (!instance) return
-    const current = markersRef.current
+    const placed = placedRef.current
     const keep = new Set<string>()
+    let changed = false
     for (const marker of markers) {
       keep.add(marker.key)
-      let placed = current.get(marker.key)
-      if (!placed) {
-        placed = new Marker({ element: createMarkerElement(marker) }).setLngLat([...marker.lngLat]).addTo(instance)
-        current.set(marker.key, placed)
+      let current = placed.get(marker.key)
+      if (!current) {
+        const anchor = marker.kind === 'customer' ? 'center' : 'bottom'
+        current = new Marker({ element: createMarkerElement(marker), anchor }).setLngLat([...marker.lngLat]).addTo(instance)
+        placed.set(marker.key, current)
+        changed = true
       } else {
-        placed.setLngLat([...marker.lngLat])
+        current.setLngLat([...marker.lngLat])
       }
-      updateMarkerElement(placed.getElement(), marker)
+      const element = current.getElement()
+      element.classList.toggle('map-marker--selected', marker.selected)
+      element.classList.toggle('map-marker--free', marker.rider?.status === 'idle')
+      element.setAttribute('aria-label', markerText(map, marker))
     }
-    for (const [key, placed] of current) {
+    for (const [key, current] of placed) {
       if (!keep.has(key)) {
-        placed.remove()
-        current.delete(key)
+        current.remove()
+        placed.delete(key)
+        changed = true
       }
     }
-  }, [markers])
+    if (changed) setElements(new Map([...placed].map(([key, current]) => [key, current.getElement()])))
+  }, [map, markers])
+
+  // Riders move every frame, but their routes only change when they pass a crossing: the key says when,
+  // so the map gets new route data a few times per trip instead of every frame.
+  const routeKey = routesKey(riders)
+  const routes = useMemo(() => routesGeoJson(map, riders), [map, routeKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  const selectedOrder = orders.find((order) => order.id === selectedOrderId)
+  const idleKey = riders.map((rider) => (rider.status === 'idle' ? rider.node : '-')).join(',')
+  const preview = useMemo(
+    () => previewGeoJson(map, riders, selectedOrder),
+    [map, selectedOrder, idleKey], // eslint-disable-line react-hooks/exhaustive-deps
+  )
 
   useEffect(() => {
-    const source = instanceRef.current?.getSource<GeoJSONSource>(ROUTES)
-    source?.setData(routes)
+    instanceRef.current?.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(routes)
   }, [routes, styleVersion])
+
+  useEffect(() => {
+    instanceRef.current?.getSource<GeoJSONSource>(PREVIEW_SOURCE)?.setData(preview)
+  }, [preview, styleVersion])
 
   const customers = markers.filter((marker) => marker.kind === 'customer').length
   return (
@@ -159,6 +165,11 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
         riders: riders.length,
         customers,
       })}
-    />
+    >
+      {markers.map((marker) => {
+        const element = elements.get(marker.key)
+        return element ? createPortal(<MapMarkerContent marker={marker} />, element, marker.key) : null
+      })}
+    </div>
   )
 }

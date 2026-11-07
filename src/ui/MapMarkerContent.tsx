@@ -1,0 +1,36 @@
+import { Bike, UtensilsCrossed, type LucideIcon } from 'lucide-react'
+import type { MapMarker } from '../map/mapData'
+
+const VEHICLE_ICONS: Record<string, LucideIcon | undefined> = {
+  bike: Bike,
+}
+
+/**
+ * What a marker looks like. Restaurants and riders are small cards with a point at the bottom that marks the
+ * exact spot; customers are dots with the order number. The marker element carries the accessible name, so
+ * everything here is decoration for screen readers.
+ */
+export function MapMarkerContent({ marker }: { marker: MapMarker }) {
+  if (marker.kind === 'restaurant') {
+    return (
+      <span className="map-pin map-pin--restaurant" aria-hidden>
+        <UtensilsCrossed size={13} strokeWidth={2.5} />
+        <span className="map-pin__letter">{marker.label}</span>
+      </span>
+    )
+  }
+  if (marker.kind === 'rider') {
+    const Icon = VEHICLE_ICONS[marker.rider?.vehicle ?? ''] ?? Bike
+    return (
+      <span className={`map-pin map-pin--rider map-pin--${marker.rider?.status ?? 'idle'}`} aria-hidden>
+        <span className="map-pin__badge">{marker.label}</span>
+        <Icon size={18} strokeWidth={2.25} />
+      </span>
+    )
+  }
+  return (
+    <span className="map-dot" aria-hidden>
+      {marker.label}
+    </span>
+  )
+}

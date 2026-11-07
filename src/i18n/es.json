@@ -55,5 +55,10 @@
   "topbar.endsAt": "Termina {end}",
   "orders.minutesLeft": "{minutes} min",
   "topbar.gameTime": "Hora",
-  "map.customer": "Cliente del pedido #{number}"
+  "map.customer": "Cliente del pedido #{number}",
+  "orders.restaurantNamed": "{label} · {name}",
+  "restaurants.r1": "Pho Søndag",
+  "restaurants.r2": "Pizza Bølgen",
+  "restaurants.r3": "Taco Nordlys",
+  "restaurants.r4": "Ramen Månelys"
 }

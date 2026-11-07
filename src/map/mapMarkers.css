@@ -1,57 +1,127 @@
 /* Marcadores sobre el mapa nocturno. El mapa es oscuro en los dos temas, así que sus colores no cambian con el tema. */
 
 .map-view {
-  --marker-restaurant: #f2b84b;
-  --marker-restaurant-ink: #1a1203;
-  --marker-customer: #a9b8d6;
-  --marker-customer-ink: #0e1a33;
-  --marker-rider: #4fb3ff;
-  --marker-rider-ink: #06213a;
-  --marker-outline: #0e1a33;
-  --marker-selected: #c4a5ff;
-  background: #0e1a33;
+  --pin-shadow: 0 2px 8px rgb(0 0 0 / 0.5);
+  --pin-point: 6px;
+  --restaurant-bg: #f2b84b;
+  --restaurant-edge: #ffd88a;
+  --restaurant-ink: #1f1404;
+  --rider-bg: #10305a;
+  --rider-ink: #cfeaff;
+  --rider-free-bg: #eaf6ff;
+  --rider-free-ink: #08223d;
+  --to-restaurant: #4fd1ff;
+  --to-customer: #ffb347;
+  --customer-bg: #a9b8d6;
+  --customer-ink: #0e1a33;
+  --night: #0e1a33;
+  --selected-ring: #c4a5ff;
+  background: var(--night);
 }
 
 .map-marker {
-  display: grid;
-  place-items: center;
-  font: 600 12px/1 system-ui, sans-serif;
   cursor: default;
 }
 
-.map-marker--restaurant {
-  width: 24px;
-  height: 24px;
-  border-radius: 5px;
-  background: var(--marker-restaurant);
-  color: var(--marker-restaurant-ink);
-  box-shadow: 0 0 0 2px var(--marker-outline);
+/* Tarjeta con punta: restaurantes y repartidores. La punta marca el lugar exacto. */
+.map-pin {
+  --edge: #ffffff;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: var(--pin-point);
+  padding: 3px 6px;
+  border: 1.5px solid var(--edge);
+  border-radius: 6px;
+  box-shadow: var(--pin-shadow);
+  font: 700 12px/1 system-ui, sans-serif;
+}
+
+.map-pin::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(-1 * var(--pin-point) - 1.5px);
+  transform: translateX(-50%);
+  border: var(--pin-point) solid transparent;
+  border-top-color: var(--edge);
+  border-bottom: 0;
+}
+
+.map-pin--restaurant {
+  --edge: var(--restaurant-edge);
+  background: var(--restaurant-bg);
+  color: var(--restaurant-ink);
+}
+
+.map-pin__letter {
   font-size: 13px;
 }
 
-.map-marker--customer {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--marker-customer);
-  color: var(--marker-customer-ink);
-  box-shadow: 0 0 0 2px var(--marker-outline);
+.map-pin--rider {
+  --edge: var(--to-restaurant);
+  padding: 4px 7px;
+  background: var(--rider-bg);
+  color: var(--rider-ink);
+}
+
+/* Libre: tarjeta clara, la que más se ve, porque es la que el jugador busca. */
+.map-pin--idle {
+  --edge: #ffffff;
+  background: var(--rider-free-bg);
+  color: var(--rider-free-ink);
+}
+
+.map-pin--atKitchen,
+.map-pin--toCustomer {
+  --edge: var(--to-customer);
+}
+
+.map-pin__badge {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--edge);
+  color: var(--night);
   font-size: 10px;
+  line-height: 15px;
+  text-align: center;
 }
 
 .map-marker--rider {
-  width: 22px;
-  height: 22px;
-  background: var(--marker-rider);
-  color: var(--marker-rider-ink);
-  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-  z-index: 1;
+  z-index: 2;
 }
 
-.map-marker--selected {
+/* Los libres arriba de todo: son los que el jugador busca. */
+.map-marker--free {
+  z-index: 3;
+}
+
+/* Cliente: punto con el número de pedido. */
+.map-dot {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--customer-bg);
+  color: var(--customer-ink);
+  box-shadow: 0 0 0 2px var(--night);
+  font: 700 10px/1 system-ui, sans-serif;
+}
+
+/* Restaurante y cliente del pedido elegido. */
+.map-marker--selected .map-pin,
+.map-marker--selected .map-dot {
   box-shadow:
-    0 0 0 2px var(--marker-outline),
-    0 0 0 5px var(--marker-selected);
+    0 0 0 2px var(--night),
+    0 0 0 5px var(--selected-ring),
+    var(--pin-shadow);
 }
 
 /* Atribución y botones de zoom sobre fondo oscuro. */

@@ -21,7 +21,7 @@ test('el mapa de Nørrebro se ve completo, con restaurantes, repartidores y la a
   // Marcadores: los 4 restaurantes y los 3 repartidores, con nombre para lectores de pantalla.
   await expect(map.getByTestId('restaurant-marker')).toHaveCount(4)
   await expect(map.getByTestId('rider-marker')).toHaveCount(3)
-  await expect(map.getByRole('img', { name: 'Restaurante A' })).toBeVisible()
+  await expect(map.getByRole('img', { name: 'A · Pho Søndag' })).toBeVisible()
   await expect(map.getByRole('img', { name: 'Repartidor 1' })).toBeVisible()
 
   // Los restaurantes caen dentro del mapa visible.
@@ -62,8 +62,26 @@ test('el mapa no deja irse lejos del barrio y se puede acercar', async ({ page }
   expect(visible).toBeGreaterThan(0)
 
   // El botón de acercar mueve los marcadores (el mapa se agranda).
-  const restaurant = map.getByRole('img', { name: 'Restaurante A' })
+  const restaurant = map.getByRole('img', { name: 'A · Pho Søndag' })
   const before = await restaurant.boundingBox()
   await page.getByRole('button', { name: 'Zoom in' }).click()
   await expect.poll(async () => (await restaurant.boundingBox())?.x).not.toBe(before?.x)
+})
+
+test('los repartidores son tarjetas: libres en claro, y al despachar pasan a estar en viaje', async ({ page }) => {
+  await page.clock.install()
+  await page.goto('/')
+  const map = page.getByRole('region', { name: /^Mapa de Nørrebro/ })
+  const free = map.locator('.map-marker--free')
+  await expect(free).toHaveCount(3)
+  await expect(map.getByTestId('rider-marker').first().locator('svg')).toBeVisible()
+
+  await page.clock.runFor(10_000)
+  await page.getByTestId('order-card').first().getByRole('button').click()
+  // El pedido elegido marca su restaurante y su cliente en el mapa.
+  await expect(map.locator('.map-marker--selected')).toHaveCount(2)
+  await page.keyboard.press('1')
+
+  await expect(free).toHaveCount(2)
+  await expect(map.getByRole('img', { name: 'Repartidor 1' }).locator('.map-pin--toRestaurant, .map-pin--atKitchen')).toHaveCount(1)
 })
