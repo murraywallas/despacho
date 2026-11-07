@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { gameMinuteMs } from './balance.ts'
+import { gameMinuteMs, prototype } from './balance.ts'
 
 test('llegan pedidos a la cola con restaurante y cuenta regresiva, y el cliente aparece en el mapa', async ({
   page,
@@ -13,7 +13,7 @@ test('llegan pedidos a la cola con restaurante y cuenta regresiva, y el cliente 
   // A 2x el primer pedido llega en la mitad del intervalo de balance.json.
   await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
   const card = panel.getByTestId('order-card').first()
-  await expect(card).toBeVisible({ timeout: 8000 })
+  await expect(card).toBeVisible({ timeout: (prototype.orders.spawnIntervalSec * 1000) / 2 + 5000 })
 
   await expect(card).toContainText('Pedido #1')
   await expect(card).toContainText(/[A-D] · \S+/)

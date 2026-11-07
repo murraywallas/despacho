@@ -285,3 +285,23 @@ describe('jugar otra vez', () => {
     expect(useShiftStore.getState().orderQueue.orders).toEqual(first)
   })
 })
+
+describe('cierre de la cocina y del turno', () => {
+  beforeEach(() => useShiftStore.getState().restartShift())
+
+  test('no llegan pedidos nuevos cuando la cocina ya cerró', () => {
+    const { tick } = useShiftStore.getState()
+    const closesAt = prototype.shift.durationSec - prototype.orders.lastOrderBeforeEndSec
+    for (let elapsed = 0; elapsed < prototype.shift.durationSec; elapsed += 1) tick(1)
+    const last = useShiftStore.getState().orderQueue.orders.at(-1)
+    expect(last?.createdAtSec).toBeLessThan(closesAt)
+  })
+
+  test('al terminar el turno no queda ningún pedido abierto: lo no entregado cuenta como cancelado', () => {
+    const { tick } = useShiftStore.getState()
+    for (let elapsed = 0; elapsed < prototype.shift.durationSec; elapsed += 1) tick(1)
+    const orders = useShiftStore.getState().orderQueue.orders
+    expect(orders.length).toBeGreaterThan(0)
+    expect(orders.every((order) => order.status === 'delivered' || order.status === 'cancelled')).toBe(true)
+  })
+})

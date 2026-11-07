@@ -31,6 +31,8 @@ export interface PrototypeBalance {
     readonly urgentBelowSec: number
     /** Customers live at least this far from the restaurant, in meters. */
     readonly minCustomerDistanceM: number
+    /** The kitchen closes this long before the end of the shift: no new orders after that. */
+    readonly lastOrderBeforeEndSec: number
   }
   readonly kitchen: {
     /** Seconds the kitchen needs from the moment an order comes in until the food is ready. */
