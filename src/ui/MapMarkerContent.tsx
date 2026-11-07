@@ -14,6 +14,11 @@ export function MapMarkerContent({ marker }: { marker: MapMarker }) {
   if (marker.kind === 'restaurant') {
     return (
       <span className="map-pin map-pin--restaurant" aria-hidden>
+        {marker.waiting && (
+          <span className={`map-pin__alert map-pin__alert--${marker.waiting.urgency}`}>
+            !{marker.waiting.count > 1 && <span className="map-pin__alert-count">{marker.waiting.count}</span>}
+          </span>
+        )}
         <UtensilsCrossed size={13} strokeWidth={2.5} />
         <span className="map-pin__letter">{marker.label}</span>
       </span>

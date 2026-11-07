@@ -6,7 +6,7 @@ import type { Feature, FeatureCollection, LineString } from 'geojson'
 import { positionOf, type CityMap, type NodeId } from '../game/cityMap'
 import { restaurantOf } from '../game/dispatch'
 import { passedIndex, riderDisplayPosition } from '../game/movement'
-import type { Order } from '../game/orders'
+import type { Order, Urgency } from '../game/orders'
 import type { Rider, RiderStatus } from '../game/riders'
 import { findRoute } from '../game/routing'
 import type { LonLat, StreetGraphFile } from '../game/streetGraph'
@@ -18,45 +18,74 @@ export interface MapMarker {
   readonly key: string
   readonly kind: MarkerKind
   readonly lngLat: LonLat
+  /** What the marker stands for: restaurant, order or rider id. */
+  readonly id: string
   /** Short text on the marker: restaurant letter, order number or rider number. */
   readonly label: string
-  /** Restaurant and customer of the selected order. */
+  /** Restaurant and customer of the selected order, or the selected rider. */
   readonly selected: boolean
+  /** Restaurants only: orders waiting for a rider there, and how urgent the most urgent one is. */
+  readonly waiting?: { readonly count: number; readonly urgency: Urgency }
   /** Riders only: what they are doing and what they ride. */
   readonly rider?: { readonly status: RiderStatus; readonly vehicle: string }
+}
+
+const URGENCY_RANK: Record<Urgency, number> = { normal: 0, urgent: 1, late: 2 }
+
+/** Orders waiting for a rider at a restaurant, the most urgent first. */
+export function waitingAt(orders: readonly Order[], restaurantId: string): Order[] {
+  return orders
+    .filter((order) => order.status === 'pending' && order.restaurantId === restaurantId)
+    .sort((a, b) => a.deadlineAtSec - b.deadlineAtSec)
+}
+
+export interface MapSelection {
+  readonly orderId: string | null
+  readonly riderId: string | null
 }
 
 export function buildMarkers(
   map: CityMap,
   orders: readonly Order[],
   riders: readonly Rider[],
-  selectedOrderId: string | null,
+  selection: MapSelection,
+  urgencyOf: (order: Order) => Urgency,
 ): MapMarker[] {
-  const selected = orders.find((order) => order.id === selectedOrderId)
+  const selected = orders.find((order) => order.id === selection.orderId)
   const selectedRestaurant = selected && restaurantOf(map, selected).id
   return [
-    ...map.restaurants.map((restaurant) => ({
-      key: `restaurant:${restaurant.id}`,
-      kind: 'restaurant' as const,
-      lngLat: positionOf(map, restaurant.node),
-      label: restaurant.label,
-      selected: restaurant.id === selectedRestaurant,
-    })),
+    ...map.restaurants.map((restaurant) => {
+      const waiting = waitingAt(orders, restaurant.id)
+      const urgency = waiting
+        .map(urgencyOf)
+        .reduce<Urgency>((worst, next) => (URGENCY_RANK[next] > URGENCY_RANK[worst] ? next : worst), 'normal')
+      return {
+        key: `restaurant:${restaurant.id}`,
+        kind: 'restaurant' as const,
+        id: restaurant.id,
+        lngLat: positionOf(map, restaurant.node),
+        label: restaurant.label,
+        selected: restaurant.id === selectedRestaurant,
+        ...(waiting.length > 0 ? { waiting: { count: waiting.length, urgency } } : {}),
+      }
+    }),
     ...orders
       .filter((order) => order.status !== 'delivered' && order.status !== 'cancelled')
       .map((order) => ({
         key: `customer:${order.id}`,
         kind: 'customer' as const,
+        id: order.id,
         lngLat: positionOf(map, order.customer),
         label: String(order.number),
-        selected: order.id === selectedOrderId,
+        selected: order.id === selection.orderId,
       })),
     ...riders.map((rider) => ({
       key: `rider:${rider.id}`,
       kind: 'rider' as const,
+      id: rider.id,
       lngLat: riderDisplayPosition(map, rider),
       label: String(rider.number),
-      selected: false,
+      selected: rider.id === selection.riderId,
       rider: { status: rider.status, vehicle: rider.vehicle },
     })),
   ]

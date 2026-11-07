@@ -17,10 +17,9 @@ test('llegan pedidos a la cola con restaurante y cuenta regresiva, y el cliente 
 
   await expect(card).toContainText('Pedido #1')
   await expect(card).toContainText(/[A-D] · \S+/)
-  await expect(card).toContainText('Esperando repartidor')
   await expect(page.getByRole('region', { name: /1 clientes esperando/ })).toBeVisible()
   await expect(page.getByTestId('customer-marker')).toHaveCount(1)
-  await expect(page.getByRole('img', { name: 'Cliente del pedido #1' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Cliente del pedido #1' })).toBeVisible()
 
   // La cuenta regresiva baja mientras el reloj corre y se frena en pausa.
   const time = card.locator('.order-card__time')

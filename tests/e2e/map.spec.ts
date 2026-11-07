@@ -21,8 +21,8 @@ test('el mapa de Nørrebro se ve completo, con restaurantes, repartidores y la a
   // Marcadores: los 4 restaurantes y los 3 repartidores, con nombre para lectores de pantalla.
   await expect(map.getByTestId('restaurant-marker')).toHaveCount(4)
   await expect(map.getByTestId('rider-marker')).toHaveCount(3)
-  await expect(map.getByRole('img', { name: 'A · Pho Søndag' })).toBeVisible()
-  await expect(map.getByRole('img', { name: 'Repartidor 1' })).toBeVisible()
+  await expect(map.getByRole('button', { name: /^A · Pho Søndag/ })).toBeVisible()
+  await expect(map.getByRole('button', { name: 'Repartidor 1' })).toBeVisible()
 
   // Los restaurantes caen dentro del mapa visible.
   for (const marker of await map.getByTestId('restaurant-marker').all()) {
@@ -62,7 +62,7 @@ test('el mapa no deja irse lejos del barrio y se puede acercar', async ({ page }
   expect(visible).toBeGreaterThan(0)
 
   // El botón de acercar mueve los marcadores (el mapa se agranda).
-  const restaurant = map.getByRole('img', { name: 'A · Pho Søndag' })
+  const restaurant = map.getByRole('button', { name: /^A · Pho Søndag/ })
   const before = await restaurant.boundingBox()
   await page.getByRole('button', { name: 'Zoom in' }).click()
   await expect.poll(async () => (await restaurant.boundingBox())?.x).not.toBe(before?.x)
@@ -83,5 +83,5 @@ test('los repartidores son tarjetas: libres en claro, y al despachar pasan a est
   await page.keyboard.press('1')
 
   await expect(free).toHaveCount(2)
-  await expect(map.getByRole('img', { name: 'Repartidor 1' }).locator('.map-pin--toRestaurant, .map-pin--atKitchen')).toHaveCount(1)
+  await expect(map.getByRole('button', { name: 'Repartidor 1' }).locator('.map-pin--toRestaurant, .map-pin--atKitchen')).toHaveCount(1)
 })

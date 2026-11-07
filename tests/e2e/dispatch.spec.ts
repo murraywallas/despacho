@@ -15,8 +15,8 @@ test('elegir un pedido muestra la ETA de los repartidores y la tecla del primero
   const riderPanel = page.getByRole('complementary', { name: /Repartidores/ })
   const riders = riderPanel.getByTestId('rider-card')
 
-  // Sin pedido elegido, no se puede asignar.
-  await expect(riders.first().getByRole('button')).toBeDisabled()
+  // Sin pedido elegido, los libres se pueden elegir primero (el pedido viene después, en el mapa).
+  await expect(riders.first().getByRole('button')).toBeEnabled()
 
   await orders.first().getByRole('button').click()
   await expect(orders.first().getByRole('button')).toHaveAttribute('aria-pressed', 'true')

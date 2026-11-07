@@ -3,10 +3,12 @@ import { assignOrder } from '../../src/game/dispatch'
 import { startTrip } from '../../src/game/movement'
 import type { Order } from '../../src/game/orders'
 import type { Rider } from '../../src/game/riders'
-import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson } from '../../src/map/mapData'
+import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, waitingAt, type MapSelection } from '../../src/map/mapData'
 import { latticeOf, nodeAt, smallCity, smallStreets } from './smallCity'
 
 const map = smallCity([nodeAt(3, 0), nodeAt(0, 4)])
+const NONE: MapSelection = { orderId: null, riderId: null }
+const normal = () => 'normal' as const
 const order = (id: string, number: number, customer: number, status: Order['status'] = 'pending'): Order => ({
   id,
   number,
@@ -24,7 +26,7 @@ describe('marcadores del mapa', () => {
   const riders = [rider(1, nodeAt(0, 0)), rider(2, nodeAt(2, 2))]
 
   test('restaurantes, clientes esperando y repartidores, cada uno con su etiqueta', () => {
-    const markers = buildMarkers(map, orders, riders, null)
+    const markers = buildMarkers(map, orders, riders, NONE, normal)
     expect(markers.map((marker) => [marker.kind, marker.label])).toEqual([
       ['restaurant', 'A'],
       ['restaurant', 'B'],
@@ -36,17 +38,40 @@ describe('marcadores del mapa', () => {
   })
 
   test('cada marcador está donde corresponde', () => {
-    const [restaurantA, , customer] = buildMarkers(map, orders, riders, null)
+    const [restaurantA, , customer] = buildMarkers(map, orders, riders, NONE, normal)
     expect(latticeOf(restaurantA.lngLat)).toEqual({ x: expect.closeTo(3), y: expect.closeTo(0) })
     expect(latticeOf(customer.lngLat)).toEqual({ x: expect.closeTo(3), y: expect.closeTo(4) })
   })
 
   test('el pedido elegido marca su restaurante y su cliente', () => {
-    const markers = buildMarkers(map, orders, riders, 'o1')
+    const markers = buildMarkers(map, orders, riders, { orderId: 'o1', riderId: null }, normal)
     expect(markers.filter((marker) => marker.selected).map((marker) => marker.key)).toEqual([
       'restaurant:r1',
       'customer:o1',
     ])
+  })
+
+  test('el repartidor elegido queda marcado', () => {
+    const markers = buildMarkers(map, orders, riders, { orderId: null, riderId: 'k2' }, normal)
+    expect(markers.filter((marker) => marker.selected).map((marker) => marker.key)).toEqual(['rider:k2'])
+  })
+
+  test('cada restaurante lleva sus pedidos esperando y el más urgente marca el color', () => {
+    const waiting = [order('o1', 1, nodeAt(3, 4)), order('o4', 4, nodeAt(4, 3)), order('o5', 5, nodeAt(2, 4), 'assigned')]
+    const urgencies: Record<string, 'normal' | 'urgent' | 'late'> = { o1: 'normal', o4: 'urgent' }
+    const [restaurantA, restaurantB] = buildMarkers(map, waiting, riders, NONE, (o) => urgencies[o.id] ?? 'normal')
+    expect(restaurantA.waiting).toEqual({ count: 2, urgency: 'urgent' })
+    expect(restaurantB.waiting).toBeUndefined()
+  })
+})
+
+describe('pedidos esperando en un restaurante', () => {
+  test('solo los que esperan repartidor, el de plazo más cercano primero', () => {
+    const later = { ...order('o1', 1, nodeAt(3, 4)), deadlineAtSec: 90 }
+    const sooner = { ...order('o2', 2, nodeAt(4, 4)), deadlineAtSec: 60 }
+    const taken = order('o3', 3, nodeAt(1, 4), 'assigned')
+    const other = { ...order('o4', 4, nodeAt(1, 1)), restaurantId: 'r2' }
+    expect(waitingAt([later, sooner, taken, other], 'r1').map((o) => o.id)).toEqual(['o2', 'o1'])
   })
 })
 

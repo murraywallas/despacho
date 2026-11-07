@@ -1,17 +1,22 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { prototype } from '../game/balance'
 import type { CityMap } from '../game/cityMap'
-import type { Order } from '../game/orders'
+import { restaurantOf } from '../game/dispatch'
+import { urgencyOf, type Order } from '../game/orders'
+import type { Rider } from '../game/riders'
 import { t } from '../i18n'
 import '../map/mapMarkers.css'
 import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
-import { AttributionControl, MapLibreMap, Marker, NavigationControl, type GeoJSONSource } from '../map/maplibre'
+import { AttributionControl, MapLibreMap, NavigationControl, Popup, type GeoJSONSource, type PositionAnchor } from '../map/maplibre'
 import { FALLBACK_STYLE, loadNightStyle } from '../map/nightStyle'
 import { addRouteLayers, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
-import type { Rider } from '../game/riders'
+import { useShiftStore } from '../store/shiftStore'
 import { MapMarkerContent } from './MapMarkerContent'
+import { RestaurantPopup } from './RestaurantPopup'
 import { restaurantName } from './restaurantName'
+import { useMapMarkers, type MarkerAction } from './useMapMarkers'
 
 interface MapViewProps {
   map: CityMap
@@ -24,47 +29,45 @@ interface MapViewProps {
 const FIT_PADDING = 24
 /** How far past the area the player can drag the map, as a share of its size. */
 const DRAG_MARGIN = 0.25
+/** Gap between the popup and the restaurant card (the card stands above its spot), in CSS pixels. */
+const POPUP_OFFSETS: Record<PositionAnchor, [number, number]> = {
+  center: [0, -18],
+  bottom: [0, -40],
+  'bottom-left': [8, -40],
+  'bottom-right': [-8, -40],
+  top: [0, 6],
+  'top-left': [8, 6],
+  'top-right': [-8, 6],
+  left: [18, -18],
+  right: [-18, -18],
+}
 // The game's own streets come from OpenStreetMap too, so the credit stays even without the base map
 // (the base map adds its own: OpenFreeMap, OpenMapTiles).
 const ATTRIBUTION =
   '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>'
 
-function markerText(map: CityMap, marker: MapMarker): string {
-  if (marker.kind === 'restaurant') {
-    const restaurant = map.restaurants.find((candidate) => candidate.label === marker.label)
-    return restaurant ? restaurantName(restaurant) : t('orders.restaurant', { label: marker.label })
-  }
-  if (marker.kind === 'customer') return t('map.customer', { number: marker.label })
-  return t('riders.name', { number: marker.label })
-}
-
-function createMarkerElement(marker: MapMarker): HTMLElement {
-  const element = document.createElement('div')
-  element.className = `map-marker map-marker--${marker.kind}`
-  element.dataset.testid = `${marker.kind}-marker`
-  element.setAttribute('role', 'img')
-  return element
-}
-
 /**
- * The map of the area: MapLibre with the night style, glowing routes for the trips in progress and cards for
- * restaurants and riders. Starts fitted to the area and doesn't let the player drag it far away.
+ * The map of the area, where dispatching happens: restaurants with orders waiting show a "!", a tap opens their
+ * card; riders are tapped to pick them. Night style, glowing routes, fitted to the area.
  */
 export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const instanceRef = useRef<MapLibreMap | null>(null)
-  const placedRef = useRef(new Map<string, Marker>())
-  // Marker elements React draws into (with portals). Changes only when markers come or go.
-  const [elements, setElements] = useState<ReadonlyMap<string, HTMLElement>>(new Map())
+  const popupRef = useRef<Popup | null>(null)
+  const [ready, setReady] = useState(false)
   // Bumped every time a style finishes loading: the route layers have to be added again on top of it.
   const [styleVersion, setStyleVersion] = useState(0)
+  const [openRestaurantId, setOpenRestaurantId] = useState<string | null>(null)
+  const selectedRiderId = useShiftStore((state) => state.selectedRiderId)
+  const nowSec = useShiftStore((state) => state.clock.elapsedSec)
+  const selectOrder = useShiftStore((state) => state.selectOrder)
+  const pickRider = useShiftStore((state) => state.pickRider)
   const streets = map.network.streets
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
     let cancelled = false
-    const placed = placedRef.current
     const instance = new MapLibreMap({
       container,
       style: FALLBACK_STYLE,
@@ -83,62 +86,85 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
       addRouteLayers(instance)
       setStyleVersion((version) => version + 1)
     })
+    instance.on('click', () => setOpenRestaurantId(null))
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenRestaurantId(null)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    instance.once('remove', () => window.removeEventListener('keydown', closeOnEscape))
     instanceRef.current = instance
+    setReady(true)
     void loadNightStyle().then(({ style, online }) => {
       if (!cancelled && online) instance.setStyle(style)
     })
     return () => {
       cancelled = true
-      for (const marker of placed.values()) marker.remove()
-      placed.clear()
-      setElements(new Map())
+      setReady(false)
       instance.remove()
       instanceRef.current = null
     }
   }, [streets])
 
+  const selection = useMemo(() => ({ orderId: selectedOrderId, riderId: selectedRiderId }), [selectedOrderId, selectedRiderId])
+  const urgentBelowSec = prototype.orders.urgentBelowSec
   const markers = useMemo(
-    () => buildMarkers(map, orders, riders, selectedOrderId),
-    [map, orders, riders, selectedOrderId],
+    () => buildMarkers(map, orders, riders, selection, (order) => urgencyOf(order, nowSec, urgentBelowSec)),
+    [map, orders, riders, selection, nowSec, urgentBelowSec],
   )
 
+  const describe = useCallback(
+    (marker: MapMarker) => {
+      if (marker.kind === 'restaurant') {
+        const restaurant = map.restaurants.find((candidate) => candidate.id === marker.id)
+        const name = restaurant ? restaurantName(restaurant) : marker.label
+        return marker.waiting ? t('map.waiting', { name, count: marker.waiting.count }) : name
+      }
+      if (marker.kind === 'customer') return t('map.customer', { number: marker.label })
+      return t('riders.name', { number: marker.label })
+    },
+    [map],
+  )
+
+  const onAction = useCallback<MarkerAction>(
+    (marker) => {
+      if (marker.kind === 'restaurant') setOpenRestaurantId(marker.id)
+      else if (marker.kind === 'rider') pickRider(Number(marker.label))
+      else selectOrder(marker.id)
+    },
+    [pickRider, selectOrder],
+  )
+  const elements = useMapMarkers(instanceRef, ready, markers, describe, onAction)
+
+  // The card shows the selected order's restaurant, or the one the player opened.
+  const selectedOrder = orders.find((order) => order.id === selectedOrderId)
+  const shownRestaurant = selectedOrder ? restaurantOf(map, selectedOrder) : map.restaurants.find((r) => r.id === openRestaurantId)
+  const closePopup = useCallback(() => {
+    setOpenRestaurantId(null)
+    if (selectedOrderId) selectOrder(selectedOrderId)
+  }, [selectOrder, selectedOrderId])
+
+  const [popupElement] = useState(() => document.createElement('div'))
   useEffect(() => {
     const instance = instanceRef.current
-    if (!instance) return
-    const placed = placedRef.current
-    const keep = new Set<string>()
-    let changed = false
-    for (const marker of markers) {
-      keep.add(marker.key)
-      let current = placed.get(marker.key)
-      if (!current) {
-        const anchor = marker.kind === 'customer' ? 'center' : 'bottom'
-        current = new Marker({ element: createMarkerElement(marker), anchor }).setLngLat([...marker.lngLat]).addTo(instance)
-        placed.set(marker.key, current)
-        changed = true
-      } else {
-        current.setLngLat([...marker.lngLat])
-      }
-      const element = current.getElement()
-      element.classList.toggle('map-marker--selected', marker.selected)
-      element.classList.toggle('map-marker--free', marker.rider?.status === 'idle')
-      element.setAttribute('aria-label', markerText(map, marker))
+    if (!instance || !ready) return
+    popupRef.current?.remove()
+    popupRef.current = null
+    if (!shownRestaurant) return
+    // No fixed side: MapLibre opens it where it fits (above the restaurant, or below or beside it near the edges).
+    const popup = new Popup({ closeButton: false, closeOnClick: false, offset: POPUP_OFFSETS, maxWidth: '260px' })
+      .setLngLat([...map.network.streets.nodes[shownRestaurant.node]])
+      .setDOMContent(popupElement)
+      .addTo(instance)
+    popupRef.current = popup
+    return () => {
+      popup.remove()
     }
-    for (const [key, current] of placed) {
-      if (!keep.has(key)) {
-        current.remove()
-        placed.delete(key)
-        changed = true
-      }
-    }
-    if (changed) setElements(new Map([...placed].map(([key, current]) => [key, current.getElement()])))
-  }, [map, markers])
+  }, [ready, map, shownRestaurant, popupElement])
 
   // Riders move every frame, but their routes only change when they pass a crossing: the key says when,
   // so the map gets new route data a few times per trip instead of every frame.
   const routeKey = routesKey(riders)
   const routes = useMemo(() => routesGeoJson(map, riders), [map, routeKey]) // eslint-disable-line react-hooks/exhaustive-deps
-  const selectedOrder = orders.find((order) => order.id === selectedOrderId)
   const idleKey = riders.map((rider) => (rider.status === 'idle' ? rider.node : '-')).join(',')
   const preview = useMemo(
     () => previewGeoJson(map, riders, selectedOrder),
@@ -160,16 +186,17 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
       className="map-view"
       role="region"
       data-testid="map"
-      aria-label={t('map.description', {
-        restaurants: map.restaurants.length,
-        riders: riders.length,
-        customers,
-      })}
+      aria-label={t('map.description', { restaurants: map.restaurants.length, riders: riders.length, customers })}
     >
       {markers.map((marker) => {
         const element = elements.get(marker.key)
         return element ? createPortal(<MapMarkerContent marker={marker} />, element, marker.key) : null
       })}
+      {shownRestaurant &&
+        createPortal(
+          <RestaurantPopup restaurant={shownRestaurant} onClose={closePopup} onDispatched={() => setOpenRestaurantId(null)} />,
+          popupElement,
+        )}
     </div>
   )
 }
