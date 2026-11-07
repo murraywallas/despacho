@@ -9,6 +9,8 @@
 import data from '../../data/balance.json'
 
 export interface PrototypeBalance {
+  /** Seed for everything random in the prototype (restaurant spots, orders). Same seed, same game. */
+  readonly seed: number
   readonly grid: {
     /** Streets per side of the grid. */
     readonly size: number

@@ -6,6 +6,10 @@
   --ink-quiet: #5b6470;
   --accent: #1f2a37;
   --accent-ink: #f5f1e8;
+  --map-bg: #ebe5d8;
+  --map-street: #c4baa6;
+  --map-restaurant: #1f2a37;
+  --map-restaurant-ink: #f5f1e8;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   color: var(--ink);
@@ -22,6 +26,10 @@
     --ink-quiet: #a9b0b9;
     --accent: #f5f1e8;
     --accent-ink: #141a22;
+    --map-bg: #1c242e;
+    --map-street: #3a4552;
+    --map-restaurant: #f5f1e8;
+    --map-restaurant-ink: #141a22;
   }
 }
 
@@ -42,10 +50,21 @@ body {
 }
 
 .shift-screen__map {
+  position: relative;
+  min-height: 0;
   margin: 16px;
-  border: 1px dashed var(--line);
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface);
+  overflow: hidden;
+  background: var(--map-bg);
+}
+
+.map-view {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* Barra superior */
