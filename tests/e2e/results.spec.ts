@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { prototype } from './balance.ts'
 
 // El turno de 5 minutos se acorta con el reloj falso de Playwright: corre en 2x y se adelanta de golpe.
 test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia todo', async ({ page }) => {
@@ -6,7 +7,8 @@ test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia t
   await page.goto('/')
   await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
 
-  await page.clock.runFor(140_000)
+  const halfShiftMs = (prototype.shift.durationSec * 1000) / 2
+  await page.clock.runFor(halfShiftMs - 10_000)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.clock.runFor(12_000)
 
@@ -32,6 +34,6 @@ test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia t
   await expect(page.getByLabel('3 de 3 repartidores libres')).toBeVisible()
 
   // Y el turno nuevo arranca de verdad.
-  await page.clock.runFor(10_500)
+  await page.clock.runFor(prototype.orders.spawnIntervalSec * 1000 + 500)
   await expect(page.getByTestId('order-card')).toHaveCount(1)
 })

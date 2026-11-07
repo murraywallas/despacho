@@ -32,8 +32,8 @@ function setup(seed = prototype.seed): { map: CityMap; run: (nowSec: number) => 
 }
 
 describe('pedidos', () => {
-  test('con el reloj en 60 s hay 6 pedidos', () => {
-    expect(setup().run(60)).toHaveLength(6)
+  test('con el reloj en 60 s hay uno por cada intervalo (6 con un pedido cada 10 s)', () => {
+    expect(setup().run(60)).toHaveLength(Math.floor(60 / settings.spawnIntervalSec))
   })
 
   test('aparece uno cada intervalo de balance.json', () => {
