@@ -65,5 +65,5 @@
   "map.noFreeRiders": "No hay repartidores libres.",
   "map.waiting": "{name}, pedidos esperando: {count}",
   "riders.hintPickFirst": "Elegí un repartidor y después un restaurante con pedidos en el mapa.",
-  "riders.hintPickedRider": "Ahora elegí un pedido: tocá un restaurante con \"!\" en el mapa."
+  "riders.hintPickedRider": "Ahora tocá un restaurante con \"!\" en el mapa: va a buscar el pedido más urgente."
 }

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { clock as clockBalance, prototype } from '../game/balance'
 import type { CityMap } from '../game/cityMap'
 import { setSpeed, togglePause, type ShiftClock } from '../game/clock'
-import type { OrderQueue, OrderSettings } from '../game/orders'
+import { waitingAt, type OrderQueue, type OrderSettings } from '../game/orders'
 import type { Random } from '../game/random'
 import type { Rider } from '../game/riders'
 import { advanceShift, createShift, dispatchOrder, shiftSettingsFrom } from '../game/shift'
@@ -31,6 +31,11 @@ interface ShiftState {
    * gets it; otherwise a free rider stays picked. Works while paused too.
    */
   pickRider: (riderNumber: number) => void
+  /**
+   * With a rider picked, the player taps a restaurant: the rider goes for its most urgent waiting order.
+   * Returns false (and changes nothing) when no rider is picked or nothing waits there.
+   */
+  sendRiderTo: (restaurantId: string) => boolean
   /** Drops both selections (Esc). */
   clearSelection: () => void
   /** "Jugar otra vez": starts the shift over (clock, orders, riders and stars). */
@@ -55,7 +60,7 @@ function newShift(): ShiftData {
   return { ...fresh.shift, selectedOrderId: null, selectedRiderId: null }
 }
 
-export const useShiftStore = create<ShiftState>()((set) => ({
+export const useShiftStore = create<ShiftState>()((set, get) => ({
   ...newShift(),
   restartShift: () => set(newShift()),
   tick: (dtSec) =>
@@ -101,5 +106,14 @@ export const useShiftStore = create<ShiftState>()((set) => ({
       if (rider.status !== 'idle') return state
       return { selectedRiderId: rider.id === state.selectedRiderId ? null : rider.id }
     }),
+  sendRiderTo: (restaurantId) => {
+    const state = get()
+    const order = waitingAt(state.orderQueue.orders, restaurantId)[0]
+    if (!state.selectedRiderId || !order || state.clock.finished) return false
+    const result = dispatchOrder(state.map, state.orderQueue, state.riders, order.id, state.selectedRiderId)
+    if (!result) return false
+    set({ ...result, ...NOTHING_SELECTED })
+    return true
+  },
   clearSelection: () => set(NOTHING_SELECTED),
 }))

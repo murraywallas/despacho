@@ -62,6 +62,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const selectOrder = useShiftStore((state) => state.selectOrder)
   const pickRider = useShiftStore((state) => state.pickRider)
+  const sendRiderTo = useShiftStore((state) => state.sendRiderTo)
   const streets = map.network.streets
 
   useEffect(() => {
@@ -127,11 +128,14 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
 
   const onAction = useCallback<MarkerAction>(
     (marker) => {
-      if (marker.kind === 'restaurant') setOpenRestaurantId(marker.id)
-      else if (marker.kind === 'rider') pickRider(Number(marker.label))
+      if (marker.kind === 'restaurant') {
+        // Rider picked first: tapping the restaurant sends them for its most urgent order, no card in between.
+        if (sendRiderTo(marker.id)) setOpenRestaurantId(null)
+        else setOpenRestaurantId(marker.id)
+      } else if (marker.kind === 'rider') pickRider(Number(marker.label))
       else selectOrder(marker.id)
     },
-    [pickRider, selectOrder],
+    [pickRider, selectOrder, sendRiderTo],
   )
   const elements = useMapMarkers(instanceRef, ready, markers, describe, onAction)
 

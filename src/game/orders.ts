@@ -102,3 +102,10 @@ export function urgencyOf(order: Order, nowSec: number, urgentBelowSec: number):
   if (left < urgentBelowSec) return 'urgent'
   return 'normal'
 }
+
+/** Orders waiting for a rider at a restaurant, the most urgent (closest deadline) first. */
+export function waitingAt(orders: readonly Order[], restaurantId: string): Order[] {
+  return orders
+    .filter((order) => order.status === 'pending' && order.restaurantId === restaurantId)
+    .sort((a, b) => a.deadlineAtSec - b.deadlineAtSec)
+}
