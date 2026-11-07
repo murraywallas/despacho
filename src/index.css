@@ -213,7 +213,6 @@ body {
   gap: 6px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-left-width: 4px;
   border-radius: 6px;
   background: var(--surface);
 }
@@ -251,7 +250,7 @@ body {
 }
 
 .order-card--urgent {
-  border-left-color: var(--urgent);
+  border-color: var(--urgent);
   background: var(--urgent-bg);
 }
 
@@ -260,7 +259,7 @@ body {
 }
 
 .order-card--late {
-  border-left-color: var(--late);
+  border-color: var(--late);
   background: var(--late-bg);
 }
 
