@@ -1,4 +1,11 @@
 {
   "app.title": "Despacho",
-  "app.tagline": "Central de delivery · Copenhague"
+  "topbar.timeLeft": "Tiempo restante del turno",
+  "topbar.paused": "En pausa",
+  "topbar.finished": "Turno terminado",
+  "topbar.pause": "Pausar",
+  "topbar.resume": "Seguir",
+  "topbar.speedLabel": "Velocidad del reloj",
+  "topbar.speedValue": "{speed}x",
+  "shift.mapArea": "Mapa"
 }
