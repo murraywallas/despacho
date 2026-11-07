@@ -37,3 +37,60 @@ describe('pedidos durante el turno', () => {
     expect(orderCount()).toBe(1)
   })
 })
+
+describe('despacho en el estado del turno', () => {
+  beforeEach(() => {
+    const initial = useShiftStore.getInitialState()
+    useShiftStore.setState({
+      clock: createClock(prototype.shift.durationSec),
+      orderQueue: createOrderQueue(orderSettings),
+      riders: initial.riders,
+      selectedOrderId: null,
+    })
+    useShiftStore.getState().tick(interval * 2)
+  })
+
+  const firstOrder = () => useShiftStore.getState().orderQueue.orders[0]
+
+  test('elegir un pedido y después un repartidor lo asigna y limpia la selección', () => {
+    const { selectOrder, assignSelectedTo } = useShiftStore.getState()
+    selectOrder(firstOrder().id)
+    expect(useShiftStore.getState().selectedOrderId).toBe(firstOrder().id)
+    assignSelectedTo(2)
+    const state = useShiftStore.getState()
+    expect(firstOrder()).toMatchObject({ status: 'assigned', riderId: 'k2' })
+    expect(state.riders[1]).toMatchObject({ status: 'toRestaurant', orderId: firstOrder().id })
+    expect(state.selectedOrderId).toBeNull()
+  })
+
+  test('sin pedido elegido, una tecla de repartidor no hace nada', () => {
+    useShiftStore.getState().assignSelectedTo(1)
+    expect(useShiftStore.getState().riders.every((rider) => rider.status === 'idle')).toBe(true)
+  })
+
+  test('un repartidor ocupado no recibe otro pedido y la selección se mantiene', () => {
+    const { selectOrder, assignSelectedTo } = useShiftStore.getState()
+    selectOrder(firstOrder().id)
+    assignSelectedTo(1)
+    const second = useShiftStore.getState().orderQueue.orders[1]
+    selectOrder(second.id)
+    assignSelectedTo(1)
+    expect(useShiftStore.getState().orderQueue.orders[1].status).toBe('pending')
+    expect(useShiftStore.getState().selectedOrderId).toBe(second.id)
+  })
+
+  test('un pedido ya asignado no se puede volver a elegir', () => {
+    const { selectOrder, assignSelectedTo } = useShiftStore.getState()
+    selectOrder(firstOrder().id)
+    assignSelectedTo(1)
+    selectOrder(firstOrder().id)
+    expect(useShiftStore.getState().selectedOrderId).toBeNull()
+  })
+
+  test('volver a tocar el pedido elegido lo deselecciona', () => {
+    const { selectOrder } = useShiftStore.getState()
+    selectOrder(firstOrder().id)
+    selectOrder(firstOrder().id)
+    expect(useShiftStore.getState().selectedOrderId).toBeNull()
+  })
+})

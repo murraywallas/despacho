@@ -18,6 +18,8 @@ export interface Rider {
   readonly vehicle: string
   readonly position: Point
   readonly status: RiderStatus
+  /** Order the rider is working on, when not idle. */
+  readonly orderId?: string
 }
 
 /** Places `count` riders on different intersections, none of them on a restaurant. */
