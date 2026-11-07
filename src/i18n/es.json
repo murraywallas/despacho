@@ -33,5 +33,12 @@
   "riders.eta": "{seconds} s",
   "riders.carrying": "pedido #{number}",
   "orders.delivered": "Entregados: {count}",
-  "riders.kitchenLeft": " ({seconds} s)"
+  "riders.kitchenLeft": " ({seconds} s)",
+  "riders.heat": "{heat}°",
+  "riders.heatLabel": "Temperatura de la comida: {heat} de {max}",
+  "riders.heatCold": "Temperatura de la comida: {heat} de {max}, fría",
+  "orders.cancelled": "Cancelados: {count}",
+  "topbar.rating": "Estrellas",
+  "topbar.ratingValue": "Promedio del turno: {rating} de {max} estrellas",
+  "topbar.ratingNone": "Todavía sin estrellas: llegan con la primera entrega"
 }

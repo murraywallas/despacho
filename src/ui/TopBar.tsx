@@ -2,6 +2,7 @@ import { remainingSec } from '../game/clock'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
 import { formatClock } from './formatClock'
+import { ShiftRating } from './ShiftRating'
 
 export function TopBar() {
   const clock = useShiftStore((state) => state.clock)
@@ -12,7 +13,10 @@ export function TopBar() {
 
   return (
     <header className="top-bar">
-      <h1 className="top-bar__title">{t('app.title')}</h1>
+      <div className="top-bar__start">
+        <h1 className="top-bar__title">{t('app.title')}</h1>
+        <ShiftRating />
+      </div>
 
       <div className="top-bar__clock">
         <span className="top-bar__label">{t('topbar.timeLeft')}</span>

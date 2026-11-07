@@ -8,9 +8,9 @@ import { randomInt, type Random } from './random'
 
 /**
  * pending: waiting for a rider. assigned: a rider is heading to the restaurant or waiting for the kitchen.
- * pickedUp: on its way to the customer. delivered: done. Later: cancelled.
+ * pickedUp: on its way to the customer. delivered: done. cancelled: the customer gave up waiting.
  */
-export type OrderStatus = 'pending' | 'assigned' | 'pickedUp' | 'delivered'
+export type OrderStatus = 'pending' | 'assigned' | 'pickedUp' | 'delivered' | 'cancelled'
 
 export interface Order {
   readonly id: string
@@ -29,6 +29,8 @@ export interface Order {
   readonly pickedUpAtSec?: number
   /** Game second when it reached the customer. */
   readonly deliveredAtSec?: number
+  /** Game second when it was cancelled. */
+  readonly cancelledAtSec?: number
 }
 
 export interface OrderQueue {

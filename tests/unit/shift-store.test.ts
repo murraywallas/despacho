@@ -142,3 +142,36 @@ describe('viaje durante el turno', () => {
     expect(useShiftStore.getState().orderQueue.orders[0].status).toBe('delivered')
   })
 })
+
+describe('cancelación durante el turno', () => {
+  const cancelAt = interval + prototype.orders.deadlineSec + prototype.orders.cancelAfterSec
+
+  beforeEach(() => {
+    const initial = useShiftStore.getInitialState()
+    useShiftStore.setState({
+      clock: createClock(prototype.shift.durationSec),
+      orderQueue: createOrderQueue(orderSettings),
+      riders: initial.riders,
+      selectedOrderId: null,
+    })
+  })
+
+  const firstOrder = () => useShiftStore.getState().orderQueue.orders[0]
+
+  test('un pedido que nadie atiende se cancela al pasar plazo + margen', () => {
+    const { tick } = useShiftStore.getState()
+    tick(cancelAt - 0.1)
+    expect(firstOrder().status).toBe('pending')
+    tick(0.1)
+    expect(firstOrder().status).toBe('cancelled')
+  })
+
+  test('si estaba elegido, la selección se limpia', () => {
+    const { tick, selectOrder } = useShiftStore.getState()
+    tick(interval)
+    selectOrder(firstOrder().id)
+    tick(cancelAt - interval)
+    expect(firstOrder().status).toBe('cancelled')
+    expect(useShiftStore.getState().selectedOrderId).not.toBe(firstOrder().id)
+  })
+})

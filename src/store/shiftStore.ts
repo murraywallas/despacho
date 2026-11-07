@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { clock as clockBalance, prototype } from '../game/balance'
+import { cancelExpired } from '../game/cancellation'
 import { createCityMap, type CityMap } from '../game/cityMap'
 import { createClock, setSpeed, tick, togglePause, type ShiftClock } from '../game/clock'
 import { assignOrder } from '../game/dispatch'
@@ -63,9 +64,14 @@ export const useShiftStore = create<ShiftState>()((set) => ({
         state.clock.elapsedSec,
         movementSettings,
       )
-      const moved = fleet.orders === state.orderQueue.orders ? state.orderQueue : { ...state.orderQueue, orders: [...fleet.orders] }
+      // Deliveries in this step happen before cancellations, so a rider arriving just in time still counts.
+      const after = cancelExpired(fleet.orders, fleet.riders, clock.elapsedSec, prototype.orders.cancelAfterSec)
+      const moved =
+        after.orders === state.orderQueue.orders ? state.orderQueue : { ...state.orderQueue, orders: [...after.orders] }
       const orderQueue = spawnOrders(moved, clock.elapsedSec, state.map, random, orderSettings)
-      return { clock, riders: fleet.riders, orderQueue }
+      const selected = orderQueue.orders.find((order) => order.id === state.selectedOrderId)
+      const selectedOrderId = selected?.status === 'pending' ? state.selectedOrderId : null
+      return { clock, riders: after.riders, orderQueue, selectedOrderId }
     }),
   togglePause: () => set((state) => ({ clock: togglePause(state.clock) })),
   toggleSpeed: () =>
