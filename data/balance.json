@@ -8,10 +8,10 @@
       "durationSec": 300
     },
     "orders": {
-      "spawnIntervalSec": 10,
-      "deadlineSec": 120,
-      "cancelAfterSec": 60,
-      "urgentBelowSec": 30
+      "spawnIntervalSec": 4,
+      "deadlineSec": 60,
+      "cancelAfterSec": 30,
+      "urgentBelowSec": 20
     },
     "kitchen": {
       "waitSec": 5
