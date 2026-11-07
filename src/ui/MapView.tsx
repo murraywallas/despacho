@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { CityMap } from '../game/cityMap'
-import { plannedRoute, restaurantOf } from '../game/dispatch'
+import { restaurantOf } from '../game/dispatch'
+import { remainingRoute, riderDisplayPosition } from '../game/movement'
 import type { Order } from '../game/orders'
 import type { Rider } from '../game/riders'
 import { t } from '../i18n'
@@ -33,12 +34,14 @@ function buildScene(map: CityMap, orders: readonly Order[], riders: readonly Rid
   const selected = orders.find((order) => order.id === selectedId)
   const routes = riders.flatMap((rider) => {
     const order = orders.find((candidate) => candidate.id === rider.orderId)
-    return order ? [plannedRoute(map, rider, order)] : []
+    return order ? [remainingRoute(map, rider, order)] : []
   })
   return {
     map,
-    customers: orders.map((order) => ({ position: order.customer, label: String(order.number) })),
-    riders: riders.map((rider) => ({ position: rider.position, label: String(rider.number) })),
+    customers: orders
+      .filter((order) => order.status !== 'delivered')
+      .map((order) => ({ position: order.customer, label: String(order.number) })),
+    riders: riders.map((rider) => ({ position: riderDisplayPosition(rider), label: String(rider.number) })),
     routes,
     highlight: selected
       ? { restaurant: restaurantOf(map, selected).position, customer: selected.customer }

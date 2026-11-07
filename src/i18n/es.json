@@ -31,5 +31,7 @@
   "orders.status.selected": "Elegido",
   "riders.hintByEta": "Ordenados por llegada al restaurante.",
   "riders.eta": "{seconds} s",
-  "riders.carrying": "pedido #{number}"
+  "riders.carrying": "pedido #{number}",
+  "orders.delivered": "Entregados: {count}",
+  "riders.kitchenLeft": " ({seconds} s)"
 }

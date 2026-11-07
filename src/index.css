@@ -371,3 +371,14 @@ body {
   font-size: 12px;
   font-weight: 600;
 }
+
+.side-panel__meta {
+  margin: -6px 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-quiet);
+}
+
+.rider-card__kitchen {
+  font-variant-numeric: tabular-nums;
+}

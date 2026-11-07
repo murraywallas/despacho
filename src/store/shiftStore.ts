@@ -3,6 +3,7 @@ import { clock as clockBalance, prototype } from '../game/balance'
 import { createCityMap, type CityMap } from '../game/cityMap'
 import { createClock, setSpeed, tick, togglePause, type ShiftClock } from '../game/clock'
 import { assignOrder } from '../game/dispatch'
+import { advanceFleet, startTrip, type MovementSettings } from '../game/movement'
 import { createOrderQueue, spawnOrders, type OrderQueue, type OrderSettings } from '../game/orders'
 import { createRandom } from '../game/random'
 import { createRiders, type Rider } from '../game/riders'
@@ -33,6 +34,11 @@ export const orderSettings: OrderSettings = {
   lastSpawnBeforeSec: prototype.shift.durationSec,
 }
 
+const movementSettings: MovementSettings = {
+  speedBlocksPerSec: prototype.riders.speedBlocksPerSec,
+  kitchenWaitSec: prototype.kitchen.waitSec,
+}
+
 // One random stream for the whole shift: first the map, then the riders, then the orders.
 // Same seed, same shift.
 const random = createRandom(prototype.seed)
@@ -47,8 +53,19 @@ export const useShiftStore = create<ShiftState>()((set) => ({
     set((state) => {
       const clock = tick(state.clock, dtSec)
       if (clock === state.clock) return state
-      const orderQueue = spawnOrders(state.orderQueue, clock.elapsedSec, state.map, random, orderSettings)
-      return orderQueue === state.orderQueue ? { clock } : { clock, orderQueue }
+      // Game seconds that really passed: 0 in pause, double at 2x, cut at the end of the shift.
+      const gameDtSec = clock.elapsedSec - state.clock.elapsedSec
+      const fleet = advanceFleet(
+        state.map,
+        state.riders,
+        state.orderQueue.orders,
+        gameDtSec,
+        state.clock.elapsedSec,
+        movementSettings,
+      )
+      const moved = fleet.orders === state.orderQueue.orders ? state.orderQueue : { ...state.orderQueue, orders: [...fleet.orders] }
+      const orderQueue = spawnOrders(moved, clock.elapsedSec, state.map, random, orderSettings)
+      return { clock, riders: fleet.riders, orderQueue }
     }),
   togglePause: () => set((state) => ({ clock: togglePause(state.clock) })),
   toggleSpeed: () =>
@@ -69,9 +86,12 @@ export const useShiftStore = create<ShiftState>()((set) => ({
       if (!state.selectedOrderId || !rider || state.clock.finished) return state
       const result = assignOrder(state.orderQueue.orders, state.riders, state.selectedOrderId, rider.id)
       if (!result.ok) return state
+      const order = result.orders.find((candidate) => candidate.id === state.selectedOrderId)
       return {
         orderQueue: { ...state.orderQueue, orders: result.orders },
-        riders: result.riders,
+        riders: result.riders.map((candidate) =>
+          candidate.id === rider.id && order ? startTrip(state.map, candidate, order) : candidate,
+        ),
         selectedOrderId: null,
       }
     }),

@@ -61,6 +61,7 @@ export function OrderPanel() {
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
   const selectOrder = useShiftStore((state) => state.selectOrder)
   const pending = orders.filter((order) => order.status === 'pending')
+  const delivered = orders.filter((order) => order.status === 'delivered').length
   const labelOf = (id: string) => restaurants.find((restaurant) => restaurant.id === id)?.label ?? '?'
 
   return (
@@ -71,6 +72,11 @@ export function OrderPanel() {
           {pending.length}
         </span>
       </h2>
+      {delivered > 0 && (
+        <p className="side-panel__meta" data-testid="delivered-count">
+          {t('orders.delivered', { count: delivered })}
+        </p>
+      )}
       {pending.length === 0 ? (
         <p className="side-panel__empty">{orders.length === 0 ? t('orders.empty') : t('orders.allAssigned')}</p>
       ) : (
