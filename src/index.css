@@ -10,6 +10,12 @@
   --map-street: #c4baa6;
   --map-restaurant: #1f2a37;
   --map-restaurant-ink: #f5f1e8;
+  --map-customer: #5b6470;
+  --map-customer-ink: #f5f1e8;
+  --urgent: #9a5b00;
+  --urgent-bg: #f6e3c2;
+  --late: #a12a1f;
+  --late-bg: #f4d3cd;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   color: var(--ink);
@@ -30,6 +36,12 @@
     --map-street: #3a4552;
     --map-restaurant: #f5f1e8;
     --map-restaurant-ink: #141a22;
+    --map-customer: #a9b0b9;
+    --map-customer-ink: #141a22;
+    --urgent: #f0b45c;
+    --urgent-bg: #3a2c16;
+    --late: #f08a7e;
+    --late-bg: #3d1e1b;
   }
 }
 
@@ -49,10 +61,16 @@ body {
   height: 100vh;
 }
 
+.shift-screen__body {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 0;
+}
+
 .shift-screen__map {
   position: relative;
   min-height: 0;
-  margin: 16px;
+  margin: 16px 16px 16px 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
@@ -141,4 +159,107 @@ body {
 .top-bar__button:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* Paneles laterales */
+
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 16px;
+}
+
+.side-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.side-panel__count {
+  min-width: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.side-panel__empty {
+  margin: 0;
+  color: var(--ink-quiet);
+}
+
+.side-panel__list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+/* Tarjeta de pedido */
+
+.order-card {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.order-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.order-card__status {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-quiet);
+}
+
+.order-card__restaurant,
+.order-card__deadline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.order-card__time {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.order-card__tag {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.order-card--urgent {
+  border-left-color: var(--urgent);
+  background: var(--urgent-bg);
+}
+
+.order-card--urgent .order-card__deadline {
+  color: var(--urgent);
+}
+
+.order-card--late {
+  border-left-color: var(--late);
+  background: var(--late-bg);
+}
+
+.order-card--late .order-card__deadline {
+  color: var(--late);
 }

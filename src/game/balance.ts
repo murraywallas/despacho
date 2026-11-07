@@ -24,6 +24,8 @@ export interface PrototypeBalance {
     readonly deadlineSec: number
     /** How long after its deadline an undelivered order is cancelled. */
     readonly cancelAfterSec: number
+    /** An order is shown as urgent when it has less than this left. */
+    readonly urgentBelowSec: number
   }
   readonly kitchen: {
     readonly waitSec: number
