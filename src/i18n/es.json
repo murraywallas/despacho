@@ -8,7 +8,7 @@
   "topbar.speedLabel": "Velocidad del reloj",
   "topbar.speedValue": "{speed}x",
   "shift.mapArea": "Mapa",
-  "map.description": "Mapa: grilla de {size} por {size} calles con {restaurants} restaurantes y {customers} clientes esperando",
+  "map.description": "Mapa: grilla de {size} por {size} calles con {restaurants} restaurantes, {riders} repartidores y {customers} clientes esperando",
   "orders.title": "Pedidos",
   "orders.count": "{count} pedidos",
   "orders.empty": "Todavía no hay pedidos. El primero llega en unos segundos.",
@@ -16,5 +16,13 @@
   "orders.restaurant": "Restaurante {label}",
   "orders.status.pending": "Esperando repartidor",
   "orders.urgent": "Urgente",
-  "orders.late": "Tarde"
+  "orders.late": "Tarde",
+  "riders.title": "Repartidores",
+  "riders.idleCount": "{idle} de {total} repartidores libres",
+  "riders.name": "Repartidor {number}",
+  "riders.status.idle": "Libre",
+  "riders.status.toRestaurant": "Yendo al restaurante",
+  "riders.status.atKitchen": "Esperando la cocina",
+  "riders.status.toCustomer": "Yendo al cliente",
+  "vehicles.bike": "Bicicleta"
 }

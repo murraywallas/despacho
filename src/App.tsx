@@ -2,6 +2,7 @@ import { t } from './i18n'
 import { useShiftStore } from './store/shiftStore'
 import { MapView } from './ui/MapView'
 import { OrderPanel } from './ui/OrderPanel'
+import { RiderPanel } from './ui/RiderPanel'
 import { TopBar } from './ui/TopBar'
 import { useGameLoop } from './ui/useGameLoop'
 import { useKeyboardShortcuts } from './ui/useKeyboardShortcuts'
@@ -9,6 +10,7 @@ import { useKeyboardShortcuts } from './ui/useKeyboardShortcuts'
 export default function App() {
   const map = useShiftStore((state) => state.map)
   const orders = useShiftStore((state) => state.orderQueue.orders)
+  const riders = useShiftStore((state) => state.riders)
   const tick = useShiftStore((state) => state.tick)
   const togglePause = useShiftStore((state) => state.togglePause)
 
@@ -21,8 +23,9 @@ export default function App() {
       <div className="shift-screen__body">
         <OrderPanel />
         <main className="shift-screen__map" aria-label={t('shift.mapArea')}>
-          <MapView map={map} orders={orders} />
+          <MapView map={map} orders={orders} riders={riders} />
         </main>
+        <RiderPanel />
       </div>
     </div>
   )
