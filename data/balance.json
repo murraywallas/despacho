@@ -1,0 +1,307 @@
+{
+  "prototype": {
+    "grid": {
+      "size": 10,
+      "restaurants": 4
+    },
+    "shift": {
+      "durationSec": 300
+    },
+    "orders": {
+      "spawnIntervalSec": 10,
+      "deadlineSec": 120,
+      "cancelAfterSec": 60
+    },
+    "kitchen": {
+      "waitSec": 5
+    },
+    "riders": {
+      "count": 3,
+      "vehicle": "bike",
+      "speedBlocksPerSec": 1
+    },
+    "heat": {
+      "start": 100,
+      "lossPerSec": 1,
+      "coldBelow": 40
+    },
+    "rating": {
+      "max": 5,
+      "latePenalty": 2,
+      "coldPenalty": 1,
+      "min": 1,
+      "cancelled": 1
+    }
+  },
+  "shift": {
+    "winAtLeast": 4,
+    "loseBelow": 3,
+    "minDurationMin": 6,
+    "maxDurationMin": 8
+  },
+  "orders": {
+    "firstLevelDeadlineMin": 25,
+    "lastLevelDeadlineMin": 15,
+    "vipTipMultiplier": 3
+  },
+  "kitchen": {
+    "minWaitMin": 1,
+    "maxWaitMin": 4
+  },
+  "riders": {
+    "speedBonusPerLevelPct": 0.05
+  },
+  "progression": {
+    "unlockAvgRating": 4
+  },
+  "difficulty": {
+    "lastLevelMinEvents": 2,
+    "lastLevelMaxEvents": 3
+  },
+  "tuning": {
+    "maxVehicleSharePct": 0.5,
+    "botShiftsPerLevel": 100,
+    "tooEasyAbove": 4.8,
+    "tooHardBelow": 3
+  },
+  "vehicles": {
+    "bike": {
+      "speedKmh": 18,
+      "capacity": 2,
+      "costPerShiftKr": 150,
+      "rainSpeedPct": -0.1,
+      "snowSpeedPct": -0.3,
+      "canRideInSnow": true,
+      "cobblestoneSpeedPct": 0,
+      "parkingMin": 0,
+      "usesBikeLanes": true,
+      "unlockable": false
+    },
+    "cargo_bike": {
+      "speedKmh": 14,
+      "capacity": 5,
+      "costPerShiftKr": 250,
+      "rainSpeedPct": -0.15,
+      "snowSpeedPct": -0.4,
+      "canRideInSnow": true,
+      "cobblestoneSpeedPct": 0,
+      "parkingMin": 0,
+      "usesBikeLanes": true,
+      "unlockable": true
+    },
+    "e_scooter": {
+      "speedKmh": 20,
+      "capacity": 1,
+      "costPerShiftKr": 180,
+      "rainSpeedPct": -0.25,
+      "canRideInSnow": false,
+      "cobblestoneSpeedPct": 0,
+      "parkingMin": 0,
+      "usesBikeLanes": true,
+      "rangeKm": 25,
+      "unlockable": false
+    },
+    "rollers": {
+      "speedKmh": 15,
+      "capacity": 1,
+      "costPerShiftKr": 100,
+      "rainSpeedPct": -0.4,
+      "canRideInSnow": false,
+      "cobblestoneSpeedPct": -0.5,
+      "parkingMin": 0,
+      "unlockable": false
+    },
+    "skateboard": {
+      "speedKmh": 13,
+      "capacity": 1,
+      "costPerShiftKr": 80,
+      "rainSpeedPct": -0.4,
+      "canRideInSnow": false,
+      "cobblestoneSpeedPct": -0.5,
+      "parkingMin": 0,
+      "allowedInPedestrian": true,
+      "unlockable": false
+    },
+    "motorcycle": {
+      "speedKmh": 30,
+      "capacity": 3,
+      "costPerShiftKr": 400,
+      "rainSpeedPct": -0.15,
+      "snowSpeedPct": -0.4,
+      "canRideInSnow": true,
+      "cobblestoneSpeedPct": 0,
+      "parkingMin": 1,
+      "usesBikeLanes": false,
+      "unlockable": false
+    },
+    "car": {
+      "speedKmh": 25,
+      "capacity": 6,
+      "costPerShiftKr": 600,
+      "rainSpeedPct": 0,
+      "snowSpeedPct": -0.2,
+      "canRideInSnow": true,
+      "cobblestoneSpeedPct": 0,
+      "parkingMin": 2,
+      "usesBikeLanes": false,
+      "allowedInPedestrian": false,
+      "unlockable": false
+    }
+  },
+  "neighborhoods": {
+    "norrebro": {
+      "order": 1,
+      "ordersMin": 10,
+      "ordersMax": 20,
+      "riders": 3,
+      "vehicles": [
+        "bike",
+        "skateboard"
+      ]
+    },
+    "vesterbro": {
+      "order": 2,
+      "ordersMin": 20,
+      "ordersMax": 30,
+      "riders": 4,
+      "vehicles": [
+        "bike",
+        "skateboard",
+        "rollers",
+        "e_scooter"
+      ]
+    },
+    "frederiksberg": {
+      "order": 3,
+      "ordersMin": 25,
+      "ordersMax": 35,
+      "riders": 5,
+      "vehicles": [
+        "bike",
+        "skateboard",
+        "rollers",
+        "e_scooter",
+        "motorcycle"
+      ]
+    },
+    "indre_by": {
+      "order": 4,
+      "ordersMin": 30,
+      "ordersMax": 40,
+      "riders": 6,
+      "vehicles": [
+        "bike",
+        "skateboard",
+        "rollers",
+        "e_scooter",
+        "motorcycle",
+        "car"
+      ]
+    },
+    "christianshavn": {
+      "order": 5,
+      "ordersMin": 30,
+      "ordersMax": 40,
+      "riders": 6,
+      "vehicles": [
+        "bike",
+        "cargo_bike",
+        "skateboard",
+        "rollers",
+        "e_scooter",
+        "motorcycle",
+        "car"
+      ]
+    },
+    "osterbro": {
+      "order": 6,
+      "ordersMin": 35,
+      "ordersMax": 45,
+      "riders": 7,
+      "vehicles": [
+        "bike",
+        "cargo_bike",
+        "skateboard",
+        "rollers",
+        "e_scooter",
+        "motorcycle",
+        "car"
+      ]
+    },
+    "amager_vest": {
+      "order": 7,
+      "ordersMin": 40,
+      "ordersMax": 50,
+      "riders": 8,
+      "vehicles": [
+        "bike",
+        "cargo_bike",
+        "skateboard",
+        "rollers",
+        "e_scooter",
+        "motorcycle",
+        "car"
+      ]
+    },
+    "greater_copenhagen": {
+      "order": 8,
+      "ordersMin": 50,
+      "riders": 10,
+      "vehicles": [
+        "bike",
+        "cargo_bike",
+        "skateboard",
+        "rollers",
+        "e_scooter",
+        "motorcycle",
+        "car"
+      ]
+    }
+  },
+  "events": {
+    "rain": {
+      "effectType": "speed",
+      "inDemo": true,
+      "demandPct": 0.3
+    },
+    "snow": {
+      "effectType": "speed",
+      "inDemo": false
+    },
+    "wind": {
+      "effectType": "speed",
+      "inDemo": true
+    },
+    "marathon": {
+      "effectType": "roads",
+      "inDemo": true
+    },
+    "street_festival": {
+      "effectType": "roads",
+      "inDemo": false
+    },
+    "football_match": {
+      "effectType": "demand",
+      "inDemo": false
+    },
+    "drawbridge": {
+      "effectType": "roads",
+      "inDemo": false,
+      "durationMin": 5,
+      "durationMax": 10
+    },
+    "strike": {
+      "effectType": "fleet",
+      "inDemo": true
+    },
+    "roadworks": {
+      "effectType": "roads",
+      "inDemo": false
+    },
+    "busy_kitchen": {
+      "effectType": "kitchen",
+      "inDemo": false,
+      "kitchenMultiplier": 2
+    }
+  }
+}
