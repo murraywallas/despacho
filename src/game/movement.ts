@@ -62,18 +62,6 @@ export function riderDisplayPosition(map: CityMap, rider: Rider): LonLat {
   return [from[0] + (to[0] - from[0]) * fraction, from[1] + (to[1] - from[1]) * fraction]
 }
 
-/**
- * Crossings left of the trip, from the last one the rider passed to the customer. Changes only when the rider
- * passes a crossing, so whoever draws it doesn't have to redraw every frame.
- */
-export function remainingCrossings(rider: Rider): NodeId[] {
-  const trip = rider.trip
-  if (!trip) return []
-  if (rider.status === 'atKitchen') return [...trip.toCustomer]
-  const ahead = trip.path.slice(passedIndex(trip))
-  return rider.status === 'toRestaurant' ? [...ahead, ...trip.toCustomer.slice(1)] : ahead
-}
-
 /** What is left of the trip, from where the rider is now to the customer. */
 export function remainingRoute(map: CityMap, rider: Rider): LonLat[] {
   const trip = rider.trip

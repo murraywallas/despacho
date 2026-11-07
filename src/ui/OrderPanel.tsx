@@ -4,6 +4,7 @@ import { timeLeftSec, urgencyOf, type Order, type Urgency } from '../game/orders
 import { isReady } from '../game/rating'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
+import { restaurantName } from './restaurantName'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
@@ -19,12 +20,12 @@ function DeadlineIcon({ urgency }: { urgency: Urgency }) {
 interface OrderCardProps {
   order: Order
   nowSec: number
-  restaurantLabel: string
+  restaurantName: string
   selected: boolean
   onSelect: (orderId: string) => void
 }
 
-function OrderCard({ order, nowSec, restaurantLabel, selected, onSelect }: OrderCardProps) {
+function OrderCard({ order, nowSec, restaurantName, selected, onSelect }: OrderCardProps) {
   const urgency = urgencyOf(order, nowSec, prototype.orders.urgentBelowSec)
   const left = timeLeftSec(order, nowSec)
 
@@ -44,7 +45,7 @@ function OrderCard({ order, nowSec, restaurantLabel, selected, onSelect }: Order
         </span>
         <span className="order-card__restaurant">
           <Store size={ICON_SIZE} aria-hidden />
-          {t('orders.restaurant', { label: restaurantLabel })}
+          {restaurantName}
           {isReady(order, nowSec) ? (
             <FoodHeat order={order} nowSec={nowSec} />
           ) : (
@@ -71,7 +72,10 @@ export function OrderPanel() {
   const pending = orders.filter((order) => order.status === 'pending')
   const delivered = orders.filter((order) => order.status === 'delivered').length
   const cancelled = orders.filter((order) => order.status === 'cancelled').length
-  const labelOf = (id: string) => restaurants.find((restaurant) => restaurant.id === id)?.label ?? '?'
+  const nameOf = (id: string) => {
+    const restaurant = restaurants.find((candidate) => candidate.id === id)
+    return restaurant ? restaurantName(restaurant) : '?'
+  }
 
   return (
     <aside className="side-panel" aria-labelledby="order-panel-title">
@@ -98,7 +102,7 @@ export function OrderPanel() {
                 key={order.id}
                 order={order}
                 nowSec={nowSec}
-                restaurantLabel={labelOf(order.restaurantId)}
+                restaurantName={nameOf(order.restaurantId)}
                 selected={order.id === selectedOrderId}
                 onSelect={selectOrder}
               />
