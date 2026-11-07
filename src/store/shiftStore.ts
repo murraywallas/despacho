@@ -4,9 +4,11 @@ import { createCityMap, type CityMap } from '../game/cityMap'
 import { createClock, setSpeed, tick, togglePause, type ShiftClock } from '../game/clock'
 import { createOrderQueue, spawnOrders, type OrderQueue, type OrderSettings } from '../game/orders'
 import { createRandom } from '../game/random'
+import { createRiders, type Rider } from '../game/riders'
 
 interface ShiftState {
   map: CityMap
+  riders: readonly Rider[]
   clock: ShiftClock
   orderQueue: OrderQueue
   /** Advances the game by dtSec real seconds. */
@@ -24,11 +26,14 @@ export const orderSettings: OrderSettings = {
   lastSpawnBeforeSec: prototype.shift.durationSec,
 }
 
-// One random stream for the whole shift: first the map, then the orders. Same seed, same shift.
+// One random stream for the whole shift: first the map, then the riders, then the orders.
+// Same seed, same shift.
 const random = createRandom(prototype.seed)
+const map = createCityMap(prototype.grid.size, prototype.grid.restaurants, random)
 
 export const useShiftStore = create<ShiftState>()((set) => ({
-  map: createCityMap(prototype.grid.size, prototype.grid.restaurants, random),
+  map,
+  riders: createRiders(map, prototype.riders.count, prototype.riders.vehicle, random),
   clock: createClock(prototype.shift.durationSec),
   orderQueue: createOrderQueue(orderSettings),
   tick: (dtSec) =>

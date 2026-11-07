@@ -12,6 +12,8 @@
   --map-restaurant-ink: #f5f1e8;
   --map-customer: #5b6470;
   --map-customer-ink: #f5f1e8;
+  --map-rider: #1f5f8b;
+  --map-rider-ink: #ffffff;
   --urgent: #9a5b00;
   --urgent-bg: #f6e3c2;
   --late: #a12a1f;
@@ -38,6 +40,8 @@
     --map-restaurant-ink: #141a22;
     --map-customer: #a9b0b9;
     --map-customer-ink: #141a22;
+    --map-rider: #6cb4e4;
+    --map-rider-ink: #0d1b26;
     --urgent: #f0b45c;
     --urgent-bg: #3a2c16;
     --late: #f08a7e;
@@ -63,14 +67,14 @@ body {
 
 .shift-screen__body {
   display: grid;
-  grid-template-columns: 280px 1fr;
+  grid-template-columns: 264px 1fr 224px;
   min-height: 0;
 }
 
 .shift-screen__map {
   position: relative;
   min-height: 0;
-  margin: 16px 16px 16px 0;
+  margin: 16px 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
@@ -262,4 +266,51 @@ body {
 
 .order-card--late .order-card__deadline {
   color: var(--late);
+}
+
+/* Tarjeta de repartidor */
+
+.rider-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+/* Rombo con el número: la misma forma y color que el repartidor en el mapa. */
+.rider-card__badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  background: var(--map-rider);
+  color: var(--map-rider-ink);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  font-weight: 700;
+}
+
+.rider-card__body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rider-card__name {
+  font-weight: 600;
+}
+
+.rider-card__vehicle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-quiet);
+}
+
+.rider-card__status {
+  font-size: 12px;
+  font-weight: 600;
 }
