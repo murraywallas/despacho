@@ -49,17 +49,18 @@ describe('números de la pantalla de resultados', () => {
     restaurantId: 'r1',
     customer: { x: 1, y: 1 },
     createdAtSec: 0,
+    readyAtSec: 0,
     deadlineAtSec: 120,
     status: 'pending',
   }
 
   test('cuenta entregados, tarde y cancelados, y promedia las estrellas', () => {
     const orders: Order[] = [
-      { ...base, status: 'delivered', pickedUpAtSec: 100, deliveredAtSec: 110 }, // 5
-      { ...base, status: 'delivered', pickedUpAtSec: 100, deliveredAtSec: 115 }, // 5
-      { ...base, status: 'delivered', pickedUpAtSec: 115, deliveredAtSec: 125 }, // 3, tarde
+      { ...base, status: 'delivered', readyAtSec: 100, deliveredAtSec: 110 }, // 5
+      { ...base, status: 'delivered', readyAtSec: 100, deliveredAtSec: 115 }, // 5
+      { ...base, status: 'delivered', readyAtSec: 115, deliveredAtSec: 125 }, // 3, tarde
       { ...base, status: 'cancelled', cancelledAtSec: 180 }, // 1
-      { ...base, status: 'pickedUp', pickedUpAtSec: 200 }, // sigue en juego: no cuenta
+      { ...base, status: 'pickedUp', readyAtSec: 190, pickedUpAtSec: 200 }, // sigue en juego: no cuenta
     ]
     expect(summarizeShift(orders, heat, rating, thresholds)).toEqual({
       average: 14 / 4,

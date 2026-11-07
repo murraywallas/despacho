@@ -38,7 +38,8 @@ export const triageBot: Bot = (shift, settings) => {
     const closest = rankRiders(shift.map, shift.riders, order, speed)[0]
     if (!closest) return undefined
     const ride = travelTimeSec(shift.map, restaurantOf(shift.map, order).position, order.customer, speed)
-    const arrivesAtSec = now + closest.etaSec + settings.movement.kitchenWaitSec + ride
+    const pickUpAtSec = Math.max(now + closest.etaSec, order.readyAtSec)
+    const arrivesAtSec = pickUpAtSec + ride
     const savable = arrivesAtSec <= order.deadlineAtSec
     const better =
       !best || (savable && !best.savable) || (savable === best.savable && closest.etaSec < best.etaSec)

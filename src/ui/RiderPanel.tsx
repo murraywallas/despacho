@@ -1,12 +1,13 @@
-import { Bike, Snowflake, Thermometer } from 'lucide-react'
+import { Bike } from 'lucide-react'
 import { useMemo } from 'react'
 import { prototype } from '../game/balance'
 import { rankRiders } from '../game/dispatch'
 import type { Order } from '../game/orders'
-import { heatOf, isCold } from '../game/rating'
+import { isReady } from '../game/rating'
 import type { Rider, RiderStatus } from '../game/riders'
 import { t, type TextKey } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
+import { FoodHeat } from './FoodHeat'
 
 const ICON_SIZE = 16
 
@@ -29,25 +30,6 @@ interface RiderCardProps {
   nowSec: number
   canAssign: boolean
   onAssign: (riderNumber: number) => void
-}
-
-/** Heat of the food the rider carries: a number and a thermometer, or a snowflake once it is cold. */
-function FoodHeat({ order, nowSec }: { order: Order; nowSec: number }) {
-  const heat = Math.round(heatOf(order, nowSec, prototype.heat))
-  const cold = isCold(heat, prototype.heat)
-  const label = t(cold ? 'riders.heatCold' : 'riders.heatLabel', { heat, max: prototype.heat.start })
-  return (
-    <span
-      className={`rider-card__heat${cold ? ' rider-card__heat--cold' : ''}`}
-      data-testid="food-heat"
-      role="img"
-      aria-label={label}
-      title={label}
-    >
-      {cold ? <Snowflake size={ICON_SIZE} aria-hidden /> : <Thermometer size={ICON_SIZE} aria-hidden />}
-      {t('riders.heat', { heat })}
-    </span>
-  )
 }
 
 function RiderCard({ rider, etaSec, order, nowSec, canAssign, onAssign }: RiderCardProps) {
@@ -79,7 +61,7 @@ function RiderCard({ rider, etaSec, order, nowSec, canAssign, onAssign }: RiderC
               </span>
             )}
           </span>
-          {rider.status === 'toCustomer' && order && <FoodHeat order={order} nowSec={nowSec} />}
+          {order && isReady(order, nowSec) && <FoodHeat order={order} nowSec={nowSec} />}
         </span>
         {etaSec !== undefined && (
           <span className="rider-card__eta">{t('riders.eta', { seconds: Math.ceil(etaSec) })}</span>

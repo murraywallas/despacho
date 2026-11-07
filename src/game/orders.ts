@@ -7,6 +7,8 @@ import { samePoint, type Point } from './grid'
 import { randomInt, type Random } from './random'
 
 /**
+ * The kitchen starts cooking as soon as an order comes in; the food is ready at readyAtSec.
+ *
  * pending: waiting for a rider. assigned: a rider is heading to the restaurant or waiting for the kitchen.
  * pickedUp: on its way to the customer. delivered: done. cancelled: the customer gave up waiting.
  */
@@ -20,6 +22,8 @@ export interface Order {
   readonly customer: Point
   /** Game second when the order appeared. */
   readonly createdAtSec: number
+  /** Game second when the kitchen has the food ready (and it starts getting cold). */
+  readonly readyAtSec: number
   /** Game second when it should be delivered. */
   readonly deadlineAtSec: number
   readonly status: OrderStatus
@@ -42,6 +46,8 @@ export interface OrderQueue {
 export interface OrderSettings {
   readonly spawnIntervalSec: number
   readonly deadlineSec: number
+  /** Seconds the kitchen needs to have the food ready. */
+  readonly cookSec: number
   /** No orders appear at or after this game second (the end of the shift). */
   readonly lastSpawnBeforeSec: number
 }
@@ -78,6 +84,7 @@ export function spawnOrders(
       restaurantId: restaurant.id,
       customer: randomCustomer(map, restaurant.position, random),
       createdAtSec: nextSpawnAtSec,
+      readyAtSec: nextSpawnAtSec + settings.cookSec,
       deadlineAtSec: nextSpawnAtSec + settings.deadlineSec,
       status: 'pending',
     })

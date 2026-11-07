@@ -38,6 +38,7 @@
   "riders.heatLabel": "Temperatura de la comida: {heat} de {max}",
   "riders.heatCold": "Temperatura de la comida: {heat} de {max}, fría",
   "orders.cancelled": "Cancelados: {count}",
+  "orders.cooking": "En la cocina",
   "topbar.rating": "Estrellas",
   "topbar.ratingValue": "Promedio del turno: {rating} de {max} estrellas",
   "topbar.ratingNone": "Todavía sin estrellas: llegan con la primera entrega",

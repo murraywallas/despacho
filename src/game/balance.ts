@@ -28,7 +28,8 @@ export interface PrototypeBalance {
     readonly urgentBelowSec: number
   }
   readonly kitchen: {
-    readonly waitSec: number
+    /** Seconds the kitchen needs from the moment an order comes in until the food is ready. */
+    readonly cookSec: number
   }
   readonly riders: {
     readonly count: number
@@ -38,7 +39,9 @@ export interface PrototypeBalance {
     readonly speedBlocksPerSec: number
   }
   readonly heat: {
+    /** Heat of the food when the kitchen has it ready. */
     readonly start: number
+    /** Heat lost per second from the moment the food is ready until it is delivered. */
     readonly lossPerSec: number
     readonly coldBelow: number
   }

@@ -15,6 +15,7 @@ const order: Order = {
   number: 1,
   restaurantId: 'r1',
   customer: { x: 3, y: 9 },
+  readyAtSec: 5,
   createdAtSec: 10,
   deadlineAtSec: 130,
   status: 'pending',
