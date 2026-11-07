@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { longestRideMs, prototype } from './balance.ts'
 
 /** Advances the page clock in small steps until the locator has the text (or gives up after maxMs). */
 async function runUntil(page: Page, locator: Locator, text: string, maxMs: number) {
@@ -12,7 +13,7 @@ async function runUntil(page: Page, locator: Locator, text: string, maxMs: numbe
 test('el repartidor va al restaurante, espera la cocina, entrega y queda libre', async ({ page }) => {
   await page.clock.install()
   await page.goto('/')
-  await page.clock.runFor(10_500)
+  await page.clock.runFor(prototype.orders.spawnIntervalSec * 1000 + 500)
 
   const orderPanel = page.getByRole('complementary', { name: /Pedidos/ })
   const riderPanel = page.getByRole('complementary', { name: /Repartidores/ })
@@ -23,8 +24,8 @@ test('el repartidor va al restaurante, espera la cocina, entrega y queda libre',
   const rider = riderPanel.locator(`[data-rider-number="${closest}"]`)
   await expect(rider).toContainText(/Yendo al restaurante|Esperando la cocina/)
 
-  // El viaje más largo posible en la grilla es de unos 40 s de juego.
-  await runUntil(page, rider, 'Esperando la cocina', 25_000)
+  // En el turno de la semilla del juego, el repartidor más cercano llega antes de que la comida esté lista.
+  await runUntil(page, rider, 'Esperando la cocina', longestRideMs)
   await expect(rider).toContainText(/\(\d+ s\)/)
 
   // En pausa no avanza: el tiempo de cocina queda igual.
@@ -35,7 +36,7 @@ test('el repartidor va al restaurante, espera la cocina, entrega y queda libre',
   await page.keyboard.press('Space')
 
   await expect(page.getByTestId('shift-rating')).toHaveText('–')
-  await runUntil(page, rider, 'Yendo al cliente', 10_000)
+  await runUntil(page, rider, 'Yendo al cliente', prototype.kitchen.cookSec * 1000 + 2000)
 
   // La comida viaja todavía caliente (cómo se enfría lo prueban los tests de reglas).
   const heat = rider.getByTestId('food-heat')
@@ -45,7 +46,7 @@ test('el repartidor va al restaurante, espera la cocina, entrega y queda libre',
   expect(value).toBeLessThanOrEqual(100)
   await expect(heat).toHaveAttribute('aria-label', `Temperatura de la comida: ${value} de 100`)
 
-  await runUntil(page, rider, 'Libre', 25_000)
+  await runUntil(page, rider, 'Libre', longestRideMs + 2000)
   await expect(rider.getByTestId('food-heat')).toHaveCount(0)
 
   await expect(orderPanel.getByTestId('delivered-count')).toHaveText('Entregados: 1')
