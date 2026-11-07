@@ -3,7 +3,7 @@
  * The store and the balance bots (autoplay.ts) both play through these functions, so they follow the same rules. Pure.
  */
 import { clock as clockBalance, vehicles, type PrototypeBalance } from './balance'
-import { cancelExpired } from './cancellation'
+import { cancelExpired, closeShift } from './cancellation'
 import { createCityMap, type CityMap } from './cityMap'
 import { createClock, tick, type ShiftClock } from './clock'
 import { assignOrder } from './dispatch'
@@ -45,7 +45,8 @@ export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
       spawnIntervalSec: balance.orders.spawnIntervalSec,
       deadlineSec: balance.orders.deadlineSec,
       cookSec: balance.kitchen.cookSec,
-      lastSpawnBeforeSec: balance.shift.durationSec,
+      // The kitchen closes before the shift ends, so the last orders can still be delivered.
+      lastSpawnBeforeSec: balance.shift.durationSec - balance.orders.lastOrderBeforeEndSec,
       minCustomerDistanceM: balance.orders.minCustomerDistanceM,
     },
     movement: {
@@ -100,7 +101,9 @@ export function advanceShift(
     settings.movement,
   )
   // Deliveries in this step happen before cancellations, so a rider arriving just in time still counts.
-  const after = cancelExpired(fleet.orders, fleet.riders, clock.elapsedSec, settings.cancelAfterSec)
+  const expired = cancelExpired(fleet.orders, fleet.riders, clock.elapsedSec, settings.cancelAfterSec)
+  // The shift just closed: whatever is still undelivered counts as cancelled.
+  const after = clock.finished ? closeShift(expired.orders, expired.riders, clock.elapsedSec) : expired
   const kept =
     after.orders === shift.orderQueue.orders ? shift.orderQueue : { ...shift.orderQueue, orders: [...after.orders] }
   const orderQueue = spawnOrders(kept, clock.elapsedSec, shift.map, random, settings.orders)

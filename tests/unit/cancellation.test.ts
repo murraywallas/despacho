@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { cancelExpired } from '../../src/game/cancellation'
+import { cancelExpired, closeShift } from '../../src/game/cancellation'
 import type { Order } from '../../src/game/orders'
 import type { Rider } from '../../src/game/riders'
 
@@ -53,5 +53,28 @@ describe('cancelación de pedidos vencidos', () => {
     const gone: Order = { ...pending, id: 'o2', status: 'cancelled', cancelledAtSec: 180 }
     const orders = [done, gone]
     expect(cancelExpired(orders, [idle], 1000, CANCEL_AFTER).orders).toBe(orders)
+  })
+})
+
+describe('cierre del turno', () => {
+  test('lo que sigue sin entregar al cierre cuenta como cancelado, y el repartidor queda libre', () => {
+    const carrying: Order = { ...pending, id: 'o2', status: 'pickedUp', riderId: 'k1', pickedUpAtSec: 150 }
+    const busy: Rider = { ...idle, status: 'toCustomer', orderId: 'o2' }
+    const done: Order = { ...pending, id: 'o3', status: 'delivered', deliveredAtSec: 100 }
+    const result = closeShift([pending, carrying, done], [busy], 300)
+    expect(result.orders.map((order) => [order.id, order.status, order.cancelledAtSec])).toEqual([
+      ['o1', 'cancelled', 300],
+      ['o2', 'cancelled', 300],
+      ['o3', 'delivered', undefined],
+    ])
+    expect(result.riders[0]).toMatchObject({ status: 'idle' })
+  })
+
+  test('si todo estaba entregado o cancelado, devuelve los mismos arreglos', () => {
+    const orders = [{ ...pending, status: 'delivered' as const, deliveredAtSec: 100 }]
+    const riders = [idle]
+    const result = closeShift(orders, riders, 300)
+    expect(result.orders).toBe(orders)
+    expect(result.riders).toBe(riders)
   })
 })

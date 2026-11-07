@@ -2,20 +2,21 @@
   "prototype": {
     "shift": {
       "startHour": 18,
-      "durationSec": 300
+      "durationSec": 420
     },
     "restaurants": {
       "count": 4
     },
     "orders": {
-      "spawnIntervalSec": 9,
-      "deadlineSec": 75,
-      "cancelAfterSec": 40,
-      "urgentBelowSec": 20,
-      "minCustomerDistanceM": 400
+      "spawnIntervalSec": 16,
+      "deadlineSec": 150,
+      "cancelAfterSec": 60,
+      "urgentBelowSec": 40,
+      "minCustomerDistanceM": 400,
+      "lastOrderBeforeEndSec": 150
     },
     "kitchen": {
-      "cookSec": 20
+      "cookSec": 15
     },
     "riders": {
       "count": 3,
@@ -23,7 +24,7 @@
     },
     "heat": {
       "start": 100,
-      "lossPerSec": 1.2,
+      "lossPerSec": 0.5,
       "coldBelow": 40
     },
     "rating": {
@@ -36,7 +37,7 @@
     "seed": 2026
   },
   "clock": {
-    "gameSecondsPerRealSecond": 20,
+    "gameSecondsPerRealSecond": 10,
     "fastSpeed": 2
   },
   "shift": {

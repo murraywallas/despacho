@@ -1,11 +1,13 @@
 import { expect, test, type Page } from '@playwright/test'
+import { prototype } from './balance.ts'
 
 /** Speeds up the clock and waits until `count` orders are in the queue, then pauses. */
 async function waitForOrders(page: Page, count: number) {
   await page.goto('/')
   await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
   const orders = page.getByRole('complementary', { name: /Pedidos/ }).getByTestId('order-card')
-  await expect(orders).toHaveCount(count, { timeout: 5000 * count + 3000 })
+  // A 2x, un pedido llega cada medio intervalo de balance.json.
+  await expect(orders).toHaveCount(count, { timeout: (prototype.orders.spawnIntervalSec * 1000 * count) / 2 + 5000 })
   await page.keyboard.press('Space')
   return orders
 }
