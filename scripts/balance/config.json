@@ -1,16 +1,43 @@
 {
   "spreadsheetId": "1ZPT-ptHHiV7kb4wClP_K82nu-DZU7dMXFIwtwAohwHs",
   "output": "data/balance.json",
-  "rules": { "name": "Reglas", "gid": 1 },
+  "rules": {
+    "name": "Reglas",
+    "gid": 1
+  },
   "tables": [
-    { "key": "vehicles", "name": "Vehículos", "gid": 2 },
+    {
+      "key": "vehicles",
+      "name": "Vehículos",
+      "gid": 2
+    },
     {
       "key": "neighborhoods",
       "name": "Barrios",
       "gid": 3,
-      "listColumns": ["vehicles"],
-      "references": { "vehicles": "vehicles" }
+      "listColumns": [
+        "vehicles"
+      ],
+      "references": {
+        "vehicles": "vehicles"
+      }
     },
-    { "key": "events", "name": "Eventos", "gid": 4 }
+    {
+      "key": "events",
+      "name": "Eventos",
+      "gid": 4
+    },
+    {
+      "key": "levels",
+      "name": "Niveles",
+      "gid": 5,
+      "listColumns": [
+        "fleet"
+      ],
+      "references": {
+        "fleet": "vehicles",
+        "neighborhood": "neighborhoods"
+      }
+    }
   ]
 }

@@ -9,13 +9,34 @@ interface BalanceData {
     riders: { fleet: string }
     tools: { reassignPenaltySec: number; callsPerShift: number; callExtendSec: number }
   }
+  levels: Record<
+    string,
+    {
+      startHour: number
+      durationSec: number
+      fleet: string[]
+      spawnIntervalSec: number
+      deadlineSec: number
+    }
+  >
   vehicles: Record<string, { speedKmh: number }>
   clock: { gameSecondsPerRealSecond: number }
 }
 
 const data = JSON.parse(readFileSync(new URL('../../data/balance.json', import.meta.url), 'utf8')) as BalanceData
 
-export const prototype = data.prototype
+/** The level the browser tests play: the first one, opened straight from the address. */
+export const LEVEL = 'lunch'
+export const SHIFT_URL = '/?level=' + LEVEL
+
+const level = data.levels[LEVEL]
+/** The rules of that level: the prototype's (Reglas tab), with the level's numbers on top (Niveles tab). */
+export const prototype = {
+  ...data.prototype,
+  shift: { startHour: level.startHour, durationSec: level.durationSec },
+  riders: { fleet: level.fleet.join(', ') },
+  orders: { ...data.prototype.orders, spawnIntervalSec: level.spawnIntervalSec, deadlineSec: level.deadlineSec },
+}
 
 /** The game clock when the shift starts and when it ends: "18:00", "19:40". */
 function clockAt(seconds: number): string {

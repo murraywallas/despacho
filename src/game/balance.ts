@@ -33,6 +33,10 @@ export interface PrototypeBalance {
     readonly minCustomerDistanceM: number
     /** The kitchen closes this long before the end of the shift: no new orders after that. */
     readonly lastOrderBeforeEndSec: number
+    /** The rush of the shift (optional): from this second to that one, orders come every peakIntervalSec. */
+    readonly peakFromSec?: number
+    readonly peakToSec?: number
+    readonly peakIntervalSec?: number
   }
   readonly kitchen: {
     /** Seconds the kitchen needs from the moment an order comes in until the food is ready. */
@@ -107,7 +111,57 @@ export interface VehicleBalance {
   readonly rangeKm?: number
 }
 
+/**
+ * A row of the Niveles tab: one shift of a neighborhood (lunch, dinner, Friday night). Its numbers replace the
+ * prototype's (Reglas tab); everything else (heat, stars, tools, kitchen) is the same for every level.
+ */
+export interface LevelBalance {
+  /** Position in the neighborhood: 1, 2, 3… */
+  readonly order: number
+  readonly neighborhood: string
+  readonly startHour: number
+  readonly durationSec: number
+  readonly restaurants: number
+  /** One rider per vehicle, in order (ids of the Vehículos tab). */
+  readonly fleet: readonly string[]
+  readonly spawnIntervalSec: number
+  readonly peakFromSec?: number
+  readonly peakToSec?: number
+  readonly peakIntervalSec?: number
+  readonly deadlineSec: number
+  readonly seed: number
+}
+
+export interface ProgressionBalance {
+  /** Average stars in a level needed to unlock the next one. */
+  readonly unlockAvgRating: number
+}
+
 export const prototype: PrototypeBalance = data.prototype
+export const levels: Readonly<Record<string, LevelBalance>> = data.levels
+export const progression: ProgressionBalance = data.progression
+
+/** Level ids in the order they are played. */
+export const levelIds: readonly string[] = Object.keys(levels).sort((a, b) => levels[a].order - levels[b].order)
+
+/** The rules of one level: the prototype's, with the level's own numbers on top. */
+export function levelBalance(base: PrototypeBalance, level: LevelBalance): PrototypeBalance {
+  return {
+    ...base,
+    seed: level.seed,
+    shift: { startHour: level.startHour, durationSec: level.durationSec },
+    restaurants: { count: level.restaurants },
+    riders: { fleet: level.fleet.join(', ') },
+    orders: {
+      ...base.orders,
+      spawnIntervalSec: level.spawnIntervalSec,
+      deadlineSec: level.deadlineSec,
+      peakFromSec: level.peakFromSec,
+      peakToSec: level.peakToSec,
+      peakIntervalSec: level.peakIntervalSec,
+    },
+  }
+}
 export const routing: RoutingBalance = data.routing
 export const shift: ShiftBalance = data.shift
 export const clock: ClockBalance = data.clock

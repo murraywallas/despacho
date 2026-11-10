@@ -1,54 +1,32 @@
-import { useCallback } from 'react'
-import { t } from './i18n'
+import { useEffect } from 'react'
+import { levelIds, progression } from './game/balance'
+import { isUnlocked } from './game/levels'
+import { useProgressStore } from './store/progressStore'
+import { useScreenStore } from './store/screenStore'
 import { useShiftStore } from './store/shiftStore'
-import { MapView } from './ui/MapView'
-import { OrderPanel } from './ui/OrderPanel'
-import { ResultsScreen } from './ui/ResultsScreen'
-import { RiderPanel } from './ui/RiderPanel'
-import { SelectionBar } from './ui/SelectionBar'
-import { TopBar } from './ui/TopBar'
-import { useGameLoop } from './ui/useGameLoop'
-import { useKeyboardShortcuts } from './ui/useKeyboardShortcuts'
+import { BriefingScreen } from './ui/BriefingScreen'
+import { LevelSelect } from './ui/LevelSelect'
+import { ShiftScreen } from './ui/ShiftScreen'
+import { useRecordProgress } from './ui/useRecordProgress'
 import { useSounds } from './ui/useSounds'
-import { useSoundStore } from './store/soundStore'
+
+/** `?level=<id>` opens that level straight away, if it is unlocked (handy to share or test a level). */
+const LEVEL_PARAM = 'level'
 
 export default function App() {
-  const map = useShiftStore((state) => state.map)
-  const orders = useShiftStore((state) => state.orderQueue.orders)
-  const riders = useShiftStore((state) => state.riders)
-  const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
-  const finished = useShiftStore((state) => state.clock.finished)
-  const tick = useShiftStore((state) => state.tick)
-  const togglePause = useShiftStore((state) => state.togglePause)
-  const selectOrder = useShiftStore((state) => state.selectOrder)
-  const pickRider = useShiftStore((state) => state.pickRider)
-  const callCustomer = useShiftStore((state) => state.callCustomer)
-  const toggleMute = useSoundStore((state) => state.toggleMute)
-  const cancelSelection = useCallback(() => selectOrder(null), [selectOrder])
-
-  useGameLoop(tick)
+  const screen = useScreenStore((state) => state.screen)
   useSounds()
-  useKeyboardShortcuts({
-    onTogglePause: togglePause,
-    onPickRider: pickRider,
-    onCancelSelection: cancelSelection,
-    onCallCustomer: callCustomer,
-    onToggleMute: toggleMute,
-    enabled: !finished,
-  })
+  useRecordProgress()
 
-  return (
-    <div className="shift-screen">
-      <TopBar />
-      <div className="shift-screen__body" inert={finished}>
-        <OrderPanel />
-        <main className="shift-screen__map" aria-label={t('shift.mapArea')}>
-          <SelectionBar />
-          <MapView map={map} orders={orders} riders={riders} selectedOrderId={selectedOrderId} />
-        </main>
-        <RiderPanel />
-      </div>
-      {finished && <ResultsScreen />}
-    </div>
-  )
+  useEffect(() => {
+    const levelId = new URLSearchParams(window.location.search).get(LEVEL_PARAM)
+    if (!levelId || !levelIds.includes(levelId)) return
+    if (!isUnlocked(levelIds, useProgressStore.getState().best, levelId, progression.unlockAvgRating)) return
+    useShiftStore.getState().startLevel(levelId)
+    useScreenStore.getState().showShift()
+  }, [])
+
+  if (screen === 'shift') return <ShiftScreen />
+  if (screen === 'briefing') return <BriefingScreen />
+  return <LevelSelect />
 }

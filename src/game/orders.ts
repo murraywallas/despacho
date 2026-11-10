@@ -45,8 +45,17 @@ export interface OrderQueue {
   readonly nextSpawnAtSec: number
 }
 
+/** A rush: between fromSec and toSec of the shift, orders come every intervalSec instead. */
+export interface OrderPeak {
+  readonly fromSec: number
+  readonly toSec: number
+  readonly intervalSec: number
+}
+
 export interface OrderSettings {
   readonly spawnIntervalSec: number
+  /** The rush of the shift, if it has one. */
+  readonly peak?: OrderPeak
   readonly deadlineSec: number
   /** Seconds the kitchen needs to have the food ready. */
   readonly cookSec: number
@@ -56,8 +65,14 @@ export interface OrderSettings {
   readonly lastSpawnBeforeSec: number
 }
 
+/** Seconds until the next order, for an order that appeared at second atSec. */
+export function spawnIntervalAt(settings: OrderSettings, atSec: number): number {
+  const peak = settings.peak
+  return peak && atSec >= peak.fromSec && atSec < peak.toSec ? peak.intervalSec : settings.spawnIntervalSec
+}
+
 export function createOrderQueue(settings: OrderSettings): OrderQueue {
-  return { orders: [], nextSpawnAtSec: settings.spawnIntervalSec }
+  return { orders: [], nextSpawnAtSec: spawnIntervalAt(settings, 0) }
 }
 
 /** Adds every order due up to second of the shift nowSec. Returns the same queue when nothing is due. */
@@ -85,7 +100,7 @@ export function spawnOrders(
       deadlineAtSec: nextSpawnAtSec + settings.deadlineSec,
       status: 'pending',
     })
-    nextSpawnAtSec += settings.spawnIntervalSec
+    nextSpawnAtSec += spawnIntervalAt(settings, nextSpawnAtSec)
   }
   if (orders.length === queue.orders.length) return queue
   return { orders, nextSpawnAtSec }
