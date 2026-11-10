@@ -4,7 +4,7 @@ import { prototype, SHIFT_URL } from './balance.ts'
 /** Speeds up the clock and waits until `count` orders are in the queue, then pauses. */
 async function waitForOrders(page: Page, count: number) {
   await page.goto(SHIFT_URL)
-  await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
+  await page.getByRole('button', { name: '2x', exact: true }).click()
   const orders = page.getByRole('complementary', { name: /Pedidos/ }).getByTestId('order-card')
   // A 2x, un pedido llega cada medio intervalo de balance.json.
   await expect(orders).toHaveCount(count, { timeout: (prototype.orders.spawnIntervalSec * 1000 * count) / 2 + 5000 })

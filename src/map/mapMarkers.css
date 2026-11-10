@@ -88,7 +88,7 @@
   border-radius: 8px;
   background: var(--edge);
   color: var(--night);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 15px;
   text-align: center;
 }
@@ -112,7 +112,7 @@
   background: var(--customer-bg);
   color: var(--customer-ink);
   box-shadow: 0 0 0 2px var(--night);
-  font: 700 11px/1 var(--font-mono);
+  font: 700 12px/1 var(--font-mono);
 }
 
 /* Restaurante y cliente del pedido elegido. */
@@ -128,7 +128,7 @@
 .map-view .maplibregl-ctrl-attrib {
   background: rgb(14 26 51 / 0.8);
   color: #a9b8d6;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .map-view .maplibregl-ctrl-attrib a {
@@ -188,7 +188,7 @@
 }
 
 .map-pin__alert-count {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 

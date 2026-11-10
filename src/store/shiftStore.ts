@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { clock as clockBalance, prototype } from '../game/balance'
+import { clock as clockBalance, clockSpeeds, prototype } from '../game/balance'
 import type { CityMap } from '../game/cityMap'
 import { setSpeed, togglePause, type ShiftClock } from '../game/clock'
 import { reorderStops } from '../game/movement'
@@ -20,6 +20,8 @@ interface ShiftState {
   togglePause: () => void
   /** Switches between normal speed and the fast speed from balance.json. */
   toggleSpeed: () => void
+  /** Sets one of the clock speeds of balance.json (1x, 2x, 3x); any other value is ignored. */
+  setSpeed: (speed: number) => void
   /** Pending order the player picked, waiting for a rider. */
   selectedOrderId: string | null
   /** More pending orders of the same restaurant added to the trip with Shift, in delivery order. */
@@ -132,6 +134,11 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
   toggleSpeed: () =>
     set((state) => {
       const speed = state.clock.speed === NORMAL_SPEED ? clockBalance.fastSpeed : NORMAL_SPEED
+      return { clock: setSpeed(state.clock, speed) }
+    }),
+  setSpeed: (speed) =>
+    set((state) => {
+      if (!clockSpeeds(clockBalance).includes(speed) || state.clock.finished) return state
       return { clock: setSpeed(state.clock, speed) }
     }),
   selectOrder: (orderId, add = false) =>

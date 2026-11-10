@@ -42,7 +42,8 @@
   },
   "clock": {
     "gameSecondsPerRealSecond": 10,
-    "fastSpeed": 2
+    "fastSpeed": 2,
+    "speeds": "1, 2, 3"
   },
   "shift": {
     "winAtLeast": 4,

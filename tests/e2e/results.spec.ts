@@ -7,7 +7,7 @@ test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro p
 test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia todo', async ({ page }) => {
   await page.clock.install()
   await page.goto(SHIFT_URL)
-  await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
+  await page.getByRole('button', { name: '2x', exact: true }).click()
 
   const halfShiftMs = (prototype.shift.durationSec * 1000) / 2
   await page.clock.runFor(halfShiftMs - 10_000)
@@ -31,7 +31,7 @@ test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia t
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page.getByTestId('shift-time')).toHaveText(shiftStartsAt)
   await expect(page.getByTestId('shift-rating')).toHaveText('–')
-  await expect(page.getByRole('button', { name: 'Velocidad del reloj' })).toHaveText('1x')
+  await expect(page.getByRole('button', { name: '1x', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByText('Todavía no hay pedidos. El primero llega en unos segundos.')).toBeVisible()
   await expect(page.getByLabel('3 de 3 repartidores libres')).toBeVisible()
 

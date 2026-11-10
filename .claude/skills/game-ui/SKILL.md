@@ -34,8 +34,12 @@ El fondo es 100 % el mapa interactivo (MapLibre), de borde a borde.
 
 Los paneles parecen el tablero de un controlador aéreo: mucha información, poco aire.
 - Padding de 4 a 8 px dentro de los paneles, y gaps de 2 a 6 px entre filas.
-- Tamaño base del texto: 12–13 px. Los títulos de panel son chicos, en mayúsculas y con tracking,
-  no titulares grandes.
+- Escala de texto (tokens en `src/styles/tokens.css`): **mínimo 12 px**, cuerpo 13 px, números críticos
+  (reloj, cuenta regresiva, ETA) 16 px o más, reloj 28 px. Todo se multiplica por `--text-scale`, el
+  ajuste de tamaño de texto. Es el punto medio entre la densidad de un tablero de control y la
+  legibilidad que pide `game-ui-design` (que, pensada para TV, pide 14 px): acá se juega en un monitor
+  a un brazo de distancia.
+- Los títulos de panel son chicos, en mayúsculas y con tracking, no titulares grandes.
 - Una fila por pedido o repartidor, con los datos alineados en columnas.
 - Nada de tarjetas gordas, sombras grandes, ilustraciones decorativas ni gradientes.
 - Los colores tienen significado (urgente, tarde, elegido, libre, frío) y no se usan para decorar.
@@ -153,6 +157,8 @@ Estas vienen de `CLAUDE.md` y del trabajo hecho; la skill no las reemplaza.
 - [ ] No hay scroll de página a 1440 × 900 ni a 1024 × 768.
 - [ ] El mapa ocupa todo el fondo y ningún panel lo tapa por completo.
 - [ ] Todos los números van en monospace con `tabular-nums`.
-- [ ] Ningún panel tiene padding mayor a 8 px ni texto base mayor a 13 px.
+- [ ] Ningún texto mide menos de 12 px y los números críticos miden 16 px o más.
+- [ ] Ningún panel tiene padding mayor a 8 px.
+- [ ] Cada acción con atajo muestra su tecla dibujada (`Keycap`) y está en la leyenda de `?`.
 - [ ] Se puede despachar con mouse (clics y arrastre) y con teclado.
 - [ ] Hay capturas a 1440 px y 1024 px, en claro y oscuro, adjuntas al Pull Request.

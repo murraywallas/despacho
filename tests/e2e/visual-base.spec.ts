@@ -1,8 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
 import { prototype, SHIFT_URL } from './balance.ts'
 
-/** The smallest text the game shows, in CSS pixels (skill game-ui and task #72). */
-const MIN_TEXT_PX = 11
+/** The smallest text the game shows, in CSS pixels (skill game-ui, tasks #72 and #73). */
+const MIN_TEXT_PX = 12
+/** Critical numbers (clock, countdowns) are at least this big. */
+const CRITICAL_TEXT_PX = 16
 
 /** Page scroll and the smallest visible text, measured in the browser. */
 async function measure(page: Page) {
@@ -33,9 +35,9 @@ async function measure(page: Page) {
   })
 }
 
-test('la pantalla de turno: el mapa de borde a borde, sin scroll y sin textos de menos de 11 px', async ({ page }) => {
+test('la pantalla de turno: el mapa de borde a borde, sin scroll y sin textos de menos de 12 px', async ({ page }) => {
   await page.goto(SHIFT_URL)
-  await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
+  await page.getByRole('button', { name: '2x', exact: true }).click()
   const orders = page.getByRole('complementary', { name: /Pedidos/ }).getByTestId('order-card')
   await expect(orders).toHaveCount(1, { timeout: (prototype.orders.spawnIntervalSec * 1000) / 2 + 5000 })
   await page.keyboard.press('Space')
@@ -50,9 +52,15 @@ test('la pantalla de turno: el mapa de borde a borde, sin scroll y sin textos de
   expect(result.scrollsDown).toBe(false)
   expect(result.scrollsAcross).toBe(false)
   expect(result.smallest, `"${result.smallestText}" mide ${result.smallest} px`).toBeGreaterThanOrEqual(MIN_TEXT_PX)
+
+  // Lo que decide el triage se lee primero: el reloj y la cuenta regresiva de cada pedido.
+  for (const critical of [page.getByTestId('shift-time'), orders.first().locator('.order-card__time')]) {
+    const size = await critical.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize))
+    expect(size).toBeGreaterThanOrEqual(CRITICAL_TEXT_PX)
+  }
 })
 
-test('inicio y briefing entran en la pantalla, sin textos de menos de 11 px', async ({ page }) => {
+test('inicio y briefing entran en la pantalla, sin textos de menos de 12 px', async ({ page }) => {
   await page.goto('/')
   let result = await measure(page)
   expect(result.scrollsDown).toBe(false)

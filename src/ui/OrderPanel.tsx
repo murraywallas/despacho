@@ -2,14 +2,14 @@ import { ChefHat, CircleAlert, Clock, TriangleAlert } from 'lucide-react'
 import { prototype } from '../game/balance'
 import { timeLeftSec, urgencyOf, type Order, type Urgency } from '../game/orders'
 import { isReady } from '../game/rating'
-import { t } from '../i18n'
+import { t, type TextKey } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
 import { restaurantName } from './restaurantName'
 
-const ICON_SIZE = 14
+const ICON_SIZE = 16
 
 function DeadlineIcon({ urgency }: { urgency: Urgency }) {
   if (urgency === 'late') return <CircleAlert size={ICON_SIZE} aria-hidden />
@@ -25,10 +25,20 @@ interface OrderCardProps {
   onSelect: (orderId: string, add: boolean) => void
 }
 
-/** A compact order: number and time left, then restaurant and food heat. */
+/** The urgency in words, next to the color and the icon: amber and red are easy to mix up. */
+const URGENCY_TAG: Partial<Record<Urgency, TextKey>> = {
+  urgent: 'orders.urgentTag',
+  late: 'orders.lateTag',
+}
+
+/**
+ * A compact order. The time left leads (it decides the triage), in green, amber or red with its icon; under it
+ * the order number and restaurant, and the urgency in words when it matters.
+ */
 function OrderCard({ order, nowSec, restaurantName, selected, onSelect }: OrderCardProps) {
   const urgency = urgencyOf(order, nowSec, prototype.orders.urgentBelowSec)
   const left = timeLeftSec(order, nowSec)
+  const tag = left > 0 ? URGENCY_TAG[urgency] : undefined
 
   return (
     <li data-testid="order-card">
@@ -39,16 +49,12 @@ function OrderCard({ order, nowSec, restaurantName, selected, onSelect }: OrderC
         onClick={(event) => onSelect(order.id, event.shiftKey)}
       >
         <span className="order-card__header">
-          <span className="order-card__number">{t('orders.number', { number: order.number })}</span>
           <span className="order-card__deadline">
             <DeadlineIcon urgency={urgency} />
             <span className="order-card__time">
               {left > 0 ? t('orders.minutesLeft', { minutes: gameMinutes(left, gameTime) }) : t('orders.late')}
             </span>
           </span>
-        </span>
-        <span className="order-card__restaurant">
-          <span className="order-card__name">{restaurantName}</span>
           {isReady(order, nowSec) ? (
             <FoodHeat order={order} nowSec={nowSec} />
           ) : (
@@ -56,6 +62,11 @@ function OrderCard({ order, nowSec, restaurantName, selected, onSelect }: OrderC
               <ChefHat size={ICON_SIZE} aria-hidden />
             </span>
           )}
+        </span>
+        <span className="order-card__restaurant">
+          <span className="order-card__number">{t('orders.number', { number: order.number })}</span>
+          <span className="order-card__name">{restaurantName}</span>
+          {tag && <span className={`order-card__tag order-card__tag--${urgency}`}>{t(tag)}</span>}
         </span>
       </button>
     </li>
