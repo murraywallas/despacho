@@ -9,6 +9,8 @@ import { SelectionBar } from './ui/SelectionBar'
 import { TopBar } from './ui/TopBar'
 import { useGameLoop } from './ui/useGameLoop'
 import { useKeyboardShortcuts } from './ui/useKeyboardShortcuts'
+import { useSounds } from './ui/useSounds'
+import { useSoundStore } from './store/soundStore'
 
 export default function App() {
   const map = useShiftStore((state) => state.map)
@@ -21,14 +23,17 @@ export default function App() {
   const selectOrder = useShiftStore((state) => state.selectOrder)
   const pickRider = useShiftStore((state) => state.pickRider)
   const callCustomer = useShiftStore((state) => state.callCustomer)
+  const toggleMute = useSoundStore((state) => state.toggleMute)
   const cancelSelection = useCallback(() => selectOrder(null), [selectOrder])
 
   useGameLoop(tick)
+  useSounds()
   useKeyboardShortcuts({
     onTogglePause: togglePause,
     onPickRider: pickRider,
     onCancelSelection: cancelSelection,
     onCallCustomer: callCustomer,
+    onToggleMute: toggleMute,
     enabled: !finished,
   })
 

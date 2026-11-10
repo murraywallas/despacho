@@ -75,10 +75,26 @@ ocupado, probá de nuevo en unos minutos.
 | `src/store` | Estado del juego |
 | `src/ui` | Componentes de la interfaz |
 | `src/map` | Dibujo del mapa |
+| `src/audio` | Sonidos: qué suena en cada evento y el ambiente de fondo |
 | `src/i18n` | Textos de la interfaz |
+| `public/sounds` | Archivos de sonido |
 | `data` | Números del juego (`balance.json`) y calles de cada barrio (`streets/`) |
 | `tests` | Tests de reglas (`unit`) y de navegador (`e2e`) |
 
 ## Créditos
 
 Calles y mapas © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), bajo licencia ODbL.
+
+Sonidos de [Kenney](https://kenney.nl) (licencia [CC0](https://creativecommons.org/publicdomain/zero/1.0/)):
+
+| Archivo | Original | Pack |
+| --- | --- | --- |
+| `new-order.ogg` | `bong_001.ogg` | [Interface Sounds](https://kenney.nl/assets/interface-sounds) |
+| `dispatch.ogg` | `drop_002.ogg` | Interface Sounds |
+| `delivered.ogg` | `confirmation_002.ogg` | Interface Sounds |
+| `urgent.ogg` | `tick_002.ogg` | Interface Sounds |
+| `late.ogg` | `error_004.ogg` | Interface Sounds |
+| `cancelled.ogg` | `error_008.ogg` | Interface Sounds |
+| `shift-end.ogg` | `jingles_SAX02.ogg` | [Music Jingles](https://kenney.nl/assets/music-jingles) |
+
+El ambiente de fondo (un murmullo grave de ciudad) se genera en el navegador, sin archivo.

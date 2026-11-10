@@ -4,6 +4,7 @@ import { useShiftStore } from '../store/shiftStore'
 import { formatGameTime } from './formatClock'
 import { gameTime } from './gameTime'
 import { ShiftRating } from './ShiftRating'
+import { SoundControls } from './SoundControls'
 
 export function TopBar() {
   const clock = useShiftStore((state) => state.clock)
@@ -42,6 +43,7 @@ export function TopBar() {
       </div>
 
       <div className="top-bar__controls">
+        <SoundControls />
         <span className="top-bar__calls" aria-label={t('topbar.callsLabel', { calls: callsLeft })} data-testid="calls-left">
           <Phone size={14} aria-hidden />
           {callsLeft}
