@@ -6,7 +6,7 @@ interface BalanceData {
     orders: { spawnIntervalSec: number; deadlineSec: number; cancelAfterSec: number }
     kitchen: { cookSec: number }
     shift: { durationSec: number; startHour: number }
-    riders: { vehicle: string }
+    riders: { fleet: string }
   }
   vehicles: Record<string, { speedKmh: number }>
   clock: { gameSecondsPerRealSecond: number }
@@ -29,6 +29,8 @@ export const gameMinuteMs = (60 / data.clock.gameSecondsPerRealSecond) * 1000
 
 // The longest bike ride inside the Nørrebro area is about 5 km of streets.
 const LONGEST_RIDE_M = 5000
-const metersPerSec = ((data.vehicles[prototype.riders.vehicle].speedKmh * 1000) / 3600) * data.clock.gameSecondsPerRealSecond
+// The slowest vehicle of the fleet sets the longest ride.
+const slowestKmh = Math.min(...prototype.riders.fleet.split(',').map((vehicle) => data.vehicles[vehicle.trim()].speedKmh))
+const metersPerSec = ((slowestKmh * 1000) / 3600) * data.clock.gameSecondsPerRealSecond
 /** Milliseconds of play of the longest ride in the area. */
 export const longestRideMs = (LONGEST_RIDE_M / metersPerSec) * 1000

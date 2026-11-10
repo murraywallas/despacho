@@ -2,7 +2,7 @@
  * One step of a shift: the clock, the riders, the cancellations and the new orders, in that order.
  * The store and the balance bots (autoplay.ts) both play through these functions, so they follow the same rules. Pure.
  */
-import { clock as clockBalance, vehicles, type PrototypeBalance } from './balance'
+import { clock as clockBalance, fleetOf, vehicles, type PrototypeBalance } from './balance'
 import { cancelExpired, closeShift } from './cancellation'
 import { createCityMap, type CityMap } from './cityMap'
 import { createClock, tick, type ShiftClock } from './clock'
@@ -10,7 +10,7 @@ import { assignOrder } from './dispatch'
 import { advanceFleet, startTrip, type MovementSettings } from './movement'
 import { createOrderQueue, spawnOrders, type OrderQueue, type OrderSettings } from './orders'
 import { createRandom, type Random } from './random'
-import { norrebroBikeNetwork } from './norrebro'
+import { norrebroBikeNetwork, norrebroNetworkFor } from './norrebro'
 import { createRiders, type Rider } from './riders'
 import type { StreetNetwork } from './routing'
 
@@ -50,7 +50,7 @@ export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
       minCustomerDistanceM: balance.orders.minCustomerDistanceM,
     },
     movement: {
-      metersPerSec: metersPerSecOf(balance.riders.vehicle),
+      metersPerSec: Object.fromEntries(fleetOf(balance).map((vehicle) => [vehicle, metersPerSecOf(vehicle)])),
     },
     cancelAfterSec: balance.orders.cancelAfterSec,
   }
@@ -64,14 +64,17 @@ export function createShift(
   balance: PrototypeBalance,
   seed: number,
   network: StreetNetwork = norrebroBikeNetwork(),
+  networkOf: (vehicle: string) => StreetNetwork = norrebroNetworkFor,
 ): { shift: ShiftSnapshot; random: Random } {
   const random = createRandom(seed)
-  const map = createCityMap(network, balance.restaurants.count, random)
+  const fleet = fleetOf(balance)
+  const networks = Object.fromEntries(fleet.map((vehicle) => [vehicle, networkOf(vehicle)]))
+  const map = createCityMap(network, balance.restaurants.count, random, networks)
   return {
     random,
     shift: {
       map,
-      riders: createRiders(map, balance.riders.count, balance.riders.vehicle, random),
+      riders: createRiders(map, fleet, random),
       clock: createClock(balance.shift.durationSec),
       orderQueue: createOrderQueue(shiftSettingsFrom(balance).orders),
     },

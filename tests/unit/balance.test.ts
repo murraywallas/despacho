@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import data from '../../data/balance.json'
-import { prototype, shift } from '../../src/game/balance'
+import { fleetOf, prototype, shift } from '../../src/game/balance'
 
 /** Every number inside an object, with its path, e.g. ["heat.start", 100]. */
 function numbersIn(value: unknown, path = ''): [string, number][] {
@@ -24,8 +24,10 @@ describe('balance', () => {
     }
   })
 
-  test('el vehículo de los repartidores existe en la pestaña Vehículos', () => {
-    expect(Object.keys(data.vehicles)).toContain(prototype.riders.vehicle)
+  test('los vehículos de la flota existen en la pestaña Vehículos', () => {
+    const fleet = fleetOf(prototype)
+    expect(fleet.length).toBeGreaterThan(0)
+    for (const vehicle of fleet) expect(Object.keys(data.vehicles)).toContain(vehicle)
   })
 
   test('para ganar hacen falta más estrellas que para no perder', () => {

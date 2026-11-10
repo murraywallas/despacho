@@ -19,8 +19,7 @@
       "cookSec": 15
     },
     "riders": {
-      "count": 3,
-      "vehicle": "bike"
+      "fleet": "bike, skateboard, e_scooter"
     },
     "heat": {
       "start": 100,

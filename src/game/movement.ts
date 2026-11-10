@@ -3,41 +3,51 @@
  * ready yet, riding to the customer, delivering.
  * Everything advances with seconds of play, so pause and fast speed come for free. Pure.
  */
-import { positionOf, type CityMap, type NodeId } from './cityMap'
+import { networkFor, positionOf, type CityMap, type NodeId } from './cityMap'
 import { restaurantOf } from './dispatch'
 import type { Order } from './orders'
 import type { Rider, Trip } from './riders'
-import { cumulativeMeters, findRoute } from './routing'
+import { cumulativeMeters, findRoute, type StreetNetwork } from './routing'
 import type { LonLat } from './streetGraph'
 
+/** Meters per second of play of each vehicle, by vehicle id (its speed × game time per real second). */
+export type Speeds = Readonly<Record<string, number>>
+
 export interface MovementSettings {
-  /** How fast riders go, in meters per second of play (vehicle speed × game time per real second). */
-  readonly metersPerSec: number
+  readonly metersPerSec: Speeds
+}
+
+/** How fast a vehicle goes, in meters per second of play. */
+export function speedOf(speeds: Speeds, vehicle: string): number {
+  const speed = speeds[vehicle]
+  if (speed === undefined) throw new Error(`No hay velocidad para el vehículo ${vehicle}.`)
+  return speed
 }
 
 /** Tolerance for floating-point leftovers when a rider arrives exactly at the end of a step. */
 const EPSILON = 1e-9
 
-function routeNodes(map: CityMap, from: NodeId, to: NodeId): NodeId[] {
-  const route = findRoute(map.network, from, to)
+function routeNodes(network: StreetNetwork, from: NodeId, to: NodeId): NodeId[] {
+  const route = findRoute(network, from, to)
   if (!route) throw new Error(`No hay ruta de ${from} a ${to}.`)
   return [...route.nodes]
 }
 
-function leg(map: CityMap, path: readonly NodeId[]): Pick<Trip, 'path' | 'pathMeters' | 'traveledM'> {
-  return { path, pathMeters: cumulativeMeters(map.network, path), traveledM: 0 }
+function leg(network: StreetNetwork, path: readonly NodeId[]): Pick<Trip, 'path' | 'pathMeters' | 'traveledM'> {
+  return { path, pathMeters: cumulativeMeters(network, path), traveledM: 0 }
 }
 
 /** Starts the first leg (to the restaurant) of a rider who just got an order, and plans the second one. */
 export function startTrip(map: CityMap, rider: Rider, order: Order): Rider {
   const restaurant = restaurantOf(map, order).node
+  const network = networkFor(map, rider.vehicle)
   return {
     ...rider,
     trip: {
       orderId: order.id,
-      ...leg(map, routeNodes(map, rider.node, restaurant)),
+      ...leg(network, routeNodes(network, rider.node, restaurant)),
       kitchenLeftSec: 0,
-      toCustomer: routeNodes(map, restaurant, order.customer),
+      toCustomer: routeNodes(network, restaurant, order.customer),
     },
   }
 }
@@ -94,6 +104,8 @@ export function advanceRider(
   let now = startSec
   let pickedUpAtSec: number | undefined
   let deliveredAtSec: number | undefined
+  const network = networkFor(map, rider.vehicle)
+  const metersPerSec = speedOf(settings.metersPerSec, rider.vehicle)
 
   while (current.trip && left > EPSILON) {
     const trip: Trip = current.trip
@@ -107,14 +119,14 @@ export function advanceRider(
       left -= trip.kitchenLeftSec
       now += trip.kitchenLeftSec
       pickedUpAtSec = now
-      current = { ...current, status: 'toCustomer', trip: { ...trip, ...leg(map, trip.toCustomer), kitchenLeftSec: 0 } }
+      current = { ...current, status: 'toCustomer', trip: { ...trip, ...leg(network, trip.toCustomer), kitchenLeftSec: 0 } }
       continue
     }
 
     const remainingM = trip.pathMeters[trip.pathMeters.length - 1] - trip.traveledM
-    const timeToEnd = remainingM / settings.metersPerSec
+    const timeToEnd = remainingM / metersPerSec
     if (left < timeToEnd - EPSILON) {
-      const moved = { ...trip, traveledM: trip.traveledM + left * settings.metersPerSec }
+      const moved = { ...trip, traveledM: trip.traveledM + left * metersPerSec }
       current = { ...current, node: moved.path[passedIndex(moved)], trip: moved }
       left = 0
       break
@@ -129,7 +141,7 @@ export function advanceRider(
         node: end,
         status: 'atKitchen',
         // Food already ready: kitchenLeftSec is 0 and the next pass of the loop picks it up right away.
-        trip: { ...trip, ...leg(map, [end]), kitchenLeftSec: Math.max(0, order.readyAtSec - now) },
+        trip: { ...trip, ...leg(network, [end]), kitchenLeftSec: Math.max(0, order.readyAtSec - now) },
       }
     } else {
       deliveredAtSec = now

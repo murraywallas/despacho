@@ -56,5 +56,5 @@ export function smallCity(restaurantNodes: readonly NodeId[] = [nodeAt(3, 0)], s
     label: String.fromCharCode('A'.charCodeAt(0) + index),
     node,
   }))
-  return { network, restaurants, addresses: Array.from({ length: size * size }, (_, node) => node) }
+  return { network, networks: {}, restaurants, addresses: Array.from({ length: size * size }, (_, node) => node) }
 }

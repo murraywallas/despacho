@@ -18,7 +18,10 @@ export interface Restaurant {
 }
 
 export interface CityMap {
+  /** The streets of the area as a bike sees them: positions, addresses and restaurants are placed on it. */
   readonly network: StreetNetwork
+  /** The streets as each vehicle of the fleet sees them, by vehicle id. */
+  readonly networks: Readonly<Record<string, StreetNetwork>>
   readonly restaurants: readonly Restaurant[]
   /**
    * Crossings where people live: on a street cars can use (not inside a park), and with a route to and from
@@ -50,9 +53,18 @@ function centralNode(network: StreetNetwork): NodeId {
   return best
 }
 
-/** Crossings on streets cars can use, reachable both ways from the middle of the area, in id order. */
-export function findAddresses(network: StreetNetwork, kind?: 'major'): NodeId[] {
-  const reachable = mutuallyReachable(network, centralNode(network))
+/** The streets a vehicle uses on this map (the bike's, for a vehicle without its own). */
+export function networkFor(map: Pick<CityMap, 'network' | 'networks'>, vehicle: string): StreetNetwork {
+  return map.networks[vehicle] ?? map.network
+}
+
+/**
+ * Crossings on streets cars can use, reachable both ways from the middle of the area by every vehicle given,
+ * in id order.
+ */
+export function findAddresses(network: StreetNetwork, kind?: 'major', others: readonly StreetNetwork[] = []): NodeId[] {
+  const everyone = [network, ...others].map((each) => mutuallyReachable(each, centralNode(network)))
+  const reachable = { has: (node: NodeId) => everyone.every((set) => set.has(node)) }
   const nodes = new Set<NodeId>()
   for (const [a, b, , kindIndex, flags] of network.streets.edges) {
     if (!(flags & FLAG.car)) continue
@@ -64,8 +76,13 @@ export function findAddresses(network: StreetNetwork, kind?: 'major'): NodeId[] 
 }
 
 /** Picks `count` different crossings on main streets for the restaurants. */
-export function placeRestaurants(network: StreetNetwork, count: number, random: Random): Restaurant[] {
-  const spots = findAddresses(network, 'major')
+export function placeRestaurants(
+  network: StreetNetwork,
+  count: number,
+  random: Random,
+  others: readonly StreetNetwork[] = [],
+): Restaurant[] {
+  const spots = findAddresses(network, 'major', others)
   if (count > spots.length) throw new Error(`No entran ${count} restaurantes en las avenidas del barrio.`)
   const restaurants: Restaurant[] = []
   while (restaurants.length < count) {
@@ -77,11 +94,19 @@ export function placeRestaurants(network: StreetNetwork, count: number, random: 
   return restaurants
 }
 
-export function createCityMap(network: StreetNetwork, restaurantCount: number, random: Random): CityMap {
+/** The city of a shift. networks: the streets of each vehicle of the fleet, by vehicle id. */
+export function createCityMap(
+  network: StreetNetwork,
+  restaurantCount: number,
+  random: Random,
+  networks: Readonly<Record<string, StreetNetwork>> = {},
+): CityMap {
+  const others = Object.values(networks)
   return {
     network,
-    restaurants: placeRestaurants(network, restaurantCount, random),
-    addresses: findAddresses(network),
+    networks,
+    restaurants: placeRestaurants(network, restaurantCount, random, others),
+    addresses: findAddresses(network, undefined, others),
   }
 }
 

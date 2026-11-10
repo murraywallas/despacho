@@ -3,7 +3,7 @@
  * trips in progress as GeoJSON. Pure, so it is tested without a browser.
  */
 import type { Feature, FeatureCollection, LineString } from 'geojson'
-import { positionOf, type CityMap, type NodeId } from '../game/cityMap'
+import { networkFor, positionOf, type CityMap, type NodeId } from '../game/cityMap'
 import { restaurantOf } from '../game/dispatch'
 import { passedIndex, riderDisplayPosition } from '../game/movement'
 import { waitingAt, type Order, type Urgency } from '../game/orders'
@@ -129,13 +129,14 @@ export function routesGeoJson(map: CityMap, riders: readonly Rider[]): FeatureCo
 export function previewGeoJson(map: CityMap, riders: readonly Rider[], order: Order | undefined): FeatureCollection<LineString> {
   if (!order || order.status !== 'pending') return { type: 'FeatureCollection', features: [] }
   const restaurant = restaurantOf(map, order).node
-  const nodesOf = (from: NodeId, to: NodeId) => findRoute(map.network, from, to)?.nodes ?? []
+  const nodesOf = (from: NodeId, to: NodeId, vehicle?: string) =>
+    findRoute(vehicle ? networkFor(map, vehicle) : map.network, from, to)?.nodes ?? []
   return {
     type: 'FeatureCollection',
     features: [
       ...riders
         .filter((rider) => rider.status === 'idle')
-        .flatMap((rider) => routeLine(map, nodesOf(rider.node, restaurant), 'preview', rider.number)),
+        .flatMap((rider) => routeLine(map, nodesOf(rider.node, restaurant, rider.vehicle), 'preview', rider.number)),
       ...routeLine(map, nodesOf(restaurant, order.customer), 'planned'),
     ],
   }

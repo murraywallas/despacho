@@ -1,51 +1,71 @@
 /**
- * Routes on real streets: the cheapest way between two crossings for a kind of vehicle, with A* (ngraph.path).
- * The cost of a stretch is its length times a factor: a bike prefers cycle tracks and avoids main streets
- * without one. Pure.
+ * Routes on real streets: the quickest way between two crossings for a kind of vehicle, with A* (ngraph.path).
+ * Each vehicle has its own streets (a skateboard may cut through pedestrian ways, a scooter may not) and its own
+ * speed on each stretch (small wheels crawl on cobblestones). The cost of a stretch is the time it takes, times a
+ * preference: a bike prefers cycle tracks and avoids main streets without one. Pure.
  */
 import createGraph, { type Graph } from 'ngraph.graph'
 import { aStar, type PathFinder } from 'ngraph.path'
-import type { RoutingBalance } from './balance'
+import type { RoutingBalance, VehicleBalance } from './balance'
 import { distanceM, FLAG, type LonLat, type StreetGraphFile, type StreetKind } from './streetGraph'
 
 /** How a kind of vehicle uses the streets. */
 export interface RoutingProfile {
-  readonly id: 'bike' | 'car'
-  /** Flag a stretch needs to be usable. */
-  readonly allowedFlag: number
+  readonly id: string
+  /** A stretch is usable when it has any of these flags. */
+  readonly allowedFlags: number
   /** Flag that makes a stretch one-way for this vehicle. */
   readonly onewayFlag: number
-  /** Cost of a stretch as a multiple of its length. */
+  /** Preference for a stretch: its cost is the time it takes times this. */
   readonly factor: (kind: StreetKind, flags: number) => number
-  /** The lowest factor, so the A* estimate never overshoots. */
+  /** Speed on a stretch, as a share of the vehicle's speed (1 = full speed). */
+  readonly speedFactor: (flags: number) => number
+  /** The lowest cost per meter at full speed, so the A* estimate never overshoots. */
   readonly minFactor: number
 }
 
-export function bikeProfile(balance: RoutingBalance): RoutingProfile {
+/** Slowest share of its speed a vehicle keeps, so a bad surface never stops it outright. */
+const MIN_SPEED_FACTOR = 0.1
+
+/** The streets and speeds of a vehicle of the Vehículos tab. */
+export function vehicleProfile(id: string, vehicle: VehicleBalance, balance: RoutingBalance): RoutingProfile {
+  const lanes = vehicle.usesBikeLanes === true
+  const pedestrian = vehicle.allowedInPedestrian === true
+  const onCobbles = Math.max(MIN_SPEED_FACTOR, 1 + (vehicle.cobblestoneSpeedPct ?? 0))
+  const factors = [1, balance.majorWithoutTrackFactor, lanes ? balance.cycleTrackFactor : 1, pedestrian ? 1 : balance.pedestrianFactor]
   return {
-    id: 'bike',
-    allowedFlag: FLAG.bike,
+    id,
+    allowedFlags: FLAG.bike | (pedestrian ? FLAG.foot : 0),
     onewayFlag: FLAG.bikeOneway,
     factor: (kind, flags) => {
-      if (flags & FLAG.cycleTrack) return balance.cycleTrackFactor
-      if (kind === 'major') return balance.majorWithoutTrackFactor
-      if (kind === 'foot') return balance.pedestrianFactor
+      if (lanes && flags & FLAG.cycleTrack) return balance.cycleTrackFactor
+      if (kind === 'major' && !(flags & FLAG.cycleTrack)) return balance.majorWithoutTrackFactor
+      if (kind === 'foot') return pedestrian ? 1 : balance.pedestrianFactor
       return 1
     },
-    minFactor: Math.min(1, balance.cycleTrackFactor, balance.majorWithoutTrackFactor, balance.pedestrianFactor),
+    speedFactor: (flags) => (flags & FLAG.cobblestone ? onCobbles : 1),
+    minFactor: Math.min(...factors),
   }
+}
+
+/** A plain bike: cycle tracks, no pedestrian ways, full speed everywhere. */
+export function bikeProfile(balance: RoutingBalance): RoutingProfile {
+  return vehicleProfile('bike', { speedKmh: 0, capacity: 1, usesBikeLanes: true }, balance)
 }
 
 export const carProfile: RoutingProfile = {
   id: 'car',
-  allowedFlag: FLAG.car,
+  allowedFlags: FLAG.car,
   onewayFlag: FLAG.carOneway,
   factor: () => 1,
+  speedFactor: () => 1,
   minFactor: 1,
 }
 
 interface Stretch {
   readonly lengthM: number
+  /** Meters at full speed that take as long as this stretch: longer than lengthM on slow surfaces. */
+  readonly effectiveM: number
   readonly cost: number
   readonly kind: StreetKind
   readonly flags: number
@@ -67,9 +87,10 @@ export function createNetwork(streets: StreetGraphFile, profile: RoutingProfile)
     if (!existing || stretch.cost < existing.data.cost) graph.addLink(from, to, stretch)
   }
   for (const [a, b, lengthM, kindIndex, flags] of streets.edges) {
-    if (!(flags & profile.allowedFlag)) continue
+    if (!(flags & profile.allowedFlags)) continue
     const kind = streets.kinds[kindIndex]
-    const stretch = { lengthM, cost: lengthM * profile.factor(kind, flags), kind, flags }
+    const effectiveM = lengthM / profile.speedFactor(flags)
+    const stretch = { lengthM, effectiveM, cost: effectiveM * profile.factor(kind, flags), kind, flags }
     add(a, b, stretch)
     if (!(flags & profile.onewayFlag)) add(b, a, stretch)
   }
@@ -86,6 +107,8 @@ export interface StreetRoute {
   /** Crossings from start to end. */
   readonly nodes: readonly number[]
   readonly lengthM: number
+  /** Meters at full speed that take as long as the route (time = effectiveM / speed). */
+  readonly effectiveM: number
 }
 
 // Routes already found, per network. The game asks for the same few routes over and over
@@ -112,12 +135,14 @@ export function findRoute(network: StreetNetwork, from: number, to: number): Str
 function searchRoute(network: StreetNetwork, from: number, to: number): StreetRoute | undefined {
   const { graph } = network
   if (!graph.hasNode(from) || !graph.hasNode(to)) return undefined
-  if (from === to) return { nodes: [from], lengthM: 0 }
+  if (from === to) return { nodes: [from], lengthM: 0, effectiveM: 0 }
   // ngraph.path returns the path from the end back to the start.
   const path = network.finder.find(from, to)
   if (path.length === 0) return undefined
   const nodes = path.map((node) => node.id as number).reverse()
-  return { nodes, lengthM: stretchesOf(network, nodes).reduce((sum, stretch) => sum + stretch.lengthM, 0) }
+  const stretches = stretchesOf(network, nodes)
+  const sum = (pick: (stretch: Stretch) => number) => stretches.reduce((total, stretch) => total + pick(stretch), 0)
+  return { nodes, lengthM: sum((stretch) => stretch.lengthM), effectiveM: sum((stretch) => stretch.effectiveM) }
 }
 
 /** The stretches a route goes through, in order. */
@@ -153,10 +178,13 @@ export function nearestNode(network: StreetNetwork, point: LonLat): number {
   return best
 }
 
-/** Meters from the start of a route to each of its crossings: [0, first stretch, first two stretches, …]. */
+/**
+ * Meters at full speed from the start of a route to each of its crossings: [0, first stretch, first two, …].
+ * A rider moving at their vehicle's speed along these meters takes the real time of each stretch.
+ */
 export function cumulativeMeters(network: StreetNetwork, nodes: readonly number[]): number[] {
   const meters = [0]
-  for (const stretch of stretchesOf(network, nodes)) meters.push(meters[meters.length - 1] + stretch.lengthM)
+  for (const stretch of stretchesOf(network, nodes)) meters.push(meters[meters.length - 1] + stretch.effectiveM)
   return meters
 }
 

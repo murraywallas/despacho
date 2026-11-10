@@ -9,7 +9,7 @@ import { BLOCK_M, latticeOf, nodeAt, smallCity } from './smallCity'
 // Restaurant 3 blocks east of the rider, customer 4 blocks south of the restaurant. One block per second.
 // The food is ready 8 s after dispatch: the rider gets there in 3 s and waits 5 s at the kitchen.
 const map = smallCity([nodeAt(3, 0)])
-const settings: MovementSettings = { metersPerSec: BLOCK_M }
+const settings: MovementSettings = { metersPerSec: { bike: BLOCK_M } }
 const START = 10
 
 const pendingOrder: Order = {

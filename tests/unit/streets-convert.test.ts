@@ -56,9 +56,15 @@ describe('qué calles entran al juego', () => {
     )
   })
 
-  test('peatonal: solo si permite bicis', () => {
-    expect(flagsOf({ highway: 'pedestrian' })).toBeUndefined()
-    expect(flagsOf({ highway: 'pedestrian', bicycle: 'yes' })).toEqual({ kind: 'foot', flags: FLAG.bike })
+  test('peatonal: a pie siempre, en bici solo si lo permite', () => {
+    expect(flagsOf({ highway: 'pedestrian' })).toEqual({ kind: 'foot', flags: FLAG.foot })
+    expect(flagsOf({ highway: 'pedestrian', bicycle: 'yes' })).toEqual({ kind: 'foot', flags: FLAG.bike | FLAG.foot })
+    expect(flagsOf({ highway: 'footway', foot: 'no' })).toBeUndefined()
+  })
+
+  test('adoquines: se marcan; las baldosas lisas no', () => {
+    expect((flagsOf({ highway: 'residential', surface: 'sett' })?.flags ?? 0) & FLAG.cobblestone).toBeTruthy()
+    expect((flagsOf({ highway: 'residential', surface: 'paving_stones' })?.flags ?? 0) & FLAG.cobblestone).toBe(0)
   })
 
   test('fuera: veredas, privadas, estacionamientos, escaleras y no calles', () => {
