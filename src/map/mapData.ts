@@ -24,6 +24,10 @@ export interface MapMarker {
   readonly label: string
   /** Restaurant and customer of the selected order, or the selected rider. */
   readonly selected: boolean
+  /** Restaurant and customer of the order under the mouse in the queue. */
+  readonly highlighted?: boolean
+  /** Customers only: how urgent their order is (the dot takes its color and, when late, another shape). */
+  readonly urgency?: Urgency
   /** Restaurants only: orders waiting for a rider there, and how urgent the most urgent one is. */
   readonly waiting?: { readonly count: number; readonly urgency: Urgency }
   /** Riders only: what they are doing and what they ride. */
@@ -36,6 +40,8 @@ export interface MapSelection {
   /** Orders picked for the next trip (the first one and the ones added with Shift). */
   readonly orderIds: readonly string[]
   readonly riderId: string | null
+  /** Order under the mouse in the queue, if any. */
+  readonly hoveredOrderId?: string | null
 }
 
 export function buildMarkers(
@@ -47,6 +53,8 @@ export function buildMarkers(
 ): MapMarker[] {
   const selected = orders.find((order) => order.id === selection.orderIds[0])
   const selectedRestaurant = selected && restaurantOf(map, selected).id
+  const hovered = orders.find((order) => order.id === selection.hoveredOrderId)
+  const hoveredRestaurant = hovered && restaurantOf(map, hovered).id
   return [
     ...map.restaurants.map((restaurant) => {
       const waiting = waitingAt(orders, restaurant.id)
@@ -60,6 +68,7 @@ export function buildMarkers(
         lngLat: positionOf(map, restaurant.node),
         label: restaurant.label,
         selected: restaurant.id === selectedRestaurant,
+        highlighted: restaurant.id === hoveredRestaurant,
         ...(waiting.length > 0 ? { waiting: { count: waiting.length, urgency } } : {}),
       }
     }),
@@ -72,6 +81,8 @@ export function buildMarkers(
         lngLat: positionOf(map, order.customer),
         label: String(order.number),
         selected: selection.orderIds.includes(order.id),
+        highlighted: order.id === selection.hoveredOrderId,
+        urgency: urgencyOf(order),
       })),
     ...riders.map((rider) => ({
       key: `rider:${rider.id}`,
@@ -129,11 +140,15 @@ export function routesGeoJson(
   return { type: 'FeatureCollection', features }
 }
 
-/** For the selected order: the way each free rider would ride to its restaurant, and then on to the customer. */
+/**
+ * For the selected order: the way each free rider would ride to its restaurant, and then on to the customer.
+ * Without `withRiders` (an order under the mouse), only the ride from the restaurant to the customer.
+ */
 export function previewGeoJson(
   map: CityMap,
   riders: readonly Rider[],
   selected: readonly Order[],
+  withRiders = true,
 ): FeatureCollection<LineString> {
   const trip = selected.filter((order) => order.status === 'pending')
   if (trip.length === 0) return { type: 'FeatureCollection', features: [] }
@@ -149,7 +164,7 @@ export function previewGeoJson(
     type: 'FeatureCollection',
     features: [
       ...riders
-        .filter((rider) => rider.status === 'idle')
+        .filter((rider) => withRiders && rider.status === 'idle')
         .flatMap((rider) => routeLine(map, nodesOf(rider.node, restaurant, rider.vehicle), 'preview', rider.number)),
       ...planned,
     ],

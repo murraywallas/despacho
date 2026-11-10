@@ -30,7 +30,7 @@ export function MapMarkerContent({ marker }: { marker: MapMarker }) {
     )
   }
   return (
-    <span className="map-dot" aria-hidden>
+    <span className={`map-dot map-dot--${marker.urgency ?? 'normal'}`} aria-hidden>
       {marker.label}
     </span>
   )

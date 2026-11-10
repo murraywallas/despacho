@@ -6,6 +6,8 @@ import { browserStorage } from './safeStorage'
 interface ProgressState {
   /** Best average stars of each level finished. */
   best: Progress
+  /** Shifts finished in this browser, of any level (the first ones show how-to hints). */
+  played: number
   /** Saves a finished shift; only a better result replaces the old one. */
   record: (levelId: string, average: number) => void
 }
@@ -15,8 +17,14 @@ export const useProgressStore = create<ProgressState>()(
   persist(
     (set) => ({
       best: {},
-      record: (levelId, average) => set((state) => ({ best: recordResult(state.best, levelId, average) })),
+      played: 0,
+      record: (levelId, average) =>
+        set((state) => ({ best: recordResult(state.best, levelId, average), played: state.played + 1 })),
     }),
-    { name: 'despacho-progress', storage: browserStorage, partialize: (state) => ({ best: state.best }) },
+    {
+      name: 'despacho-progress',
+      storage: browserStorage,
+      partialize: (state) => ({ best: state.best, played: state.played }),
+    },
   ),
 )

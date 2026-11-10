@@ -5,7 +5,9 @@ import { Keycap } from './Keycap'
 /** Every shortcut of the shift, in the order a player meets them. */
 const SHORTCUTS: readonly { keys: readonly string[]; text: TextKey }[] = [
   { keys: ['␣'], text: 'shortcuts.pause' },
+  { keys: ['↑', '↓'], text: 'shortcuts.nextOrder' },
   { keys: ['1', '…', '9'], text: 'shortcuts.rider' },
+  { keys: [t('shortcuts.dragKey')], text: 'shortcuts.drag' },
   { keys: ['⇧', t('shortcuts.click')], text: 'shortcuts.addOrder' },
   { keys: ['L'], text: 'shortcuts.call' },
   { keys: ['M'], text: 'shortcuts.mute' },

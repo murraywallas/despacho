@@ -1,104 +1,15 @@
 import { useMemo } from 'react'
 import { capacityOf, rankRiders } from '../game/dispatch'
 import { ordersOf } from '../game/movement'
-import type { Order } from '../game/orders'
-import { isReady } from '../game/rating'
-import type { Rider, RiderStatus } from '../game/riders'
-import { t, type TextKey } from '../i18n'
-import { settings, useShiftStore } from '../store/shiftStore'
-import { gameMinutes } from './formatClock'
-import { gameTime } from './gameTime'
-import { FoodHeat } from './FoodHeat'
-import { RiderStops } from './RiderStops'
-import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
+import type { Rider } from '../game/riders'
+import { t } from '../i18n'
+import { usePointerStore } from '../store/pointerStore'
+import { useProgressStore } from '../store/progressStore'
+import { selectedOrderIds, settings, useShiftStore } from '../store/shiftStore'
+import { RiderCard } from './RiderCard'
 
-const ICON_SIZE = 16
-
-const STATUS_TEXT: Record<RiderStatus, TextKey> = {
-  idle: 'riders.status.idle',
-  toRestaurant: 'riders.status.toRestaurant',
-  atKitchen: 'riders.status.atKitchen',
-  toCustomer: 'riders.status.toCustomer',
-}
-
-interface RiderCardProps {
-  rider: Rider
-  /** Seconds to the selected order's restaurant; undefined when nothing is selected or the rider is busy. */
-  etaSec?: number
-  /** The rider's orders, in delivery order. */
-  trip: readonly Order[]
-  orders: readonly Order[]
-  nowSec: number
-  /** Free riders can be picked; with orders picked, picking one gives them the orders. */
-  canPick: boolean
-  /** Free, but the vehicle doesn't carry that many orders. */
-  tooSmallFor?: number
-  selected: boolean
-  onPick: (riderNumber: number) => void
-  /** Picks one of this rider's orders (still at the restaurant) to give it to someone else. */
-  onReassign: (orderId: string) => void
-}
-
-function RiderCard({ rider, etaSec, trip, orders, nowSec, canPick, tooSmallFor, selected, onPick, onReassign }: RiderCardProps) {
-  const reassignable = trip.filter((stop) => stop.status === 'assigned')
-  const vehicleKey = VEHICLE_TEXT[rider.vehicle]
-  const order = trip[0]
-  return (
-    <li data-testid="rider-card" data-rider-number={rider.number}>
-      <button
-        type="button"
-        className={`rider-card rider-card--${rider.status}${selected ? ' rider-card--selected' : ''}`}
-        disabled={!canPick}
-        aria-pressed={selected}
-        onClick={() => onPick(rider.number)}
-        aria-keyshortcuts={String(rider.number)}
-      >
-        <span className="rider-card__badge" aria-hidden>
-          {rider.number}
-        </span>
-        <span className="rider-card__body">
-          <span className="rider-card__name">{t('riders.name', { number: rider.number })}</span>
-          <span className="rider-card__vehicle">
-            <VehicleIcon vehicle={rider.vehicle} size={ICON_SIZE} aria-hidden />
-            {vehicleKey ? t(vehicleKey) : rider.vehicle}
-            <span className="rider-card__capacity">{t('riders.capacity', { count: capacityOf(rider.vehicle) })}</span>
-          </span>
-          <span className="rider-card__status">
-            {t(STATUS_TEXT[rider.status])}
-            {trip.length === 1 && ` · ${t('riders.carrying', { number: order.number })}`}
-            {trip.length > 1 && ` · ${t('riders.carryingMany', { count: trip.length })}`}
-            {rider.status === 'atKitchen' && rider.trip && (
-              <span className="rider-card__kitchen">
-                {t('riders.kitchenLeft', { minutes: gameMinutes(rider.trip.kitchenLeftSec, gameTime) })}
-              </span>
-            )}
-          </span>
-          {order && isReady(order, nowSec) && <FoodHeat order={order} nowSec={nowSec} />}
-          {tooSmallFor !== undefined && <span className="rider-card__note">{t('riders.tooSmall', { count: tooSmallFor })}</span>}
-        </span>
-        {etaSec !== undefined && (
-          <span className="rider-card__eta">{t('riders.eta', { minutes: gameMinutes(etaSec, gameTime) })}</span>
-        )}
-      </button>
-      {reassignable.length > 0 && (
-        <div className="rider-card__tools">
-          {reassignable.map((stop) => (
-            <button
-              key={stop.id}
-              type="button"
-              className="rider-card__reassign"
-              onClick={() => onReassign(stop.id)}
-              aria-label={t('riders.reassignLabel', { number: stop.number })}
-            >
-              {t('riders.reassign', { number: stop.number })}
-            </button>
-          ))}
-        </div>
-      )}
-      <RiderStops rider={rider} orders={orders} nowSec={nowSec} />
-    </li>
-  )
-}
+/** The how-to hint under the title shows during the first shifts only; then the player knows. */
+const HINT_SHIFTS = 2
 
 /**
  * The fleet. A free rider can be picked first (then an order on the map), or after an order: then free riders
@@ -114,6 +25,9 @@ export function RiderPanel() {
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const pickRider = useShiftStore((state) => state.pickRider)
   const selectOrder = useShiftStore((state) => state.selectOrder)
+  const dispatchByDrop = useShiftStore((state) => state.dispatchByDrop)
+  const draggedOrderId = usePointerStore((state) => state.draggedOrderId)
+  const played = useProgressStore((state) => state.played)
   const selectedOrder = orders.find((order) => order.id === selectedOrderId)
   // A picked-up order can't change hands; an assigned one is being reassigned.
   const onTheWay = selectedOrder?.status === 'pickedUp'
@@ -126,6 +40,21 @@ export function RiderPanel() {
   )
   const etaOf = new Map(ranked.map((entry) => [entry.rider.id, entry.etaSec]))
   const fits = (rider: Rider) => capacityOf(rider.vehicle) >= Math.max(1, count)
+  // Dragging an order: free riders whose vehicle carries the trip (the whole batch, if the order is in it).
+  const draggedCount =
+    draggedOrderId && selectedOrderIds({ selectedOrderId, addedOrderIds }).includes(draggedOrderId) ? count : 1
+  const canTakeDragged = (rider: Rider) => rider.status === 'idle' && capacityOf(rider.vehicle) >= draggedCount
+  const hint = onTheWay
+    ? t('riders.hintOnTheWay')
+    : selectedOrder?.status === 'assigned'
+      ? t('riders.hintReassign', { number: selectedOrder.number })
+      : selectedOrder
+        ? t('riders.hintByEta')
+        : selectedRiderId
+          ? t('riders.hintPickedRider')
+          : played < HINT_SHIFTS
+            ? t('riders.hintPickFirst')
+            : null
   // Free riders by ETA first; then free ones whose vehicle is too small for the trip; busy ones last.
   const ordered = selectedOrder && !onTheWay
     ? [
@@ -143,17 +72,7 @@ export function RiderPanel() {
           {idle}/{riders.length}
         </span>
       </h2>
-      <p className="side-panel__hint">
-        {onTheWay
-          ? t('riders.hintOnTheWay')
-          : selectedOrder?.status === 'assigned'
-            ? t('riders.hintReassign', { number: selectedOrder.number })
-            : selectedOrder
-              ? t('riders.hintByEta')
-              : selectedRiderId
-                ? t('riders.hintPickedRider')
-                : t('riders.hintPickFirst')}
-      </p>
+      {hint && <p className="side-panel__hint">{hint}</p>}
       <ol className="side-panel__list">
         {ordered.map((rider) => (
           <RiderCard
@@ -166,8 +85,10 @@ export function RiderPanel() {
             canPick={rider.status === 'idle' && fits(rider) && !onTheWay}
             tooSmallFor={rider.status === 'idle' && !fits(rider) && !onTheWay ? count : undefined}
             selected={rider.id === selectedRiderId}
+            dropTarget={draggedOrderId ? canTakeDragged(rider) : undefined}
             onPick={pickRider}
             onReassign={selectOrder}
+            onDropOrder={dispatchByDrop}
           />
         ))}
       </ol>

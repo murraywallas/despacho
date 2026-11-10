@@ -65,7 +65,7 @@ test('el mapa no deja irse lejos del barrio y se puede acercar', async ({ page }
   // El botón de acercar mueve los marcadores (el mapa se agranda).
   const restaurant = map.getByRole('button', { name: /^A · Pho Søndag/ })
   const before = await restaurant.boundingBox()
-  await page.getByRole('button', { name: 'Zoom in' }).click()
+  await page.getByRole('button', { name: 'Acercar' }).click()
   await expect.poll(async () => (await restaurant.boundingBox())?.x).not.toBe(before?.x)
 })
 

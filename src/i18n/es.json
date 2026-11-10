@@ -72,7 +72,6 @@
   "riders.stopUp": "Entregar antes el pedido #{number}",
   "riders.stopDown": "Entregar después el pedido #{number}",
   "riders.carryingMany": "{count} pedidos",
-  "riders.capacity": "lleva {count}",
   "riders.tooSmall": "No le entran {count} pedidos.",
   "orders.addHint": "Shift + clic suma otro pedido del mismo restaurante.",
   "map.pickedCount": "{count} pedidos elegidos para un mismo viaje.",
@@ -137,5 +136,13 @@
   "shortcuts.legend": "Mostrar u ocultar esta lista",
   "orders.urgentTag": "Urgente",
   "orders.lateTag": "Tarde",
-  "shortcuts.click": "clic"
+  "shortcuts.click": "clic",
+  "riders.load": "{count}/{capacity}",
+  "riders.capacityTitle": "Lleva hasta {count} pedidos a la vez",
+  "shortcuts.nextOrder": "Recorrer la cola de pedidos, del más urgente al menos urgente",
+  "shortcuts.drag": "Arrastrar un repartidor libre a un pedido (o al revés) para mandarlo",
+  "shortcuts.dragKey": "arrastrar",
+  "map.zoomIn": "Acercar",
+  "map.zoomOut": "Alejar",
+  "map.toggleAttribution": "Mostrar u ocultar los créditos del mapa"
 }

@@ -16,6 +16,9 @@
   --customer-ink: #0e1a33;
   --night: #0e1a33;
   --selected-ring: #d8ff54;
+  --customer-ok: #7ee69b;
+  --customer-urgent: #ffbe69;
+  --customer-late: #ff7a6b;
   background: var(--night);
 }
 
@@ -113,6 +116,33 @@
   color: var(--customer-ink);
   box-shadow: 0 0 0 2px var(--night);
   font: 700 12px/1 var(--font-mono);
+}
+
+/* Clientes por urgencia: verde con tiempo, ámbar urgente, rojo y cuadrado cuando ya está tarde. */
+.map-dot--normal {
+  background: var(--customer-ok);
+}
+
+.map-dot--urgent {
+  background: var(--customer-urgent);
+}
+
+.map-dot--late {
+  border-radius: 3px;
+  background: var(--customer-late);
+}
+
+/* Restaurante y cliente del pedido bajo el mouse en la cola. */
+.map-marker--highlighted {
+  z-index: 4;
+}
+
+.map-marker--highlighted .map-pin,
+.map-marker--highlighted .map-dot {
+  box-shadow:
+    0 0 0 2px var(--night),
+    0 0 0 4px #ffffff,
+    var(--pin-shadow);
 }
 
 /* Restaurante y cliente del pedido elegido. */

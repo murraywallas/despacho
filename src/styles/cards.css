@@ -32,6 +32,20 @@
   border-color: var(--ink-quiet);
 }
 
+.order-card--hovered {
+  border-color: var(--ink-quiet);
+}
+
+/* Arrastrando un repartidor: cada pedido de la cola es un destino. */
+.order-card--drop {
+  border-style: dashed;
+  border-color: var(--accent);
+}
+
+.order-card[draggable='true'] {
+  cursor: grab;
+}
+
 .order-card--selected,
 .order-card--selected:hover {
   border-color: var(--selected);
@@ -138,6 +152,21 @@
   cursor: pointer;
 }
 
+.rider-card[draggable='true'] {
+  cursor: grab;
+}
+
+/* Arrastrando un pedido: los que lo pueden llevar se marcan; los demás se apagan. */
+.rider-card--drop {
+  border-style: dashed;
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+.rider-card--no-drop {
+  opacity: 0.35;
+}
+
 .rider-card:enabled:hover {
   border-color: var(--map-rider);
   box-shadow: inset 0 0 0 1px var(--map-rider);
@@ -175,22 +204,40 @@
   min-width: 0;
 }
 
-.rider-card__name {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .rider-card__vehicle {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  column-gap: 4px;
+  gap: 5px;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.rider-card__vehicle-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Carga: pedidos que lleva / que le entran. */
+.rider-card__load {
+  margin-left: auto;
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink-quiet);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rider-card__status {
   color: var(--ink-quiet);
   font-size: var(--text-sm);
 }
 
-.rider-card__status {
-  font-size: var(--text-sm);
+.rider-card--idle .rider-card__status {
+  color: var(--ok);
   font-weight: 600;
 }
 
@@ -200,21 +247,17 @@
 }
 
 .rider-card__eta {
-  margin-left: auto;
+  min-width: 5ch;
+  text-align: right;
   white-space: nowrap;
   font-family: var(--font-mono);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-.rider-card__capacity,
 .rider-card__note {
   color: var(--ink-quiet);
   font-size: var(--text-sm);
-}
-
-.rider-card__capacity {
-  white-space: nowrap;
 }
 
 /* Calor de la comida */
@@ -281,14 +324,19 @@
 .rider-stops__move {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 24px;
   padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--ink);
   cursor: pointer;
+}
+
+/* Separadas para que sus áreas de clic de 32 px no se pisen. */
+.rider-stops__move + .rider-stops__move {
+  margin-left: 6px;
 }
 
 .rider-stops__move:disabled {

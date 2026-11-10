@@ -25,6 +25,7 @@ export function ShiftScreen() {
   const selectOrder = useShiftStore((state) => state.selectOrder)
   const pickRider = useShiftStore((state) => state.pickRider)
   const callCustomer = useShiftStore((state) => state.callCustomer)
+  const selectNextOrder = useShiftStore((state) => state.selectNextOrder)
   const toggleMute = useSoundStore((state) => state.toggleMute)
   const [showShortcuts, setShowShortcuts] = useState(false)
   const toggleShortcuts = useCallback(() => setShowShortcuts((shown) => !shown), [])
@@ -42,6 +43,7 @@ export function ShiftScreen() {
     onCallCustomer: callCustomer,
     onToggleMute: toggleMute,
     onToggleShortcuts: toggleShortcuts,
+    onMoveOrder: selectNextOrder,
     enabled: !finished,
   })
 

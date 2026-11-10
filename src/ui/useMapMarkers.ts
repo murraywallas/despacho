@@ -71,6 +71,7 @@ export function useMapMarkers(
       }
       const element = current.getElement()
       element.classList.toggle('map-marker--selected', marker.selected)
+      element.classList.toggle('map-marker--highlighted', marker.highlighted === true)
       element.classList.toggle('map-marker--free', marker.rider?.status === 'idle')
       setIfChanged(element, 'aria-label', describe(marker))
       setIfChanged(element, 'aria-pressed', String(marker.selected))

@@ -12,6 +12,8 @@ interface Shortcuts {
   onToggleMute: () => void
   /** ? shows and hides the shortcut legend. */
   onToggleShortcuts: () => void
+  /** Arrow down / up pick the next / previous order of the queue. */
+  onMoveOrder: (step: 1 | -1) => void
   /** Off while the results screen is up, so Space and Enter reach its button. */
   enabled?: boolean
 }
@@ -28,12 +30,17 @@ function isTextField(target: EventTarget | null): boolean {
   )
 }
 
+/** The map canvas keeps its own arrow keys (panning) while it has the focus; cards on the map don't. */
+function isMapFocused(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && target.classList.contains('maplibregl-canvas')
+}
+
 /** Matches the number keys on the main row and on the numeric keypad. */
 const RIDER_KEY = /^(?:Digit|Numpad)([1-9])$/
 
 /**
  * Space pauses and resumes (even when a button has focus), 1–9 pick a rider, L calls the customer, M mutes,
- * ? shows the shortcut legend, Escape drops the selection. Typing in a text field is left alone.
+ * ? shows the shortcut legend, ↑ / ↓ walk the order queue, Escape drops the selection. Typing in a text field is left alone.
  */
 export function useKeyboardShortcuts({
   onTogglePause,
@@ -42,6 +49,7 @@ export function useKeyboardShortcuts({
   onCallCustomer,
   onToggleMute,
   onToggleShortcuts,
+  onMoveOrder,
   enabled = true,
 }: Shortcuts): void {
   useEffect(() => {
@@ -68,6 +76,12 @@ export function useKeyboardShortcuts({
         onToggleMute()
         return
       }
+      if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && !isMapFocused(event.target)) {
+        // The page doesn't scroll: the arrows walk the queue.
+        event.preventDefault()
+        onMoveOrder(event.key === 'ArrowDown' ? 1 : -1)
+        return
+      }
       if (event.key === '?' && !event.repeat) {
         onToggleShortcuts()
         return
@@ -83,5 +97,5 @@ export function useKeyboardShortcuts({
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
     }
-  }, [onTogglePause, onPickRider, onCancelSelection, onCallCustomer, onToggleMute, onToggleShortcuts, enabled])
+  }, [onTogglePause, onPickRider, onCancelSelection, onCallCustomer, onToggleMute, onToggleShortcuts, onMoveOrder, enabled])
 }
