@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test'
-import { prototype } from './balance.ts'
+import { prototype, SHIFT_URL } from './balance.ts'
 
 test('la comida de un pedido sin repartidor se enfría desde que la cocina la tiene lista', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
   const { spawnIntervalSec } = prototype.orders
   const firstOrder = page.getByTestId('order-card').filter({ has: page.getByText('Pedido #1', { exact: true }) })
 

@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test'
-import { gameMinuteMs, prototype } from './balance.ts'
+import { gameMinuteMs, prototype, SHIFT_URL } from './balance.ts'
 
 test('llegan pedidos a la cola con restaurante y cuenta regresiva, y el cliente aparece en el mapa', async ({
   page,
 }) => {
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
 
   const panel = page.getByRole('complementary', { name: /Pedidos/ })
   await expect(panel.getByText('Todavía no hay pedidos')).toBeVisible()

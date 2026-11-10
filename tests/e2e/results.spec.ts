@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { prototype, shiftEndsAt, shiftStartsAt } from './balance.ts'
+import { prototype, SHIFT_URL, shiftEndsAt, shiftStartsAt } from './balance.ts'
 
 // El turno de 5 minutos se acorta con el reloj falso de Playwright: corre en 2x y se adelanta de golpe.
 test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
 
 test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia todo', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
   await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
 
   const halfShiftMs = (prototype.shift.durationSec * 1000) / 2

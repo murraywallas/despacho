@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
-import { longestRideMs, prototype } from './balance.ts'
+import { longestRideMs, prototype, SHIFT_URL } from './balance.ts'
 
 test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
 
 test('la bici arma un viaje de 2 pedidos con Shift, se cambia el orden y entrega los dos', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
   const map = page.getByRole('region', { name: /^Mapa de Nørrebro/ })
   const twoWaiting = map.getByRole('button', { name: /pedidos esperando: 2/ }).first()
 

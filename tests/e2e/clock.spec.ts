@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
-import { gameMinuteMs } from './balance.ts'
+import { gameMinuteMs, SHIFT_URL } from './balance.ts'
 
 test('el reloj baja y la barra espaciadora lo pausa y lo reanuda', async ({ page }) => {
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
   const time = page.getByTestId('shift-time')
 
   const start = await time.textContent()
@@ -20,7 +20,7 @@ test('el reloj baja y la barra espaciadora lo pausa y lo reanuda', async ({ page
 })
 
 test('el botón de pausa y el de 2x funcionan, y la barra espaciadora sigue pausando', async ({ page }) => {
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
 
   const speed = page.getByRole('button', { name: 'Velocidad del reloj' })
   await speed.click()

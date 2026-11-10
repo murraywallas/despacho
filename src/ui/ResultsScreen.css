@@ -128,3 +128,29 @@
   outline: 2px solid var(--ink);
   outline-offset: 3px;
 }
+
+.results__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.results__secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.results__secondary:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}

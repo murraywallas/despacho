@@ -2,7 +2,7 @@ import { Phone } from 'lucide-react'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
 import { formatGameTime } from './formatClock'
-import { gameTime } from './gameTime'
+import { gameTimeOf, levelName } from './levelText'
 import { ShiftRating } from './ShiftRating'
 import { SoundControls } from './SoundControls'
 
@@ -11,6 +11,8 @@ export function TopBar() {
   const togglePause = useShiftStore((state) => state.togglePause)
   const toggleSpeed = useShiftStore((state) => state.toggleSpeed)
   const callsLeft = useShiftStore((state) => state.callsLeft)
+  const levelId = useShiftStore((state) => state.levelId)
+  const gameTime = gameTimeOf(levelId)
 
   const status = clock.finished ? t('topbar.finished') : clock.paused ? t('topbar.paused') : null
   const now = formatGameTime(clock.elapsedSec, gameTime)
@@ -20,6 +22,11 @@ export function TopBar() {
     <header className="top-bar">
       <div className="top-bar__start">
         <h1 className="top-bar__title">{t('app.title')}</h1>
+        {levelId !== null && (
+          <span className="top-bar__level" data-testid="level-name">
+            {levelName(levelId)}
+          </span>
+        )}
         <ShiftRating />
       </div>
 

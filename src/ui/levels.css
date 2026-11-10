@@ -1,0 +1,237 @@
+/* Pantalla de inicio (turnos del barrio) y briefing */
+
+.levels {
+  min-height: 100vh;
+  padding: 56px 32px;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.levels__header,
+.briefing {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.levels__app {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-quiet);
+}
+
+.levels__title {
+  margin: 0;
+  font-size: 40px;
+  letter-spacing: -0.02em;
+}
+
+.levels__intro {
+  max-width: 56ch;
+  margin: 8px 0 0;
+  color: var(--ink-quiet);
+}
+
+.levels__list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 960px;
+  margin: 32px auto 0;
+  padding: 0;
+  list-style: none;
+}
+
+.level-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    transform 120ms ease;
+}
+
+.level-card:hover:not(:disabled) {
+  border-color: var(--ink);
+  transform: translateY(-2px);
+}
+
+.level-card:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.level-card:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.level-card__number {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-quiet);
+}
+
+.level-card__name {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.level-card__hours {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.level-card__tagline {
+  flex: 1;
+  color: var(--ink-quiet);
+  font-size: 14px;
+}
+
+.level-card__footer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.level-card__star {
+  color: var(--star);
+  fill: var(--star);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .level-card {
+    transition: none;
+  }
+
+  .level-card:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* Briefing */
+
+.briefing {
+  max-width: 640px;
+}
+
+.briefing__facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 28px 0 0;
+}
+
+.briefing__fact {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.briefing__fact dt {
+  font-size: 12px;
+  color: var(--ink-quiet);
+}
+
+.briefing__fact dd {
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.briefing__subtitle {
+  margin: 28px 0 10px;
+  font-size: 16px;
+}
+
+.briefing__fleet {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.briefing__rider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.briefing__badge {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--map-rider);
+  color: var(--map-rider-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.briefing__goal {
+  margin: 20px 0 0;
+  color: var(--ink-quiet);
+}
+
+.briefing__actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.briefing__back,
+.briefing__start {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.briefing__back {
+  background: transparent;
+  color: var(--ink);
+}
+
+.briefing__start {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.briefing__back:focus-visible,
+.briefing__start:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}

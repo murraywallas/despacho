@@ -1,7 +1,10 @@
-import { RotateCcw, Star } from 'lucide-react'
-import { prototype, shift } from '../game/balance'
+import { ArrowRight, List, RotateCcw, Star } from 'lucide-react'
+import { levelIds, progression, prototype, shift } from '../game/balance'
+import { isUnlocked, nextLevel } from '../game/levels'
 import { summarizeShift, type ShiftOutcome } from '../game/results'
 import { t, type TextKey } from '../i18n'
+import { useProgressStore } from '../store/progressStore'
+import { useScreenStore } from '../store/screenStore'
 import { useShiftStore } from '../store/shiftStore'
 import { formatRating } from './formatRating'
 import './ResultsScreen.css'
@@ -19,7 +22,15 @@ const OUTCOME_TEXT: Record<ShiftOutcome, TextKey> = {
 export function ResultsScreen() {
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const restartShift = useShiftStore((state) => state.restartShift)
+  const levelId = useShiftStore((state) => state.levelId)
+  const best = useProgressStore((state) => state.best)
+  const showBriefing = useScreenStore((state) => state.showBriefing)
+  const showLevels = useScreenStore((state) => state.showLevels)
   const results = summarizeShift(orders, prototype.heat, prototype.rating, shift)
+  // The next level, once this one has opened it (now or in an earlier game).
+  const following = levelId === null ? undefined : nextLevel(levelIds, levelId)
+  const next =
+    following && isUnlocked(levelIds, best, following, progression.unlockAvgRating) ? following : undefined
   const rating = formatRating(results.average)
 
   const stats = [
@@ -69,10 +80,29 @@ export function ResultsScreen() {
           ))}
         </dl>
 
-        <button type="button" className="results__again" onClick={restartShift} autoFocus>
-          <RotateCcw size={ICON_SIZE} aria-hidden />
-          {t('results.playAgain')}
-        </button>
+        <div className="results__actions">
+          {next && (
+            <button type="button" className="results__again" onClick={() => showBriefing(next)} autoFocus>
+              <ArrowRight size={ICON_SIZE} aria-hidden />
+              {t('results.nextLevel')}
+            </button>
+          )}
+          <button
+            type="button"
+            className={next ? 'results__secondary' : 'results__again'}
+            onClick={restartShift}
+            autoFocus={!next}
+          >
+            <RotateCcw size={ICON_SIZE} aria-hidden />
+            {t('results.playAgain')}
+          </button>
+          {levelId !== null && (
+            <button type="button" className="results__secondary" onClick={showLevels}>
+              <List size={ICON_SIZE} aria-hidden />
+              {t('results.levels')}
+            </button>
+          )}
+        </div>
       </section>
     </div>
   )

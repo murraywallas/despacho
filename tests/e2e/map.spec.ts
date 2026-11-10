@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test'
+import { SHIFT_URL } from './balance.ts'
 
 test('el mapa de Nørrebro se ve completo, con restaurantes, repartidores y la atribución', async ({ page }) => {
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
 
   const map = page.getByRole('region', { name: /^Mapa de Nørrebro con 4 restaurantes, 3 repartidores/ })
   await expect(map).toBeVisible()
@@ -40,7 +41,7 @@ test('el mapa de Nørrebro se ve completo, con restaurantes, repartidores y la a
 })
 
 test('el mapa no deja irse lejos del barrio y se puede acercar', async ({ page }) => {
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
   const map = page.getByRole('region', { name: /^Mapa de Nørrebro/ })
   await expect(map.getByTestId('restaurant-marker')).toHaveCount(4)
   const box = await map.boundingBox()
@@ -70,7 +71,7 @@ test('el mapa no deja irse lejos del barrio y se puede acercar', async ({ page }
 
 test('los repartidores son tarjetas: libres en claro, y al despachar pasan a estar en viaje', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
   const map = page.getByRole('region', { name: /^Mapa de Nørrebro/ })
   const free = map.locator('.map-marker--free')
   await expect(free).toHaveCount(3)

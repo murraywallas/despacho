@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { longestRideMs, prototype } from './balance.ts'
+import { longestRideMs, prototype, SHIFT_URL } from './balance.ts'
 
 /** Advances the page clock in small steps until the locator has the text (or gives up after maxMs). */
 async function runUntil(page: Page, locator: Locator, text: string, maxMs: number) {
@@ -14,7 +14,7 @@ test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro p
 
 test('el repartidor va al restaurante por las calles, retira la comida, entrega y queda libre', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
   await page.clock.runFor(prototype.orders.spawnIntervalSec * 1000 + 500)
 
   const orderPanel = page.getByRole('complementary', { name: /Pedidos/ })

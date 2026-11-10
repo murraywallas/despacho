@@ -146,3 +146,13 @@
   accent-color: var(--ink);
   cursor: pointer;
 }
+
+.top-bar__level {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-quiet);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}

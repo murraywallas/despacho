@@ -172,7 +172,8 @@
       "riders": 3,
       "vehicles": [
         "bike",
-        "skateboard"
+        "skateboard",
+        "e_scooter"
       ]
     },
     "vesterbro": {
@@ -318,6 +319,65 @@
       "effectType": "kitchen",
       "inDemo": false,
       "kitchenMultiplier": 2
+    }
+  },
+  "levels": {
+    "lunch": {
+      "order": 1,
+      "neighborhood": "norrebro",
+      "startHour": 12,
+      "durationSec": 420,
+      "restaurants": 4,
+      "fleet": [
+        "bike",
+        "skateboard",
+        "e_scooter"
+      ],
+      "spawnIntervalSec": 20,
+      "peakFromSec": 120,
+      "peakToSec": 240,
+      "peakIntervalSec": 15,
+      "deadlineSec": 150,
+      "seed": 101
+    },
+    "dinner": {
+      "order": 2,
+      "neighborhood": "norrebro",
+      "startHour": 19,
+      "durationSec": 420,
+      "restaurants": 4,
+      "fleet": [
+        "bike",
+        "bike",
+        "skateboard",
+        "e_scooter"
+      ],
+      "spawnIntervalSec": 13,
+      "peakFromSec": 150,
+      "peakToSec": 300,
+      "peakIntervalSec": 9,
+      "deadlineSec": 132,
+      "seed": 2026
+    },
+    "friday": {
+      "order": 3,
+      "neighborhood": "norrebro",
+      "startHour": 21,
+      "durationSec": 420,
+      "restaurants": 5,
+      "fleet": [
+        "bike",
+        "bike",
+        "skateboard",
+        "e_scooter",
+        "e_scooter"
+      ],
+      "spawnIntervalSec": 10,
+      "peakFromSec": 120,
+      "peakToSec": 330,
+      "peakIntervalSec": 7,
+      "deadlineSec": 114,
+      "seed": 202
     }
   }
 }

@@ -10,7 +10,7 @@ import { assignOrders, capacityOf } from './dispatch'
 
 export { capacityOf }
 import { advanceFleet, startTrip, type MovementSettings } from './movement'
-import { createOrderQueue, spawnOrders, type OrderQueue, type OrderSettings } from './orders'
+import { createOrderQueue, spawnOrders, type OrderPeak, type OrderQueue, type OrderSettings } from './orders'
 import { createRandom, type Random } from './random'
 import { norrebroBikeNetwork, norrebroNetworkFor } from './norrebro'
 import { createRiders, type Rider } from './riders'
@@ -41,19 +41,29 @@ export function metersPerSecOf(vehicle: string, gameSecondsPerRealSecond = clock
   return ((row.speedKmh * METERS_PER_KM) / SECONDS_PER_HOUR) * gameSecondsPerRealSecond
 }
 
-/** The rules of a prototype shift, from balance.json. */
+/** The rush of a shift, when the balance has all three numbers. */
+function peakOf(orders: PrototypeBalance['orders']): OrderPeak | undefined {
+  const { peakFromSec, peakToSec, peakIntervalSec } = orders
+  if (peakFromSec === undefined || peakToSec === undefined || peakIntervalSec === undefined) return undefined
+  return { fromSec: peakFromSec, toSec: peakToSec, intervalSec: peakIntervalSec }
+}
+
+/** The rules of a shift, from balance.json (the prototype, or a level through levelBalance). */
 export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
+  const peak = peakOf(balance.orders)
   return {
     orders: {
       spawnIntervalSec: balance.orders.spawnIntervalSec,
+      ...(peak ? { peak } : {}),
       deadlineSec: balance.orders.deadlineSec,
       cookSec: balance.kitchen.cookSec,
       // The kitchen closes before the shift ends, so the last orders can still be delivered.
       lastSpawnBeforeSec: balance.shift.durationSec - balance.orders.lastOrderBeforeEndSec,
       minCustomerDistanceM: balance.orders.minCustomerDistanceM,
     },
+    // Every vehicle of the Vehículos tab, so the speeds don't depend on the level's fleet.
     movement: {
-      metersPerSec: Object.fromEntries(fleetOf(balance).map((vehicle) => [vehicle, metersPerSecOf(vehicle)])),
+      metersPerSec: Object.fromEntries(Object.keys(vehicles).map((vehicle) => [vehicle, metersPerSecOf(vehicle)])),
     },
     cancelAfterSec: balance.orders.cancelAfterSec,
   }

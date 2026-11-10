@@ -1,9 +1,9 @@
 import { expect, test, type Page } from '@playwright/test'
-import { prototype } from './balance.ts'
+import { prototype, SHIFT_URL } from './balance.ts'
 
 /** Speeds up the clock and waits until `count` orders are in the queue, then pauses. */
 async function waitForOrders(page: Page, count: number) {
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
   await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
   const orders = page.getByRole('complementary', { name: /Pedidos/ }).getByTestId('order-card')
   // A 2x, un pedido llega cada medio intervalo de balance.json.

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { SHIFT_URL } from './balance.ts'
 
 test('los sonidos cargan al primer clic, sin errores, y el silencio se recuerda entre partidas', async ({ page }) => {
   const errors: string[] = []
@@ -11,7 +12,7 @@ test('los sonidos cargan al primer clic, sin errores, y el silencio se recuerda 
     if (response.url().includes('/sounds/') && response.ok()) loaded.push(response.url())
   })
 
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
   const mute = page.getByTestId('sound-mute')
   await expect(mute).toHaveAttribute('aria-pressed', 'false')
 

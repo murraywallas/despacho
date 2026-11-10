@@ -7,6 +7,7 @@ import { waitingAt, type OrderQueue, type OrderSettings } from '../game/orders'
 import type { Random } from '../game/random'
 import type { Rider } from '../game/riders'
 import { advanceShift, capacityOf, createShift, dispatchOrders, reassignAndStart, shiftSettingsFrom } from '../game/shift'
+import { balanceFor } from '../game/levels'
 import { callCustomer } from '../game/tools'
 
 interface ShiftState {
@@ -55,6 +56,10 @@ interface ShiftState {
   clearSelection: () => void
   /** "Jugar otra vez": starts the shift over (clock, orders, riders and stars). */
   restartShift: () => void
+  /** Level being played (a row of the Niveles tab); null is the prototype shift of the Reglas tab. */
+  levelId: string | null
+  /** Starts a level from the beginning, with its own fleet, orders and clock. */
+  startLevel: (levelId: string | null) => void
 }
 
 const NORMAL_SPEED = 1
@@ -62,8 +67,12 @@ const NORMAL_SPEED = 1
 const NO_ORDERS: readonly string[] = []
 const NOTHING_SELECTED = { selectedOrderId: null, addedOrderIds: NO_ORDERS, selectedRiderId: null }
 
+/** The prototype's rules. Vehicle speeds are the same in every level, so the interface reads them from here. */
 export const settings = shiftSettingsFrom(prototype)
 export const orderSettings: OrderSettings = settings.orders
+
+// The rules of the level being played (orders, deadlines): they change with startLevel.
+let levelSettings = settings
 
 /** Every order picked for the next trip: the first one and the ones added with Shift. */
 export function selectedOrderIds(state: Pick<ShiftState, 'selectedOrderId' | 'addedOrderIds'>): string[] {
@@ -75,22 +84,33 @@ let random: Random
 
 type ShiftData = Pick<
   ShiftState,
-  'map' | 'riders' | 'clock' | 'orderQueue' | 'selectedOrderId' | 'addedOrderIds' | 'selectedRiderId' | 'callsLeft'
+  | 'map'
+  | 'riders'
+  | 'clock'
+  | 'orderQueue'
+  | 'selectedOrderId'
+  | 'addedOrderIds'
+  | 'selectedRiderId'
+  | 'callsLeft'
+  | 'levelId'
 >
 
-/** A fresh shift: clock at the start, no orders, riders at their starting spots. */
-function newShift(): ShiftData {
-  const fresh = createShift(prototype, prototype.seed)
+/** A fresh shift of a level: clock at the start, no orders, riders at their starting spots. */
+function newShift(levelId: string | null): ShiftData {
+  const balance = balanceFor(levelId)
+  levelSettings = shiftSettingsFrom(balance)
+  const fresh = createShift(balance, balance.seed)
   random = fresh.random
-  return { ...fresh.shift, ...NOTHING_SELECTED, callsLeft: prototype.tools.callsPerShift }
+  return { ...fresh.shift, ...NOTHING_SELECTED, callsLeft: balance.tools.callsPerShift, levelId }
 }
 
 export const useShiftStore = create<ShiftState>()((set, get) => ({
-  ...newShift(),
-  restartShift: () => set(newShift()),
+  ...newShift(null),
+  restartShift: () => set((state) => newShift(state.levelId)),
+  startLevel: (levelId) => set(newShift(levelId)),
   tick: (dtSec) =>
     set((state) => {
-      const next = advanceShift(state, dtSec, random, settings)
+      const next = advanceShift(state, dtSec, random, levelSettings)
       if (next === state) return state
       const statusOf = (id: string) => next.orderQueue.orders.find((order) => order.id === id)?.status
       const stillPending = (id: string) => statusOf(id) === 'pending'

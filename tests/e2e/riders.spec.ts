@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test'
+import { SHIFT_URL } from './balance.ts'
 
 test('los 3 repartidores aparecen libres, cada uno con su vehículo, en el panel y en el mapa', async ({ page }) => {
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
 
   const panel = page.getByRole('complementary', { name: /Repartidores/ })
   const cards = panel.getByTestId('rider-card')

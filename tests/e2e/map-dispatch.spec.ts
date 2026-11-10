@@ -1,10 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
-import { prototype } from './balance.ts'
+import { prototype, SHIFT_URL } from './balance.ts'
 
 /** Opens the game, lets the first order come in and pauses. */
 async function firstOrderIn(page: Page) {
   await page.clock.install()
-  await page.goto('/')
+  await page.goto(SHIFT_URL)
   await page.clock.runFor(prototype.orders.spawnIntervalSec * 1000 + 500)
   await page.keyboard.press('Space')
   const map = page.getByRole('region', { name: /^Mapa de Nørrebro/ })

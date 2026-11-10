@@ -49,7 +49,7 @@ y el juego los lee de `data/balance.json`. Nunca edites ese archivo a mano: camb
 npm run balance
 ```
 
-El comando baja las pestañas Reglas, Vehículos, Barrios y Eventos y vuelve a escribir `data/balance.json`.
+El comando baja las pestañas Reglas, Vehículos, Barrios, Eventos y Niveles y vuelve a escribir `data/balance.json`.
 Si algo de la planilla está mal (un ID repetido, una clave que choca con otra, un barrio con un vehículo
 que no existe), avisa qué pestaña y qué fila revisar, y no cambia el archivo. La planilla tiene que estar
 compartida como "Cualquier persona con el enlace: Lector". La pestaña Léeme explica cómo está armada.
