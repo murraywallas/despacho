@@ -39,17 +39,19 @@ export interface Rider {
   readonly trip?: Trip
 }
 
-/** Places `count` riders on different addresses, none of them on a restaurant. */
-export function createRiders(map: CityMap, count: number, vehicle: string, random: Random): Rider[] {
+/** One rider per vehicle of the fleet, in order, on different addresses, none of them on a restaurant. */
+export function createRiders(map: CityMap, fleet: readonly string[], random: Random): Rider[] {
   const taken = new Set(map.restaurants.map((restaurant) => restaurant.node))
-  if (count > map.addresses.length - taken.size) throw new Error(`No entran ${count} repartidores en el barrio.`)
+  if (fleet.length > map.addresses.length - taken.size) {
+    throw new Error(`No entran ${fleet.length} repartidores en el barrio.`)
+  }
   const riders: Rider[] = []
-  while (riders.length < count) {
+  while (riders.length < fleet.length) {
     const node = map.addresses[randomInt(random, map.addresses.length)]
     if (taken.has(node)) continue
     taken.add(node)
     const number = riders.length + 1
-    riders.push({ id: `k${number}`, number, vehicle, node, status: 'idle' })
+    riders.push({ id: `k${number}`, number, vehicle: fleet[number - 1], node, status: 'idle' })
   }
   return riders
 }

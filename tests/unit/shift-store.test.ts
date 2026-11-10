@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest'
 import { clock as clockBalance, prototype } from '../../src/game/balance'
 import { createClock } from '../../src/game/clock'
+import { speedOf } from '../../src/game/movement'
 import { createOrderQueue } from '../../src/game/orders'
 import { orderSettings, settings, useShiftStore } from '../../src/store/shiftStore'
 
@@ -205,7 +206,7 @@ describe('viaje durante el turno', () => {
     toggleSpeed()
     tick(0.25)
     const meters = (riderOne().trip?.traveledM ?? 0) - before
-    expect(meters).toBeCloseTo(0.25 * clockBalance.fastSpeed * settings.movement.metersPerSec)
+    expect(meters).toBeCloseTo(0.25 * clockBalance.fastSpeed * speedOf(settings.movement.metersPerSec, riderOne().vehicle))
   })
 
   test('termina entregando y queda libre', () => {

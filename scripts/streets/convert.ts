@@ -31,6 +31,8 @@ const FOOT = new Set(['footway', 'pedestrian', 'path'])
 const YES = new Set(['yes', 'designated', 'permissive'])
 const NO = new Set(['no', 'private'])
 const TRACK = /^(track|lane|opposite_track|opposite_lane|shared_lane)$/
+// Cobblestones proper; smooth paving stones (paving_stones) ride almost like asphalt.
+const COBBLES = new Set(['sett', 'cobblestone', 'unhewn_cobblestone'])
 
 function kindOf(tags: Record<string, string>): StreetKind | undefined {
   const highway = tags.highway ?? ''
@@ -64,13 +66,17 @@ export function flagsOf(tags: Record<string, string>): { kind: StreetKind; flags
   const oneway = tags.oneway === 'yes' || tags.oneway === '1' || tags.oneway === 'true' || tags.oneway === '-1'
   const bikeExempt = tags['oneway:bicycle'] === 'no' || /^opposite/.test(tags.cycleway ?? '')
 
+  const foot = kind === 'foot' && !NO.has(tags.foot ?? '')
+
   let flags = 0
   if (bike) flags |= FLAG.bike
   if (car) flags |= FLAG.car
   if (car && oneway) flags |= FLAG.carOneway
   if (bike && oneway && !bikeExempt) flags |= FLAG.bikeOneway
   if (kind === 'cycleway' || hasCycleTrack(tags)) flags |= FLAG.cycleTrack
-  return flags === 0 ? undefined : { kind, flags }
+  if (COBBLES.has(tags.surface ?? '')) flags |= FLAG.cobblestone
+  if (foot) flags |= FLAG.foot
+  return flags & (FLAG.bike | FLAG.car | FLAG.foot) ? { kind, flags } : undefined
 }
 
 const COORD_DECIMALS = 6
@@ -79,11 +85,11 @@ const round = (value: number, decimals: number) => Number(value.toFixed(decimals
 type Edge = [number, number, number, number, number]
 type Bbox = [number, number, number, number]
 
-/** The largest group of nodes connected by bike stretches, ignoring direction. */
+/** The largest group of nodes connected by bike or foot stretches, ignoring direction. */
 function largestBikeComponent(nodeCount: number, edges: readonly Edge[]): Set<number> {
   const neighbors = Array.from({ length: nodeCount }, () => [] as number[])
   for (const [a, b, , , flags] of edges) {
-    if (flags & FLAG.bike) {
+    if (flags & (FLAG.bike | FLAG.foot)) {
       neighbors[a].push(b)
       neighbors[b].push(a)
     }

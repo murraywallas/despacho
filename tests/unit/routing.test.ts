@@ -55,7 +55,7 @@ const neutral = { cycleTrackFactor: 1, majorWithoutTrackFactor: 1, pedestrianFac
 describe('rutas en un grafo chico', () => {
   test('la bici prefiere la ciclovía a la avenida sin ciclovía, a igual distancia', () => {
     const route = findRoute(createNetwork(square, bikeProfile(routing)), 0, 2)
-    expect(route).toEqual({ nodes: [0, 3, 2], lengthM: 200 })
+    expect(route).toEqual({ nodes: [0, 3, 2], lengthM: 200, effectiveM: 200 })
   })
 
   test('el auto no entra en la ciclovía', () => {
@@ -79,7 +79,7 @@ describe('rutas en un grafo chico', () => {
 
   test('mismo punto: ruta de un solo cruce; cruce inexistente: no hay ruta', () => {
     const network = createNetwork(square, bikeProfile(routing))
-    expect(findRoute(network, 1, 1)).toEqual({ nodes: [1], lengthM: 0 })
+    expect(findRoute(network, 1, 1)).toEqual({ nodes: [1], lengthM: 0, effectiveM: 0 })
     expect(findRoute(network, 0, 99)).toBeUndefined()
   })
 

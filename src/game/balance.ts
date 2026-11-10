@@ -39,9 +39,8 @@ export interface PrototypeBalance {
     readonly cookSec: number
   }
   readonly riders: {
-    readonly count: number
-    /** Vehicle id from the Vehículos tab. */
-    readonly vehicle: string
+    /** One rider per vehicle, in order: ids from the Vehículos tab separated by commas ("bike, skateboard"). */
+    readonly fleet: string
   }
   readonly heat: {
     /** Heat of the food when the kitchen has it ready. */
@@ -88,6 +87,15 @@ export interface ClockBalance {
 /** A row of the Vehículos tab (only what the game uses so far). */
 export interface VehicleBalance {
   readonly speedKmh: number
+  /** Orders it can carry at once. */
+  readonly capacity: number
+  /** Speed change on cobblestones, as a share (−0.5 = half speed). */
+  readonly cobblestoneSpeedPct?: number
+  readonly usesBikeLanes?: boolean
+  /** May ride through pedestrian streets and footways. */
+  readonly allowedInPedestrian?: boolean
+  /** Battery range, for electric vehicles. */
+  readonly rangeKm?: number
 }
 
 export const prototype: PrototypeBalance = data.prototype
@@ -95,3 +103,11 @@ export const routing: RoutingBalance = data.routing
 export const shift: ShiftBalance = data.shift
 export const clock: ClockBalance = data.clock
 export const vehicles: Readonly<Record<string, VehicleBalance>> = data.vehicles
+
+/** The vehicles of the fleet, one per rider, in order. */
+export function fleetOf(balance: Pick<PrototypeBalance, 'riders'>): string[] {
+  return balance.riders.fleet
+    .split(',')
+    .map((vehicle) => vehicle.trim())
+    .filter((vehicle) => vehicle !== '')
+}

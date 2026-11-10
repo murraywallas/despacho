@@ -28,29 +28,29 @@ function rider(number: number, x: number, y: number, status: Rider['status'] = '
 
 describe('ETA', () => {
   test('metros de la ruta hasta el restaurante dividido la velocidad', () => {
-    expect(travelTimeSec(map, nodeAt(0, 0), nodeAt(3, 4), BLOCK_PER_SEC)).toBe(7)
-    expect(travelTimeSec(map, nodeAt(0, 0), nodeAt(3, 4), 2 * BLOCK_PER_SEC)).toBe(3.5)
+    expect(travelTimeSec(map.network, nodeAt(0, 0), nodeAt(3, 4), BLOCK_PER_SEC)).toBe(7)
+    expect(travelTimeSec(map.network, nodeAt(0, 0), nodeAt(3, 4), 2 * BLOCK_PER_SEC)).toBe(3.5)
   })
 
   test('ya en el restaurante: cero', () => {
-    expect(travelTimeSec(map, nodeAt(3, 4), nodeAt(3, 4), BLOCK_PER_SEC)).toBe(0)
+    expect(travelTimeSec(map.network, nodeAt(3, 4), nodeAt(3, 4), BLOCK_PER_SEC)).toBe(0)
   })
 
   test('sin ruta posible: infinito', () => {
-    expect(travelTimeSec(map, nodeAt(0, 0), 999, BLOCK_PER_SEC)).toBe(Infinity)
+    expect(travelTimeSec(map.network, nodeAt(0, 0), 999, BLOCK_PER_SEC)).toBe(Infinity)
   })
 })
 
 describe('ranking de repartidores', () => {
   test('ordena a los libres por ETA y deja afuera a los ocupados', () => {
     const riders = [rider(1, 9, 9), rider(2, 3, 5), rider(3, 3, 4, 'toRestaurant'), rider(4, 0, 0)]
-    const ranked = rankRiders(map, riders, order, BLOCK_PER_SEC)
+    const ranked = rankRiders(map, riders, order, { bike: BLOCK_PER_SEC })
     expect(ranked.map((entry) => entry.rider.number)).toEqual([2, 4, 1])
     expect(ranked.map((entry) => entry.etaSec)).toEqual([1, 7, 11])
   })
 
   test('con la misma ETA va primero el número más bajo', () => {
-    const ranked = rankRiders(map, [rider(2, 3, 3), rider(1, 3, 5)], order, BLOCK_PER_SEC)
+    const ranked = rankRiders(map, [rider(2, 3, 3), rider(1, 3, 5)], order, { bike: BLOCK_PER_SEC })
     expect(ranked.map((entry) => entry.rider.number)).toEqual([1, 2])
   })
 })

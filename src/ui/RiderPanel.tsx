@@ -1,4 +1,3 @@
-import { Bike } from 'lucide-react'
 import { useMemo } from 'react'
 import { rankRiders } from '../game/dispatch'
 import type { Order } from '../game/orders'
@@ -9,6 +8,7 @@ import { settings, useShiftStore } from '../store/shiftStore'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
 import { FoodHeat } from './FoodHeat'
+import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
 
 const ICON_SIZE = 16
 
@@ -17,10 +17,6 @@ const STATUS_TEXT: Record<RiderStatus, TextKey> = {
   toRestaurant: 'riders.status.toRestaurant',
   atKitchen: 'riders.status.atKitchen',
   toCustomer: 'riders.status.toCustomer',
-}
-
-const VEHICLE_TEXT: Record<string, TextKey | undefined> = {
-  bike: 'vehicles.bike',
 }
 
 interface RiderCardProps {
@@ -53,7 +49,7 @@ function RiderCard({ rider, etaSec, order, nowSec, canPick, selected, onPick }: 
         <span className="rider-card__body">
           <span className="rider-card__name">{t('riders.name', { number: rider.number })}</span>
           <span className="rider-card__vehicle">
-            <Bike size={ICON_SIZE} aria-hidden />
+            <VehicleIcon vehicle={rider.vehicle} size={ICON_SIZE} aria-hidden />
             {vehicleKey ? t(vehicleKey) : rider.vehicle}
           </span>
           <span className="rider-card__status">

@@ -2,15 +2,21 @@
  * Dispatching: estimating how long each rider takes to reach a restaurant, ranking the free riders
  * and assigning an order to one of them. Pure: functions return new arrays.
  */
-import type { CityMap, NodeId, Restaurant } from './cityMap'
+import { networkFor, type CityMap, type NodeId, type Restaurant } from './cityMap'
+import { speedOf, type Speeds } from './movement'
 import type { Order } from './orders'
 import type { Rider } from './riders'
-import { findRoute } from './routing'
+import { findRoute, type StreetNetwork } from './routing'
 
-/** Seconds of play a rider needs to ride from one crossing to another (Infinity when there is no route). */
-export function travelTimeSec(map: CityMap, from: NodeId, to: NodeId, metersPerSec: number): number {
-  const route = findRoute(map.network, from, to)
-  return route ? route.lengthM / metersPerSec : Infinity
+/** Seconds of play to ride from one crossing to another on a vehicle's streets (Infinity when there is no route). */
+export function travelTimeSec(network: StreetNetwork, from: NodeId, to: NodeId, metersPerSec: number): number {
+  const route = findRoute(network, from, to)
+  return route ? route.effectiveM / metersPerSec : Infinity
+}
+
+/** Seconds of play a rider needs to ride from where they are to a crossing, on their vehicle. */
+export function riderTimeSec(map: CityMap, rider: Rider, to: NodeId, speeds: Speeds): number {
+  return travelTimeSec(networkFor(map, rider.vehicle), rider.node, to, speedOf(speeds, rider.vehicle))
 }
 
 export function restaurantOf(map: CityMap, order: Order): Restaurant {
@@ -30,12 +36,12 @@ export function rankRiders(
   map: CityMap,
   riders: readonly Rider[],
   order: Order,
-  metersPerSec: number,
+  speeds: Speeds,
 ): RankedRider[] {
   const restaurant = restaurantOf(map, order)
   return riders
     .filter((rider) => rider.status === 'idle')
-    .map((rider) => ({ rider, etaSec: travelTimeSec(map, rider.node, restaurant.node, metersPerSec) }))
+    .map((rider) => ({ rider, etaSec: riderTimeSec(map, rider, restaurant.node, speeds) }))
     .sort((a, b) => a.etaSec - b.etaSec || a.rider.number - b.rider.number)
 }
 

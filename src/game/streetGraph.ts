@@ -17,6 +17,10 @@ export const FLAG = {
   bikeOneway: 8,
   /** Has a cycle track or lane (or is a cycleway). */
   cycleTrack: 16,
+  /** Paved with cobblestones (sett): slow for small wheels. */
+  cobblestone: 32,
+  /** A pedestrian way (pedestrian street, footway, path): only vehicles allowed on foot ways use it. */
+  foot: 64,
 } as const
 
 export const ATTRIBUTION = '© OpenStreetMap contributors (ODbL), https://www.openstreetmap.org/copyright'

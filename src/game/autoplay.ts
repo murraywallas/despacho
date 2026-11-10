@@ -3,7 +3,9 @@
  * (is there pressure? does dispatching well pay off?). Pure.
  */
 import type { PrototypeBalance } from './balance'
+import { networkFor } from './cityMap'
 import { rankRiders, restaurantOf, travelTimeSec } from './dispatch'
+import { speedOf } from './movement'
 import { advanceShift, createShift, dispatchOrder, type ShiftSettings, type ShiftSnapshot } from './shift'
 
 export interface BotPick {
@@ -31,13 +33,15 @@ export const firstComeBot: Bot = (shift) => {
  */
 export const triageBot: Bot = (shift, settings) => {
   const now = shift.clock.elapsedSec
-  const speed = settings.movement.metersPerSec
+  const speeds = settings.movement.metersPerSec
   let best: { pick: BotPick; savable: boolean; etaSec: number } | undefined
 
   for (const order of pendingOrders(shift)) {
-    const closest = rankRiders(shift.map, shift.riders, order, speed)[0]
+    const closest = rankRiders(shift.map, shift.riders, order, speeds)[0]
     if (!closest) return undefined
-    const ride = travelTimeSec(shift.map, restaurantOf(shift.map, order).node, order.customer, speed)
+    const vehicle = closest.rider.vehicle
+    const restaurant = restaurantOf(shift.map, order).node
+    const ride = travelTimeSec(networkFor(shift.map, vehicle), restaurant, order.customer, speedOf(speeds, vehicle))
     const pickUpAtSec = Math.max(now + closest.etaSec, order.readyAtSec)
     const arrivesAtSec = pickUpAtSec + ride
     const savable = arrivesAtSec <= order.deadlineAtSec
