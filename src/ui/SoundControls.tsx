@@ -41,7 +41,7 @@ export function SoundControls() {
       </button>
       <button
         type="button"
-        className="sound-controls__more"
+        className="sound-controls__more hit-area"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls="volume-panel"

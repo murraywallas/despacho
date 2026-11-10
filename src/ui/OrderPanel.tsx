@@ -1,13 +1,19 @@
 import { ChefHat, CircleAlert, Clock, TriangleAlert } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { prototype } from '../game/balance'
 import { timeLeftSec, urgencyOf, type Order, type Urgency } from '../game/orders'
 import { isReady } from '../game/rating'
 import { t, type TextKey } from '../i18n'
-import { useShiftStore } from '../store/shiftStore'
+import { usePointerStore } from '../store/pointerStore'
+import { useShiftStore, waitingQueue } from '../store/shiftStore'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
 import { restaurantName } from './restaurantName'
+import { RIDER_DRAG_TYPE } from './RiderCard'
+
+/** Type of the drag data when an order is dragged onto a rider. */
+const ORDER_DRAG_TYPE = 'application/x-despacho-order'
 
 const ICON_SIZE = 16
 
@@ -23,6 +29,8 @@ interface OrderCardProps {
   restaurantName: string
   selected: boolean
   onSelect: (orderId: string, add: boolean) => void
+  /** A free rider (by number) was dropped on this order. */
+  onDropRider: (orderId: string, riderNumber: number) => void
 }
 
 /** The urgency in words, next to the color and the icon: amber and red are easy to mix up. */
@@ -35,7 +43,16 @@ const URGENCY_TAG: Partial<Record<Urgency, TextKey>> = {
  * A compact order. The time left leads (it decides the triage), in green, amber or red with its icon; under it
  * the order number and restaurant, and the urgency in words when it matters.
  */
-function OrderCard({ order, nowSec, restaurantName, selected, onSelect }: OrderCardProps) {
+function OrderCard({ order, nowSec, restaurantName, selected, onSelect, onDropRider }: OrderCardProps) {
+  const hoverOrder = usePointerStore((state) => state.hoverOrder)
+  const dragOrder = usePointerStore((state) => state.dragOrder)
+  const hovered = usePointerStore((state) => state.hoveredOrderId === order.id)
+  const riderDragged = usePointerStore((state) => state.draggedRiderId !== null)
+  const ref = useRef<HTMLButtonElement>(null)
+  // Picked with the arrow keys (or on the map): keep it in view in a long queue.
+  useEffect(() => {
+    if (selected) ref.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [selected])
   const urgency = urgencyOf(order, nowSec, prototype.orders.urgentBelowSec)
   const left = timeLeftSec(order, nowSec)
   const tag = left > 0 ? URGENCY_TAG[urgency] : undefined
@@ -43,10 +60,31 @@ function OrderCard({ order, nowSec, restaurantName, selected, onSelect }: OrderC
   return (
     <li data-testid="order-card">
       <button
+        ref={ref}
         type="button"
-        className={`order-card order-card--${urgency}${selected ? ' order-card--selected' : ''}`}
+        className={`order-card order-card--${urgency}${selected ? ' order-card--selected' : ''}${hovered ? ' order-card--hovered' : ''}${riderDragged ? ' order-card--drop' : ''}`}
         aria-pressed={selected}
         onClick={(event) => onSelect(order.id, event.shiftKey)}
+        onMouseEnter={() => hoverOrder(order.id)}
+        onMouseLeave={() => hoverOrder(null)}
+        onFocus={() => hoverOrder(order.id)}
+        onBlur={() => hoverOrder(null)}
+        draggable
+        onDragStart={(event) => {
+          event.dataTransfer.setData(ORDER_DRAG_TYPE, order.id)
+          event.dataTransfer.effectAllowed = 'move'
+          dragOrder(order.id)
+        }}
+        onDragEnd={() => dragOrder(null)}
+        onDragOver={(event) => {
+          if (riderDragged) event.preventDefault()
+        }}
+        onDrop={(event) => {
+          event.preventDefault()
+          const riderNumber = Number(event.dataTransfer.getData(RIDER_DRAG_TYPE))
+          usePointerStore.getState().dragRider(null)
+          if (riderNumber > 0) onDropRider(order.id, riderNumber)
+        }}
       >
         <span className="order-card__header">
           <span className="order-card__deadline">
@@ -84,9 +122,8 @@ export function OrderPanel() {
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
   const addedOrderIds = useShiftStore((state) => state.addedOrderIds)
   const selectOrder = useShiftStore((state) => state.selectOrder)
-  const pending = orders
-    .filter((order) => order.status === 'pending')
-    .sort((a, b) => a.deadlineAtSec - b.deadlineAtSec)
+  const dispatchByDrop = useShiftStore((state) => state.dispatchByDrop)
+  const pending = waitingQueue(orders)
   const delivered = orders.filter((order) => order.status === 'delivered').length
   const cancelled = orders.filter((order) => order.status === 'cancelled').length
   const nameOf = (id: string) => {
@@ -120,6 +157,7 @@ export function OrderPanel() {
               restaurantName={nameOf(order.restaurantId)}
               selected={order.id === selectedOrderId || addedOrderIds.includes(order.id)}
               onSelect={selectOrder}
+              onDropRider={dispatchByDrop}
             />
           ))}
         </ol>

@@ -68,7 +68,7 @@ export function RiderStops({ rider, orders, nowSec }: { rider: Rider; orders: re
             )}
             <button
               type="button"
-              className="rider-stops__move"
+              className="rider-stops__move hit-area"
               onClick={() => move(index, index - 1)}
               disabled={index === 0}
               aria-label={t('riders.stopUp', { number })}
@@ -77,7 +77,7 @@ export function RiderStops({ rider, orders, nowSec }: { rider: Rider; orders: re
             </button>
             <button
               type="button"
-              className="rider-stops__move"
+              className="rider-stops__move hit-area"
               onClick={() => move(index, index + 1)}
               disabled={index === ids.length - 1}
               aria-label={t('riders.stopDown', { number })}

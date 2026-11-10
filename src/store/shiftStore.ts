@@ -3,7 +3,7 @@ import { clock as clockBalance, clockSpeeds, prototype } from '../game/balance'
 import type { CityMap } from '../game/cityMap'
 import { setSpeed, togglePause, type ShiftClock } from '../game/clock'
 import { reorderStops } from '../game/movement'
-import { waitingAt, type OrderQueue, type OrderSettings } from '../game/orders'
+import { waitingAt, type Order, type OrderQueue, type OrderSettings } from '../game/orders'
 import type { Random } from '../game/random'
 import type { Rider } from '../game/riders'
 import { advanceShift, capacityOf, createShift, dispatchOrders, reassignAndStart, shiftSettingsFrom } from '../game/shift'
@@ -56,6 +56,16 @@ interface ShiftState {
   callCustomer: () => boolean
   /** Drops every selection (Esc). */
   clearSelection: () => void
+  /**
+   * A rider was dropped on an order, or an order on a rider: that rider gets the order (with the rest of the
+   * trip, if the order was part of the orders picked with Shift). Same rules as picking both by hand.
+   */
+  dispatchByDrop: (orderId: string, riderNumber: number) => void
+  /**
+   * Arrow keys: picks the next (+1) or previous (−1) order waiting for a rider, in the order of the queue (the
+   * most urgent first). It only picks; a number key then gives it to a rider.
+   */
+  selectNextOrder: (step: 1 | -1) => void
   /** "Jugar otra vez": starts the shift over (clock, orders, riders and stars). */
   restartShift: () => void
   /** Level being played (a row of the Niveles tab); null is the prototype shift of the Reglas tab. */
@@ -209,7 +219,30 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
     return true
   },
   clearSelection: () => set(NOTHING_SELECTED),
+  dispatchByDrop: (orderId, riderNumber) => {
+    const state = get()
+    if (!selectedOrderIds(state).includes(orderId)) {
+      set(NOTHING_SELECTED)
+      get().selectOrder(orderId)
+    } else if (state.selectedRiderId) {
+      set({ selectedRiderId: null })
+    }
+    get().pickRider(riderNumber)
+  },
+  selectNextOrder: (step) =>
+    set((state) => {
+      const queue = waitingQueue(state.orderQueue.orders)
+      if (queue.length === 0) return state
+      const at = queue.findIndex((order) => order.id === state.selectedOrderId)
+      const next = at < 0 ? (step > 0 ? 0 : queue.length - 1) : (at + step + queue.length) % queue.length
+      return { ...NOTHING_SELECTED, selectedOrderId: queue[next].id }
+    }),
 }))
+
+/** Orders waiting for a rider, as the queue shows them: the closest deadline first. */
+export function waitingQueue(orders: readonly Order[]): Order[] {
+  return orders.filter((order) => order.status === 'pending').sort((a, b) => a.deadlineAtSec - b.deadlineAtSec)
+}
 
 /** The previous list when nothing changed, so watchers don't redo work for an equal list. */
 function keepIfSame(previous: readonly string[], next: readonly string[]): readonly string[] {

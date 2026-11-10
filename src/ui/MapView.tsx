@@ -13,6 +13,7 @@ import { AttributionControl, MapLibreMap, NavigationControl, Popup, type GeoJSON
 import { FALLBACK_STYLE, loadNightStyle } from '../map/nightStyle'
 import { panelInsets } from './panelInsets'
 import { addRouteLayers, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
+import { usePointerStore } from '../store/pointerStore'
 import { selectedOrderIds, useShiftStore } from '../store/shiftStore'
 import { MapMarkerContent } from './MapMarkerContent'
 import { RestaurantPopup } from './RestaurantPopup'
@@ -80,6 +81,11 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
       fitBoundsOptions: { padding: panelInsets(container, FIT_PADDING) },
       maxBounds: areaBounds(streets, DRAG_MARGIN),
       attributionControl: false,
+      locale: {
+        'NavigationControl.ZoomIn': t('map.zoomIn'),
+        'NavigationControl.ZoomOut': t('map.zoomOut'),
+        'AttributionControl.ToggleAttribution': t('map.toggleAttribution'),
+      },
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,
@@ -115,7 +121,11 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     () => selectedOrderIds({ selectedOrderId, addedOrderIds }),
     [selectedOrderId, addedOrderIds],
   )
-  const selection = useMemo(() => ({ orderIds: pickedIds, riderId: selectedRiderId }), [pickedIds, selectedRiderId])
+  const hoveredOrderId = usePointerStore((state) => state.hoveredOrderId)
+  const selection = useMemo(
+    () => ({ orderIds: pickedIds, riderId: selectedRiderId, hoveredOrderId }),
+    [pickedIds, selectedRiderId, hoveredOrderId],
+  )
   const urgentBelowSec = prototype.orders.urgentBelowSec
   const markers = useMemo(
     () => buildMarkers(map, orders, riders, selection, (order) => urgencyOf(order, nowSec, urgentBelowSec)),
@@ -129,7 +139,13 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
         const name = restaurant ? restaurantName(restaurant) : marker.label
         return marker.waiting ? t('map.waiting', { name, count: marker.waiting.count }) : name
       }
-      if (marker.kind === 'customer') return t('map.customer', { number: marker.label })
+      if (marker.kind === 'customer') {
+        const name = t('map.customer', { number: marker.label })
+        // The dot's color and shape say how urgent it is; the name says it too.
+        if (marker.urgency === 'late') return `${name} · ${t('orders.lateTag')}`
+        if (marker.urgency === 'urgent') return `${name} · ${t('orders.urgentTag')}`
+        return name
+      }
       return t('riders.name', { number: marker.label })
     },
     [map],
@@ -185,10 +201,13 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   const routeKey = routesKey(riders)
   const routes = useMemo(() => routesGeoJson(map, riders, orders), [map, routeKey]) // eslint-disable-line react-hooks/exhaustive-deps
   const idleKey = riders.map((rider) => (rider.status === 'idle' ? rider.node : '-')).join(',')
-  const preview = useMemo(
-    () => previewGeoJson(map, riders, pickedIds.flatMap((id) => orders.find((order) => order.id === id) ?? [])),
-    [map, pickedIds, idleKey], // eslint-disable-line react-hooks/exhaustive-deps
-  )
+  // The picked trip, with each free rider's way to it; with nothing picked, the order under the mouse.
+  const preview = useMemo(() => {
+    const picked = pickedIds.flatMap((id) => orders.find((order) => order.id === id) ?? [])
+    if (picked.length > 0) return previewGeoJson(map, riders, picked)
+    const hovered = orders.find((order) => order.id === hoveredOrderId)
+    return previewGeoJson(map, riders, hovered ? [hovered] : [], false)
+  }, [map, pickedIds, idleKey, hoveredOrderId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     instanceRef.current?.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(routes)
