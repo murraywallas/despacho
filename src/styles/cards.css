@@ -1,0 +1,295 @@
+/* Filas de los paneles: pedidos (izquierda), repartidores (derecha) y paradas de un viaje. */
+
+.order-card,
+.rider-card {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  text-align: left;
+  transition:
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.order-card:active,
+.rider-card:active:enabled {
+  transform: scale(0.98);
+}
+
+/* Pedidos */
+
+.order-card {
+  display: grid;
+  gap: 2px;
+  padding: 6px var(--pad);
+  cursor: pointer;
+}
+
+.order-card:hover {
+  border-color: var(--ink-quiet);
+}
+
+.order-card--selected,
+.order-card--selected:hover {
+  border-color: var(--selected);
+  box-shadow: inset 0 0 0 1px var(--selected);
+}
+
+.order-card--selected .order-card__status {
+  color: var(--selected);
+  font-weight: 600;
+}
+
+.order-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--gap);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.order-card__status {
+  color: var(--ink-quiet);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+.order-card__restaurant,
+.order-card__deadline {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+}
+
+.order-card__restaurant {
+  color: var(--ink-quiet);
+  font-size: var(--text-sm);
+}
+
+.order-card__name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.order-card__deadline {
+  font-size: var(--text-md);
+}
+
+.order-card__time {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.order-card__tag {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+}
+
+.order-card--urgent {
+  border-color: var(--urgent);
+  background: var(--urgent-bg);
+}
+
+.order-card--urgent .order-card__deadline {
+  color: var(--urgent);
+}
+
+.order-card--late {
+  border-color: var(--late);
+  background: var(--late-bg);
+}
+
+.order-card--late .order-card__deadline {
+  color: var(--late);
+}
+
+.order-card__restaurant .food-heat,
+.order-card__cooking {
+  display: inline-flex;
+  margin-left: auto;
+}
+
+.order-card__cooking {
+  color: var(--ink-quiet);
+  font-size: var(--text-sm);
+}
+
+/* Repartidores */
+
+.rider-card {
+  display: flex;
+  align-items: center;
+  gap: var(--pad);
+  padding: 6px var(--pad);
+}
+
+.rider-card:enabled {
+  cursor: pointer;
+}
+
+.rider-card:enabled:hover {
+  border-color: var(--map-rider);
+  box-shadow: inset 0 0 0 1px var(--map-rider);
+}
+
+.rider-card--selected,
+.rider-card--selected:enabled:hover {
+  border-color: var(--selected);
+  box-shadow: inset 0 0 0 1px var(--selected);
+}
+
+/* Ocupado: no se le puede dar otro pedido. */
+.rider-card:not(.rider-card--idle) {
+  opacity: 0.62;
+}
+
+/* Rombo con el número: la misma forma y color que el repartidor en el mapa. */
+.rider-card__badge {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  background: var(--map-rider);
+  color: var(--map-rider-ink);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+.rider-card__body {
+  display: grid;
+  flex: 1;
+  gap: 1px;
+  min-width: 0;
+}
+
+.rider-card__name {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rider-card__vehicle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 4px;
+  color: var(--ink-quiet);
+  font-size: var(--text-sm);
+}
+
+.rider-card__status {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.rider-card__kitchen {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.rider-card__eta {
+  margin-left: auto;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rider-card__capacity,
+.rider-card__note {
+  color: var(--ink-quiet);
+  font-size: var(--text-sm);
+}
+
+.rider-card__capacity {
+  white-space: nowrap;
+}
+
+/* Calor de la comida */
+
+.food-heat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  width: fit-content;
+  color: var(--heat);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.food-heat--cold {
+  color: var(--cold);
+}
+
+/* Paradas de un viaje con varios pedidos: se arrastran (o se mueven con las flechas) para cambiar el orden. */
+
+.rider-stops {
+  display: grid;
+  gap: 2px;
+  margin: 3px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rider-stops__stop {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: var(--text-sm);
+  cursor: grab;
+}
+
+.rider-stops__stop--dragging {
+  opacity: 0.5;
+}
+
+.rider-stops__grip {
+  color: var(--ink-quiet);
+}
+
+.rider-stops__number,
+.rider-stops__eta {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.rider-stops__number {
+  font-weight: 600;
+}
+
+.rider-stops__eta {
+  margin-left: auto;
+}
+
+.rider-stops__move {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.rider-stops__move:disabled {
+  opacity: 0.3;
+  cursor: default;
+}

@@ -74,11 +74,13 @@ ocupado, probá de nuevo en unos minutos.
 | `src/game` | Lógica del juego (sin interfaz) |
 | `src/store` | Estado del juego |
 | `src/ui` | Componentes de la interfaz |
+| `src/styles` | Estilos globales: tokens de diseño (colores, tipografía, medidas, capas), base y pantalla de turno |
 | `src/map` | Dibujo del mapa |
 | `src/audio` | Sonidos: qué suena en cada evento y el ambiente de fondo |
 | `src/i18n` | Textos de la interfaz |
 | `public/sounds` | Archivos de sonido |
 | `data` | Números del juego (`balance.json`) y calles de cada barrio (`streets/`) |
+| `.claude/skills/game-ui` | Reglas de diseño de la interfaz que sigue Claude Code |
 | `tests` | Tests de reglas (`unit`) y de navegador (`e2e`) |
 
 ## Créditos
@@ -98,3 +100,5 @@ Sonidos de [Kenney](https://kenney.nl) (licencia [CC0](https://creativecommons.o
 | `shift-end.ogg` | `jingles_SAX02.ogg` | [Music Jingles](https://kenney.nl/assets/music-jingles) |
 
 El ambiente de fondo (un murmullo grave de ciudad) se genera en el navegador, sin archivo.
+
+Tipografías [Inter](https://fonts.google.com/specimen/Inter) y [JetBrains Mono](https://fonts.google.com/specimen/JetBrains+Mono), de Google Fonts (licencia OFL).

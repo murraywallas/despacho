@@ -15,7 +15,7 @@
   --customer-bg: #a9b8d6;
   --customer-ink: #0e1a33;
   --night: #0e1a33;
-  --selected-ring: #c4a5ff;
+  --selected-ring: #d8ff54;
   background: var(--night);
 }
 
@@ -35,7 +35,7 @@
   border: 1.5px solid var(--edge);
   border-radius: 6px;
   box-shadow: var(--pin-shadow);
-  font: 700 12px/1 system-ui, sans-serif;
+  font: 700 12px/1 var(--font-mono);
 }
 
 .map-pin::after {
@@ -88,7 +88,7 @@
   border-radius: 8px;
   background: var(--edge);
   color: var(--night);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 15px;
   text-align: center;
 }
@@ -112,7 +112,7 @@
   background: var(--customer-bg);
   color: var(--customer-ink);
   box-shadow: 0 0 0 2px var(--night);
-  font: 700 10px/1 system-ui, sans-serif;
+  font: 700 11px/1 var(--font-mono);
 }
 
 /* Restaurante y cliente del pedido elegido. */
@@ -174,7 +174,7 @@
   border-radius: 10px;
   background: var(--alert);
   color: var(--night);
-  font: 800 12px/1 system-ui, sans-serif;
+  font: 800 12px/1 var(--font-mono);
   justify-content: center;
 }
 
@@ -188,7 +188,7 @@
 }
 
 .map-pin__alert-count {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -210,7 +210,7 @@
   width: 236px;
   padding: 10px 10px 12px;
   color: #dbe6fa;
-  font: 13px/1.3 system-ui, sans-serif;
+  font: 13px/1.3 var(--font-sans);
 }
 
 .map-popup__header {
@@ -297,12 +297,14 @@
   color: #ff7b7b;
 }
 
-.map-popup__order-number {
-  font-weight: 700;
+.map-popup__order-number,
+.map-popup__order-time {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
-.map-popup__order-time {
-  font-variant-numeric: tabular-nums;
+.map-popup__order-number {
+  font-weight: 700;
 }
 
 .map-popup__order .food-heat,
@@ -317,11 +319,12 @@
 
 .map-popup__eta {
   margin-left: auto;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
 /* La tarjeta emergente va por encima de los marcadores. */
 .map-view .maplibregl-popup {
-  z-index: 5;
+  z-index: var(--z-popups);
 }
