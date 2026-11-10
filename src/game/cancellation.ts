@@ -27,11 +27,14 @@ function cancelOrders(
       const at = cancelled.get(order.id)
       return at === undefined ? order : { ...order, status: 'cancelled', cancelledAtSec: at }
     }),
-    riders: riders.map((rider) =>
-      rider.orderId && cancelled.has(rider.orderId)
-        ? { ...rider, status: 'idle', orderId: undefined, trip: undefined }
-        : rider,
-    ),
+    // A cancelled order leaves its rider's trip; a rider left with nothing to deliver is free where they are.
+    riders: riders.map((rider) => {
+      const mine = rider.orderIds ?? []
+      if (!mine.some((id) => cancelled.has(id))) return rider
+      const left = mine.filter((id) => !cancelled.has(id))
+      if (left.length === 0) return { ...rider, status: 'idle', orderIds: undefined, trip: undefined }
+      return { ...rider, orderIds: left }
+    }),
   }
 }
 

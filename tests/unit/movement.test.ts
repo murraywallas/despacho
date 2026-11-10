@@ -27,7 +27,7 @@ const idleRider: Rider = { id: 'k1', number: 1, vehicle: 'bike', node: nodeAt(0,
 function dispatched(riderAt = idleRider.node, order = pendingOrder) {
   const result = assignOrder([order], [{ ...idleRider, node: riderAt }], 'o1', 'k1')
   if (!result.ok) throw new Error(result.error)
-  return { riders: [startTrip(map, result.riders[0], result.orders[0])], orders: result.orders }
+  return { riders: [startTrip(map, result.riders[0], result.orders)], orders: result.orders }
 }
 
 /** Advances in small steps, like the game loop does. */
@@ -89,7 +89,7 @@ describe('viaje de un pedido', () => {
     expect(order.deliveredAtSec).toBeCloseTo(START + 12)
     expect(rider).toMatchObject({ status: 'idle', node: nodeAt(3, 4) })
     expect(rider.trip).toBeUndefined()
-    expect(rider.orderId).toBeUndefined()
+    expect(rider.orderIds).toBeUndefined()
   })
 
   test('avanzar de golpe da el mismo resultado que de a poco', () => {
@@ -130,25 +130,28 @@ describe('viaje de un pedido', () => {
 
 describe('ruta que falta', () => {
   test('mientras va al restaurante incluye el tramo hasta el cliente', () => {
-    const route = remainingRoute(map, run(1.5).rider)
+    const { rider, order } = run(1.5)
+    const route = remainingRoute(map, rider, [order])
     expectLattice(route[0], 1.5, 0)
     expectLattice(route[route.length - 1], 3, 4)
   })
 
   test('esperando la cocina, la ruta es la del restaurante al cliente', () => {
-    const route = remainingRoute(map, run(5).rider)
+    const { rider, order } = run(5)
+    const route = remainingRoute(map, rider, [order])
     expectLattice(route[0], 3, 0)
     expect(route).toHaveLength(5)
   })
 
   test('mientras lleva la comida, solo lo que falta hasta el cliente', () => {
-    const route = remainingRoute(map, run(10).rider)
+    const { rider, order } = run(10)
+    const route = remainingRoute(map, rider, [order])
     expectLattice(route[0], 3, 2)
     expectLattice(route[route.length - 1], 3, 4)
     expect(route.every((point) => latticeOf(point).y >= 2 - 1e-6)).toBe(true)
   })
 
   test('libre: no hay ruta', () => {
-    expect(remainingRoute(map, idleRider)).toEqual([])
+    expect(remainingRoute(map, idleRider, [])).toEqual([])
   })
 })

@@ -36,15 +36,15 @@ describe('cancelación de pedidos vencidos', () => {
     const busy: Rider = {
       ...idle,
       status: 'toCustomer',
-      orderId: 'o1',
-      trip: { orderId: 'o1', path: [17, 18], pathMeters: [0, 100], traveledM: 50, kitchenLeftSec: 0, toCustomer: [] },
+      orderIds: ['o1'],
+      trip: { path: [17, 18], pathMeters: [0, 100], traveledM: 50, kitchenLeftSec: 0 },
     }
     const other: Rider = { ...idle, id: 'k2', number: 2 }
     const result = cancelExpired([carrying], [busy, other], 200, CANCEL_AFTER)
     expect(result.orders[0].status).toBe('cancelled')
     expect(result.riders[0]).toMatchObject({ status: 'idle', node: 17 })
     expect(result.riders[0].trip).toBeUndefined()
-    expect(result.riders[0].orderId).toBeUndefined()
+    expect(result.riders[0].orderIds).toBeUndefined()
     expect(result.riders[1]).toBe(other)
   })
 
@@ -59,7 +59,7 @@ describe('cancelación de pedidos vencidos', () => {
 describe('cierre del turno', () => {
   test('lo que sigue sin entregar al cierre cuenta como cancelado, y el repartidor queda libre', () => {
     const carrying: Order = { ...pending, id: 'o2', status: 'pickedUp', riderId: 'k1', pickedUpAtSec: 150 }
-    const busy: Rider = { ...idle, status: 'toCustomer', orderId: 'o2' }
+    const busy: Rider = { ...idle, status: 'toCustomer', orderIds: ['o2'] }
     const done: Order = { ...pending, id: 'o3', status: 'delivered', deliveredAtSec: 100 }
     const result = closeShift([pending, carrying, done], [busy], 300)
     expect(result.orders.map((order) => [order.id, order.status, order.cancelledAtSec])).toEqual([

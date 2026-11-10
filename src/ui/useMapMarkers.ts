@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { MapMarker } from '../map/mapData'
 import { Marker, type MapLibreMap } from '../map/maplibre'
 
-/** Called when the player clicks a marker, or presses Enter on it. */
-export type MarkerAction = (marker: Pick<MapMarker, 'kind' | 'id' | 'label'>) => void
+/** Called when the player clicks a marker, or presses Enter on it (shift: with the Shift key held). */
+export type MarkerAction = (marker: Pick<MapMarker, 'kind' | 'id' | 'label'>, options: { shift: boolean }) => void
 
 function setIfChanged(element: HTMLElement, name: string, value: string) {
   if (element.getAttribute(name) !== value) element.setAttribute(name, value)
 }
 
-function createMarkerElement(marker: MapMarker, act: () => void): HTMLElement {
+function createMarkerElement(marker: MapMarker, act: (shift: boolean) => void): HTMLElement {
   const element = document.createElement('div')
   element.className = `map-marker map-marker--${marker.kind}`
   element.dataset.testid = `${marker.kind}-marker`
@@ -17,12 +17,12 @@ function createMarkerElement(marker: MapMarker, act: () => void): HTMLElement {
   element.tabIndex = 0
   element.addEventListener('click', (event) => {
     event.stopPropagation()
-    act()
+    act(event.shiftKey)
   })
   element.addEventListener('keydown', (event) => {
     if (event.key !== 'Enter') return
     event.preventDefault()
-    act()
+    act(event.shiftKey)
   })
   return element
 }
@@ -56,9 +56,9 @@ export function useMapMarkers(
       keep.add(marker.key)
       let current = placed.get(marker.key)
       if (!current) {
-        const act = () => {
+        const act = (shift: boolean) => {
           const latest = latestRef.current.markers.find((candidate) => candidate.key === marker.key)
-          if (latest) latestRef.current.onAction(latest)
+          if (latest) latestRef.current.onAction(latest, { shift })
         }
         const anchor = marker.kind === 'customer' ? 'center' : 'bottom'
         current = new Marker({ element: createMarkerElement(marker, act), anchor }).setLngLat([...marker.lngLat]).addTo(instance)

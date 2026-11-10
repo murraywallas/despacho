@@ -61,7 +61,7 @@ describe('asignar un pedido', () => {
     expect(result.ok).toBe(true)
     if (!result.ok) return
     expect(result.orders[0]).toMatchObject({ status: 'assigned', riderId: 'k1' })
-    expect(result.riders[0]).toMatchObject({ status: 'toRestaurant', orderId: 'o1' })
+    expect(result.riders[0]).toMatchObject({ status: 'toRestaurant', orderIds: ['o1'] })
   })
 
   test('no se puede asignar a un repartidor ocupado', () => {

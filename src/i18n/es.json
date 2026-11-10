@@ -67,5 +67,14 @@
   "riders.hintPickFirst": "Elegí un repartidor y después un restaurante con pedidos en el mapa.",
   "riders.hintPickedRider": "Ahora tocá un restaurante con \"!\" en el mapa: va a buscar el pedido más urgente.",
   "vehicles.skateboard": "Patineta",
-  "vehicles.e_scooter": "Monopatín"
+  "vehicles.e_scooter": "Monopatín",
+  "riders.stops": "Paradas del repartidor {number}",
+  "riders.stop": "{position}. #{number}",
+  "riders.stopUp": "Entregar antes el pedido #{number}",
+  "riders.stopDown": "Entregar después el pedido #{number}",
+  "riders.carryingMany": "{count} pedidos",
+  "riders.capacity": "lleva {count}",
+  "riders.tooSmall": "No le entran {count} pedidos.",
+  "orders.addHint": "Shift + clic suma otro pedido del mismo restaurante.",
+  "map.pickedCount": "{count} pedidos elegidos para un mismo viaje."
 }

@@ -61,7 +61,7 @@ describe('despacho en el estado del turno', () => {
     pickRider(2)
     const state = useShiftStore.getState()
     expect(firstOrder()).toMatchObject({ status: 'assigned', riderId: 'k2' })
-    expect(state.riders[1]).toMatchObject({ status: 'toRestaurant', orderId: firstOrder().id })
+    expect(state.riders[1]).toMatchObject({ status: 'toRestaurant', orderIds: [firstOrder().id] })
     expect(state.selectedOrderId).toBeNull()
   })
 
@@ -78,7 +78,7 @@ describe('despacho en el estado del turno', () => {
     selectOrder(firstOrder().id)
     const state = useShiftStore.getState()
     expect(firstOrder()).toMatchObject({ status: 'assigned', riderId: 'k2' })
-    expect(state.riders[1]).toMatchObject({ status: 'toRestaurant', orderId: firstOrder().id })
+    expect(state.riders[1]).toMatchObject({ status: 'toRestaurant', orderIds: [firstOrder().id] })
     expect(state.selectedRiderId).toBeNull()
     expect(state.selectedOrderId).toBeNull()
   })
@@ -115,7 +115,7 @@ describe('despacho en el estado del turno', () => {
       status: 'assigned',
       riderId: 'k3',
     })
-    expect(state.riders[2]).toMatchObject({ status: 'toRestaurant', orderId: mostUrgent.id })
+    expect(state.riders[2]).toMatchObject({ status: 'toRestaurant', orderIds: [mostUrgent.id] })
     expect(state).toMatchObject({ selectedOrderId: null, selectedRiderId: null })
   })
 
@@ -304,5 +304,61 @@ describe('cierre de la cocina y del turno', () => {
     const orders = useShiftStore.getState().orderQueue.orders
     expect(orders.length).toBeGreaterThan(0)
     expect(orders.every((order) => order.status === 'delivered' || order.status === 'cancelled')).toBe(true)
+  })
+})
+
+describe('varios pedidos por viaje', () => {
+  beforeEach(() => useShiftStore.getState().restartShift())
+
+  /** Lets orders come in until some restaurant has two waiting, and returns them. */
+  function twoFromOneRestaurant() {
+    const { tick } = useShiftStore.getState()
+    for (let i = 0; i < 200; i++) {
+      tick(1)
+      const orders = useShiftStore.getState().orderQueue.orders.filter((order) => order.status === 'pending')
+      for (const order of orders) {
+        const pair = orders.filter((other) => other.restaurantId === order.restaurantId)
+        if (pair.length >= 2) return pair.slice(0, 2)
+      }
+    }
+    throw new Error('Nunca hubo dos pedidos del mismo restaurante.')
+  }
+
+  test('Shift + clic suma un pedido del mismo restaurante; otro restaurante no entra', () => {
+    const [a, b] = twoFromOneRestaurant()
+    const { selectOrder } = useShiftStore.getState()
+    selectOrder(a.id)
+    selectOrder(b.id, true)
+    expect(useShiftStore.getState()).toMatchObject({ selectedOrderId: a.id, addedOrderIds: [b.id] })
+    const other = useShiftStore
+      .getState()
+      .orderQueue.orders.find((order) => order.status === 'pending' && order.restaurantId !== a.restaurantId)
+    if (other) {
+      selectOrder(other.id, true)
+      expect(useShiftStore.getState().addedOrderIds).toEqual([b.id])
+    }
+    // Volver a sumar el mismo lo saca.
+    selectOrder(b.id, true)
+    expect(useShiftStore.getState().addedOrderIds).toEqual([])
+  })
+
+  test('la bici lleva los dos; la patineta, que lleva uno, no los acepta', () => {
+    const [a, b] = twoFromOneRestaurant()
+    const { selectOrder, pickRider } = useShiftStore.getState()
+    selectOrder(a.id)
+    selectOrder(b.id, true)
+    pickRider(2) // patineta
+    expect(useShiftStore.getState().riders[1].status).toBe('idle')
+    pickRider(1) // bici
+    expect(useShiftStore.getState().riders[0]).toMatchObject({ status: 'toRestaurant', orderIds: [a.id, b.id] })
+    expect(useShiftStore.getState()).toMatchObject({ selectedOrderId: null, addedOrderIds: [] })
+  })
+
+  test('repartidor y después Shift + restaurante: lleva tantos como entran en su vehículo', () => {
+    const [a] = twoFromOneRestaurant()
+    const { pickRider, sendRiderTo } = useShiftStore.getState()
+    pickRider(1)
+    expect(sendRiderTo(a.restaurantId, true)).toBe(true)
+    expect(useShiftStore.getState().riders[0].orderIds).toHaveLength(2)
   })
 })
