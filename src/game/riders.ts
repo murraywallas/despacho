@@ -8,19 +8,16 @@ import { randomInt, type Random } from './random'
 /** What a rider is doing. */
 export type RiderStatus = 'idle' | 'toRestaurant' | 'atKitchen' | 'toCustomer'
 
-/** The leg of an order the rider is on. */
+/** The leg of the trip the rider is on: to the restaurant, or to the next customer. */
 export interface Trip {
-  readonly orderId: string
   /** Crossings of the current leg, from where it started to where it ends. */
   readonly path: readonly NodeId[]
-  /** Meters from the start of the leg to each crossing of `path`. */
+  /** Meters at full speed from the start of the leg to each crossing of `path`. */
   readonly pathMeters: readonly number[]
-  /** Meters already ridden along `path`. */
+  /** Meters at full speed already ridden along `path`. */
   readonly traveledM: number
   /** Seconds left at the kitchen (only while "atKitchen"). */
   readonly kitchenLeftSec: number
-  /** Route from the restaurant to the customer, planned when the order was assigned. */
-  readonly toCustomer: readonly NodeId[]
 }
 
 export interface Rider {
@@ -33,8 +30,11 @@ export interface Rider {
   /** Last crossing the rider was at. While riding, see riderDisplayPosition for where they are now. */
   readonly node: NodeId
   readonly status: RiderStatus
-  /** Order the rider is working on, when not idle. */
-  readonly orderId?: string
+  /**
+   * Orders the rider is working on, all from the same restaurant, in delivery order: the first one is the next
+   * stop. Delivered orders leave the list. Empty or missing when idle.
+   */
+  readonly orderIds?: readonly string[]
   /** Current leg, while working on an order. */
   readonly trip?: Trip
 }

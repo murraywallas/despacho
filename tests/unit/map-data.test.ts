@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { assignOrder } from '../../src/game/dispatch'
+import { assignOrders } from '../../src/game/dispatch'
 import { startTrip } from '../../src/game/movement'
 import type { Order } from '../../src/game/orders'
 import type { Rider } from '../../src/game/riders'
@@ -8,7 +8,7 @@ import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, type MapSelect
 import { latticeOf, nodeAt, smallCity, smallStreets } from './smallCity'
 
 const map = smallCity([nodeAt(3, 0), nodeAt(0, 4)])
-const NONE: MapSelection = { orderId: null, riderId: null }
+const NONE: MapSelection = { orderIds: [], riderId: null }
 const normal = () => 'normal' as const
 const order = (id: string, number: number, customer: number, status: Order['status'] = 'pending'): Order => ({
   id,
@@ -45,7 +45,7 @@ describe('marcadores del mapa', () => {
   })
 
   test('el pedido elegido marca su restaurante y su cliente', () => {
-    const markers = buildMarkers(map, orders, riders, { orderId: 'o1', riderId: null }, normal)
+    const markers = buildMarkers(map, orders, riders, { orderIds: ['o1'], riderId: null }, normal)
     expect(markers.filter((marker) => marker.selected).map((marker) => marker.key)).toEqual([
       'restaurant:r1',
       'customer:o1',
@@ -53,7 +53,7 @@ describe('marcadores del mapa', () => {
   })
 
   test('el repartidor elegido queda marcado', () => {
-    const markers = buildMarkers(map, orders, riders, { orderId: null, riderId: 'k2' }, normal)
+    const markers = buildMarkers(map, orders, riders, { orderIds: [], riderId: 'k2' }, normal)
     expect(markers.filter((marker) => marker.selected).map((marker) => marker.key)).toEqual(['rider:k2'])
   })
 
@@ -77,16 +77,18 @@ describe('pedidos esperando en un restaurante', () => {
 })
 
 describe('rutas en el mapa', () => {
-  function dispatchedRider() {
-    const result = assignOrder([order('o1', 1, nodeAt(3, 4))], [rider(1, nodeAt(0, 0))], 'o1', 'k1')
+  const first = order('o1', 1, nodeAt(3, 4))
+  function dispatchedRider(orders: Order[] = [first]) {
+    const result = assignOrders(orders, [rider(1, nodeAt(0, 0))], orders.map((o) => o.id), 'k1', orders.length)
     if (!result.ok) throw new Error(result.error)
-    return startTrip(map, result.riders[0], result.orders[0])
+    return { rider: startTrip(map, result.riders[0], result.orders), orders: result.orders }
   }
   const ends = (coordinates: number[][]) => [latticeOf(coordinates[0] as [number, number]), latticeOf(coordinates.at(-1) as [number, number])]
   const near = (x: number, y: number) => ({ x: expect.closeTo(x), y: expect.closeTo(y) })
 
   test('yendo al restaurante: un tramo hasta el restaurante y el siguiente, planeado, hasta el cliente', () => {
-    const routes = routesGeoJson(map, [dispatchedRider(), rider(2, nodeAt(2, 2))])
+    const { rider: busy, orders } = dispatchedRider()
+    const routes = routesGeoJson(map, [busy, rider(2, nodeAt(2, 2))], orders)
     expect(routes.features.map((feature) => feature.properties)).toEqual([
       { leg: 'toRestaurant', rider: 1 },
       { leg: 'planned', rider: 1 },
@@ -95,25 +97,32 @@ describe('rutas en el mapa', () => {
     expect(ends(routes.features[1].geometry.coordinates)).toEqual([near(3, 0), near(3, 4)])
   })
 
+  test('con dos pedidos, un tramo planeado más: del primer cliente al segundo', () => {
+    const second = order('o2', 2, nodeAt(4, 4))
+    const { rider: busy, orders } = dispatchedRider([first, second])
+    const routes = routesGeoJson(map, [busy], orders)
+    expect(routes.features.map((feature) => feature.properties?.leg)).toEqual(['toRestaurant', 'planned', 'planned'])
+    expect(ends(routes.features[2].geometry.coordinates)).toEqual([near(3, 4), near(4, 4)])
+  })
+
   test('esperando la cocina, el tramo al cliente sigue planeado; con la comida, es el viaje al cliente', () => {
-    const atKitchen: Rider = { ...dispatchedRider(), status: 'atKitchen' }
-    const kitchen = atKitchen.trip
-    if (!kitchen) throw new Error('sin viaje')
-    expect(routesGeoJson(map, [{ ...atKitchen, trip: { ...kitchen, path: [nodeAt(3, 0)], pathMeters: [0] } }]).features.map((f) => f.properties?.leg)).toEqual(['planned'])
-    const carrying: Rider = { ...atKitchen, status: 'toCustomer', trip: { ...kitchen, path: kitchen.toCustomer, pathMeters: [0, 100, 200, 300, 400], traveledM: 150 } }
-    const routes = routesGeoJson(map, [carrying])
+    const { rider: busy, orders } = dispatchedRider()
+    const atKitchen: Rider = { ...busy, status: 'atKitchen', node: nodeAt(3, 0) }
+    expect(routesGeoJson(map, [atKitchen], orders).features.map((f) => f.properties?.leg)).toEqual(['planned'])
+    const path = [nodeAt(3, 0), nodeAt(3, 1), nodeAt(3, 2), nodeAt(3, 3), nodeAt(3, 4)]
+    const carrying: Rider = { ...atKitchen, status: 'toCustomer', trip: { path, pathMeters: [0, 100, 200, 300, 400], traveledM: 150, kitchenLeftSec: 0 } }
+    const routes = routesGeoJson(map, [carrying], orders)
     expect(routes.features.map((feature) => feature.properties?.leg)).toEqual(['toCustomer'])
     // Arranca en el último cruce que pasó: (3, 1).
     expect(ends(routes.features[0].geometry.coordinates)).toEqual([near(3, 1), near(3, 4)])
   })
 
   test('sin viajes no hay líneas', () => {
-    expect(routesGeoJson(map, [rider(1, 0)]).features).toEqual([])
+    expect(routesGeoJson(map, [rider(1, 0)], []).features).toEqual([])
   })
 
   test('el pedido elegido muestra cómo llegaría cada repartidor libre, y el tramo al cliente', () => {
-    const pending = order('o1', 1, nodeAt(3, 4))
-    const preview = previewGeoJson(map, [rider(1, nodeAt(0, 0)), { ...rider(2, nodeAt(4, 4)), status: 'toCustomer' }, rider(3, nodeAt(3, 2))], pending)
+    const preview = previewGeoJson(map, [rider(1, nodeAt(0, 0)), { ...rider(2, nodeAt(4, 4)), status: 'toCustomer' }, rider(3, nodeAt(3, 2))], [first])
     expect(preview.features.map((feature) => feature.properties)).toEqual([
       { leg: 'preview', rider: 1 },
       { leg: 'preview', rider: 3 },
@@ -122,9 +131,14 @@ describe('rutas en el mapa', () => {
     expect(ends(preview.features[0].geometry.coordinates)).toEqual([near(0, 0), near(3, 0)])
   })
 
+  test('con dos pedidos elegidos, la vista previa encadena los dos clientes', () => {
+    const preview = previewGeoJson(map, [rider(1, nodeAt(0, 0))], [first, order('o2', 2, nodeAt(4, 4))])
+    expect(preview.features.map((feature) => feature.properties?.leg)).toEqual(['preview', 'planned', 'planned'])
+  })
+
   test('sin pedido elegido, o si ya tiene repartidor, no hay vista previa', () => {
-    expect(previewGeoJson(map, [rider(1, 0)], undefined).features).toEqual([])
-    expect(previewGeoJson(map, [rider(1, 0)], order('o1', 1, nodeAt(3, 4), 'assigned')).features).toEqual([])
+    expect(previewGeoJson(map, [rider(1, 0)], []).features).toEqual([])
+    expect(previewGeoJson(map, [rider(1, 0)], [order('o1', 1, nodeAt(3, 4), 'assigned')]).features).toEqual([])
   })
 })
 

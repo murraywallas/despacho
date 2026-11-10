@@ -471,3 +471,83 @@ body {
   margin-left: auto;
   color: var(--ink-quiet);
 }
+
+/* Paradas de un viaje con varios pedidos: se arrastran (o se mueven con las flechas) para cambiar el orden. */
+.rider-stops {
+  display: grid;
+  gap: 3px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rider-stops__stop {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 4px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  font-size: 12px;
+  cursor: grab;
+}
+
+.rider-stops__stop--dragging {
+  opacity: 0.5;
+}
+
+.rider-stops__grip {
+  color: var(--ink-quiet);
+}
+
+.rider-stops__number {
+  font-weight: 600;
+}
+
+.rider-stops__eta {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.rider-stops__move {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.rider-stops__move:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.rider-stops__move:focus-visible {
+  outline: 2px solid var(--ink);
+}
+
+.rider-card__capacity,
+.rider-card__note {
+  color: var(--ink-quiet);
+  font-size: 12px;
+}
+
+/* La línea del vehículo puede partirse ("Bicicleta" · "lleva 2") sin empujar la ETA fuera de la tarjeta. */
+.rider-card__body {
+  flex: 1;
+}
+
+.rider-card__vehicle {
+  flex-wrap: wrap;
+  column-gap: 4px;
+}
+
+.rider-card__capacity {
+  white-space: nowrap;
+}

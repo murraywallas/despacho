@@ -30,6 +30,7 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
   const riders = useShiftStore((state) => state.riders)
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
+  const addedOrderIds = useShiftStore((state) => state.addedOrderIds)
   const selectedRiderId = useShiftStore((state) => state.selectedRiderId)
   const selectOrder = useShiftStore((state) => state.selectOrder)
   const pickRider = useShiftStore((state) => state.pickRider)
@@ -38,7 +39,9 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
   const waiting = waitingAt(orders, restaurant.id)
   const selectedOrder = waiting.find((order) => order.id === selectedOrderId)
   const selectedRider = riders.find((rider) => rider.id === selectedRiderId)
-  const ranked = selectedOrder ? rankRiders(map, riders, selectedOrder, settings.movement.metersPerSec) : []
+  const picked = selectedOrder ? 1 + addedOrderIds.length : 0
+  const ranked = selectedOrder ? rankRiders(map, riders, selectedOrder, settings.movement.metersPerSec, picked) : []
+  const isPicked = (id: string) => id === selectedOrderId || addedOrderIds.includes(id)
 
   return (
     <div className="map-popup" role="dialog" aria-label={name} data-testid="map-popup">
@@ -70,11 +73,12 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
                   <button
                     type="button"
                     className={`map-popup__order map-popup__order--${urgency}`}
-                    aria-pressed={order.id === selectedOrderId}
+                    aria-pressed={isPicked(order.id)}
                     data-testid="popup-order"
-                    onClick={() => {
-                      selectOrder(order.id)
-                      if (selectedRider) onDispatched()
+                    onClick={(event) => {
+                      // Shift + click adds the order to the trip; a click with a rider picked dispatches it.
+                      selectOrder(order.id, event.shiftKey)
+                      if (selectedRider && !event.shiftKey) onDispatched()
                     }}
                   >
                     <span className="map-popup__order-number">{t('orders.number', { number: order.number })}</span>
@@ -96,6 +100,9 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
 
       {selectedOrder && (
         <>
+          {(picked > 1 || waiting.length > 1) && (
+            <p className="map-popup__note">{picked > 1 ? t('map.pickedCount', { count: picked }) : t('orders.addHint')}</p>
+          )}
           <p className="map-popup__note">{ranked.length > 0 ? t('map.closestRiders') : t('map.noFreeRiders')}</p>
           <ul className="map-popup__list">
             {ranked.map(({ rider, etaSec }) => (

@@ -6,7 +6,13 @@ import { networkFor, type CityMap, type NodeId, type Restaurant } from './cityMa
 import { speedOf, type Speeds } from './movement'
 import type { Order } from './orders'
 import type { Rider } from './riders'
+import { vehicles } from './balance'
 import { findRoute, type StreetNetwork } from './routing'
+
+/** How many orders a vehicle carries at once (1 for a vehicle not in the Vehículos tab). */
+export function capacityOf(vehicle: string): number {
+  return vehicles[vehicle]?.capacity ?? 1
+}
 
 /** Seconds of play to ride from one crossing to another on a vehicle's streets (Infinity when there is no route). */
 export function travelTimeSec(network: StreetNetwork, from: NodeId, to: NodeId, metersPerSec: number): number {
@@ -31,25 +37,68 @@ export interface RankedRider {
   readonly etaSec: number
 }
 
-/** Free riders, closest to the order's restaurant first (ties: lower number first). */
+/**
+ * Free riders whose vehicle carries at least count orders, closest to the order's restaurant first (ties: lower
+ * number first).
+ */
 export function rankRiders(
   map: CityMap,
   riders: readonly Rider[],
   order: Order,
   speeds: Speeds,
+  count = 1,
 ): RankedRider[] {
   const restaurant = restaurantOf(map, order)
   return riders
-    .filter((rider) => rider.status === 'idle')
+    .filter((rider) => rider.status === 'idle' && capacityOf(rider.vehicle) >= count)
     .map((rider) => ({ rider, etaSec: riderTimeSec(map, rider, restaurant.node, speeds) }))
     .sort((a, b) => a.etaSec - b.etaSec || a.rider.number - b.rider.number)
 }
 
-export type AssignError = 'order-not-found' | 'rider-not-found' | 'order-not-pending' | 'rider-busy'
+export type AssignError =
+  | 'order-not-found'
+  | 'rider-not-found'
+  | 'order-not-pending'
+  | 'rider-busy'
+  | 'no-orders'
+  | 'different-restaurants'
+  | 'over-capacity'
 
 export type AssignResult =
   | { readonly ok: true; readonly orders: Order[]; readonly riders: Rider[] }
   | { readonly ok: false; readonly error: AssignError }
+
+/**
+ * Gives one or more pending orders of the same restaurant to a free rider, who heads there and delivers them in
+ * the order given. `capacity` is how many orders the rider's vehicle carries (from the Vehículos tab).
+ */
+export function assignOrders(
+  orders: readonly Order[],
+  riders: readonly Rider[],
+  orderIds: readonly string[],
+  riderId: string,
+  capacity = 1,
+): AssignResult {
+  const picked = orderIds.map((id) => orders.find((candidate) => candidate.id === id))
+  const rider = riders.find((candidate) => candidate.id === riderId)
+  if (orderIds.length === 0) return { ok: false, error: 'no-orders' }
+  if (picked.some((order) => !order)) return { ok: false, error: 'order-not-found' }
+  if (!rider) return { ok: false, error: 'rider-not-found' }
+  const trip = picked as Order[]
+  if (trip.some((order) => order.status !== 'pending')) return { ok: false, error: 'order-not-pending' }
+  if (rider.status !== 'idle') return { ok: false, error: 'rider-busy' }
+  if (trip.some((order) => order.restaurantId !== trip[0].restaurantId)) return { ok: false, error: 'different-restaurants' }
+  if (trip.length > capacity) return { ok: false, error: 'over-capacity' }
+
+  const ids = new Set(orderIds)
+  return {
+    ok: true,
+    orders: orders.map((candidate) => (ids.has(candidate.id) ? { ...candidate, status: 'assigned', riderId } : candidate)),
+    riders: riders.map((candidate) =>
+      candidate.id === riderId ? { ...candidate, status: 'toRestaurant', orderIds: [...orderIds] } : candidate,
+    ),
+  }
+}
 
 /** Gives a pending order to a free rider, who heads to the restaurant. */
 export function assignOrder(
@@ -58,20 +107,5 @@ export function assignOrder(
   orderId: string,
   riderId: string,
 ): AssignResult {
-  const order = orders.find((candidate) => candidate.id === orderId)
-  const rider = riders.find((candidate) => candidate.id === riderId)
-  if (!order) return { ok: false, error: 'order-not-found' }
-  if (!rider) return { ok: false, error: 'rider-not-found' }
-  if (order.status !== 'pending') return { ok: false, error: 'order-not-pending' }
-  if (rider.status !== 'idle') return { ok: false, error: 'rider-busy' }
-
-  return {
-    ok: true,
-    orders: orders.map((candidate) =>
-      candidate.id === orderId ? { ...candidate, status: 'assigned', riderId } : candidate,
-    ),
-    riders: riders.map((candidate) =>
-      candidate.id === riderId ? { ...candidate, status: 'toRestaurant', orderId } : candidate,
-    ),
-  }
+  return assignOrders(orders, riders, [orderId], riderId)
 }

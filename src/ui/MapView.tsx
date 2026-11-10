@@ -12,7 +12,7 @@ import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, routesKey, typ
 import { AttributionControl, MapLibreMap, NavigationControl, Popup, type GeoJSONSource, type PositionAnchor } from '../map/maplibre'
 import { FALLBACK_STYLE, loadNightStyle } from '../map/nightStyle'
 import { addRouteLayers, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
-import { useShiftStore } from '../store/shiftStore'
+import { selectedOrderIds, useShiftStore } from '../store/shiftStore'
 import { MapMarkerContent } from './MapMarkerContent'
 import { RestaurantPopup } from './RestaurantPopup'
 import { restaurantName } from './restaurantName'
@@ -106,7 +106,12 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     }
   }, [streets])
 
-  const selection = useMemo(() => ({ orderId: selectedOrderId, riderId: selectedRiderId }), [selectedOrderId, selectedRiderId])
+  const addedOrderIds = useShiftStore((state) => state.addedOrderIds)
+  const pickedIds = useMemo(
+    () => selectedOrderIds({ selectedOrderId, addedOrderIds }),
+    [selectedOrderId, addedOrderIds],
+  )
+  const selection = useMemo(() => ({ orderIds: pickedIds, riderId: selectedRiderId }), [pickedIds, selectedRiderId])
   const urgentBelowSec = prototype.orders.urgentBelowSec
   const markers = useMemo(
     () => buildMarkers(map, orders, riders, selection, (order) => urgencyOf(order, nowSec, urgentBelowSec)),
@@ -127,13 +132,14 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   )
 
   const onAction = useCallback<MarkerAction>(
-    (marker) => {
+    (marker, { shift }) => {
       if (marker.kind === 'restaurant') {
-        // Rider picked first: tapping the restaurant sends them for its most urgent order, no card in between.
-        if (sendRiderTo(marker.id)) setOpenRestaurantId(null)
+        // Rider picked first: tapping the restaurant sends them for its most urgent order, no card in between
+        // (with Shift, for as many orders as their vehicle carries).
+        if (sendRiderTo(marker.id, shift)) setOpenRestaurantId(null)
         else setOpenRestaurantId(marker.id)
       } else if (marker.kind === 'rider') pickRider(Number(marker.label))
-      else selectOrder(marker.id)
+      else selectOrder(marker.id, shift)
     },
     [pickRider, selectOrder, sendRiderTo],
   )
@@ -168,11 +174,11 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   // Riders move every frame, but their routes only change when they pass a crossing: the key says when,
   // so the map gets new route data a few times per trip instead of every frame.
   const routeKey = routesKey(riders)
-  const routes = useMemo(() => routesGeoJson(map, riders), [map, routeKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  const routes = useMemo(() => routesGeoJson(map, riders, orders), [map, routeKey]) // eslint-disable-line react-hooks/exhaustive-deps
   const idleKey = riders.map((rider) => (rider.status === 'idle' ? rider.node : '-')).join(',')
   const preview = useMemo(
-    () => previewGeoJson(map, riders, selectedOrder),
-    [map, selectedOrder, idleKey], // eslint-disable-line react-hooks/exhaustive-deps
+    () => previewGeoJson(map, riders, pickedIds.flatMap((id) => orders.find((order) => order.id === id) ?? [])),
+    [map, pickedIds, idleKey], // eslint-disable-line react-hooks/exhaustive-deps
   )
 
   useEffect(() => {

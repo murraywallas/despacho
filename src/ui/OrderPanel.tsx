@@ -22,7 +22,7 @@ interface OrderCardProps {
   nowSec: number
   restaurantName: string
   selected: boolean
-  onSelect: (orderId: string) => void
+  onSelect: (orderId: string, add: boolean) => void
 }
 
 /** A compact order: number and time left, then restaurant and food heat. */
@@ -36,7 +36,7 @@ function OrderCard({ order, nowSec, restaurantName, selected, onSelect }: OrderC
         type="button"
         className={`order-card order-card--${urgency}${selected ? ' order-card--selected' : ''}`}
         aria-pressed={selected}
-        onClick={() => onSelect(order.id)}
+        onClick={(event) => onSelect(order.id, event.shiftKey)}
       >
         <span className="order-card__header">
           <span className="order-card__number">{t('orders.number', { number: order.number })}</span>
@@ -71,6 +71,7 @@ export function OrderPanel() {
   const restaurants = useShiftStore((state) => state.map.restaurants)
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
+  const addedOrderIds = useShiftStore((state) => state.addedOrderIds)
   const selectOrder = useShiftStore((state) => state.selectOrder)
   const pending = orders
     .filter((order) => order.status === 'pending')
@@ -106,7 +107,7 @@ export function OrderPanel() {
               order={order}
               nowSec={nowSec}
               restaurantName={nameOf(order.restaurantId)}
-              selected={order.id === selectedOrderId}
+              selected={order.id === selectedOrderId || addedOrderIds.includes(order.id)}
               onSelect={selectOrder}
             />
           ))}

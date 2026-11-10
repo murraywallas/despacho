@@ -5,7 +5,7 @@
 import type { Feature, FeatureCollection, LineString } from 'geojson'
 import { networkFor, positionOf, type CityMap, type NodeId } from '../game/cityMap'
 import { restaurantOf } from '../game/dispatch'
-import { passedIndex, riderDisplayPosition } from '../game/movement'
+import { passedIndex, riderDisplayPosition, upcomingLegs } from '../game/movement'
 import { waitingAt, type Order, type Urgency } from '../game/orders'
 import type { Rider, RiderStatus } from '../game/riders'
 import { findRoute } from '../game/routing'
@@ -33,7 +33,8 @@ export interface MapMarker {
 const URGENCY_RANK: Record<Urgency, number> = { normal: 0, urgent: 1, late: 2 }
 
 export interface MapSelection {
-  readonly orderId: string | null
+  /** Orders picked for the next trip (the first one and the ones added with Shift). */
+  readonly orderIds: readonly string[]
   readonly riderId: string | null
 }
 
@@ -44,7 +45,7 @@ export function buildMarkers(
   selection: MapSelection,
   urgencyOf: (order: Order) => Urgency,
 ): MapMarker[] {
-  const selected = orders.find((order) => order.id === selection.orderId)
+  const selected = orders.find((order) => order.id === selection.orderIds[0])
   const selectedRestaurant = selected && restaurantOf(map, selected).id
   return [
     ...map.restaurants.map((restaurant) => {
@@ -70,7 +71,7 @@ export function buildMarkers(
         id: order.id,
         lngLat: positionOf(map, order.customer),
         label: String(order.number),
-        selected: order.id === selection.orderId,
+        selected: selection.orderIds.includes(order.id),
       })),
     ...riders.map((rider) => ({
       key: `rider:${rider.id}`,
@@ -111,33 +112,46 @@ function routeLine(
  * What is left of each trip in progress, a line per leg, from the last crossing the rider passed
  * (the rider's marker covers the bit between that crossing and the rider).
  */
-export function routesGeoJson(map: CityMap, riders: readonly Rider[]): FeatureCollection<LineString> {
+export function routesGeoJson(
+  map: CityMap,
+  riders: readonly Rider[],
+  orders: readonly Order[],
+): FeatureCollection<LineString> {
   const features = riders.flatMap((rider) => {
-    const trip = rider.trip
-    if (!trip) return []
-    const ahead = trip.path.slice(passedIndex(trip))
-    if (rider.status === 'toRestaurant') {
-      return [...routeLine(map, ahead, 'toRestaurant', rider.number), ...routeLine(map, trip.toCustomer, 'planned', rider.number)]
-    }
-    if (rider.status === 'atKitchen') return routeLine(map, trip.toCustomer, 'planned', rider.number)
-    return routeLine(map, ahead, 'toCustomer', rider.number)
+    if (!rider.trip) return []
+    // The leg the rider is on glows; the next ones (one per customer still to visit) are planned.
+    const current: RouteLeg | undefined =
+      rider.status === 'toRestaurant' ? 'toRestaurant' : rider.status === 'toCustomer' ? 'toCustomer' : undefined
+    return upcomingLegs(map, rider, orders).flatMap((nodes, index) =>
+      routeLine(map, nodes, index === 0 && current ? current : 'planned', rider.number),
+    )
   })
   return { type: 'FeatureCollection', features }
 }
 
 /** For the selected order: the way each free rider would ride to its restaurant, and then on to the customer. */
-export function previewGeoJson(map: CityMap, riders: readonly Rider[], order: Order | undefined): FeatureCollection<LineString> {
-  if (!order || order.status !== 'pending') return { type: 'FeatureCollection', features: [] }
-  const restaurant = restaurantOf(map, order).node
+export function previewGeoJson(
+  map: CityMap,
+  riders: readonly Rider[],
+  selected: readonly Order[],
+): FeatureCollection<LineString> {
+  const trip = selected.filter((order) => order.status === 'pending')
+  if (trip.length === 0) return { type: 'FeatureCollection', features: [] }
+  const restaurant = restaurantOf(map, trip[0]).node
   const nodesOf = (from: NodeId, to: NodeId, vehicle?: string) =>
     findRoute(vehicle ? networkFor(map, vehicle) : map.network, from, to)?.nodes ?? []
+  // From the restaurant to each customer of the trip, in order.
+  const stops = trip.map((order) => order.customer)
+  const planned = stops.flatMap((customer, index) =>
+    routeLine(map, nodesOf(index === 0 ? restaurant : stops[index - 1], customer), 'planned'),
+  )
   return {
     type: 'FeatureCollection',
     features: [
       ...riders
         .filter((rider) => rider.status === 'idle')
         .flatMap((rider) => routeLine(map, nodesOf(rider.node, restaurant, rider.vehicle), 'preview', rider.number)),
-      ...routeLine(map, nodesOf(restaurant, order.customer), 'planned'),
+      ...planned,
     ],
   }
 }
@@ -145,7 +159,11 @@ export function previewGeoJson(map: CityMap, riders: readonly Rider[], order: Or
 /** Changes only when some route on the map changes: compare it to know when to redraw them. */
 export function routesKey(riders: readonly Rider[]): string {
   return riders
-    .map((rider) => (rider.trip ? `${rider.id}:${rider.status}:${rider.trip.path.length}:${passedIndex(rider.trip)}` : ''))
+    .map((rider) =>
+      rider.trip
+        ? `${rider.id}:${rider.status}:${(rider.orderIds ?? []).join(',')}:${rider.trip.path.length}:${passedIndex(rider.trip)}`
+        : '',
+    )
     .join('|')
 }
 

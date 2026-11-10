@@ -6,7 +6,9 @@ import { clock as clockBalance, fleetOf, vehicles, type PrototypeBalance } from 
 import { cancelExpired, closeShift } from './cancellation'
 import { createCityMap, type CityMap } from './cityMap'
 import { createClock, tick, type ShiftClock } from './clock'
-import { assignOrder } from './dispatch'
+import { assignOrders, capacityOf } from './dispatch'
+
+export { capacityOf }
 import { advanceFleet, startTrip, type MovementSettings } from './movement'
 import { createOrderQueue, spawnOrders, type OrderQueue, type OrderSettings } from './orders'
 import { createRandom, type Random } from './random'
@@ -113,6 +115,26 @@ export function advanceShift(
   return { ...shift, clock, riders: after.riders, orderQueue }
 }
 
+/**
+ * Gives one or more orders of the same restaurant to a rider and starts the trip, delivering them in the order
+ * given. Undefined when the orders or the rider can't go together (busy, over capacity, two restaurants…).
+ */
+export function dispatchOrders(
+  map: CityMap,
+  orderQueue: OrderQueue,
+  riders: readonly Rider[],
+  orderIds: readonly string[],
+  riderId: string,
+): { orderQueue: OrderQueue; riders: readonly Rider[] } | undefined {
+  const rider = riders.find((candidate) => candidate.id === riderId)
+  const result = assignOrders(orderQueue.orders, riders, orderIds, riderId, rider ? capacityOf(rider.vehicle) : 1)
+  if (!result.ok) return undefined
+  return {
+    orderQueue: { ...orderQueue, orders: result.orders },
+    riders: result.riders.map((candidate) => (candidate.id === riderId ? startTrip(map, candidate, result.orders) : candidate)),
+  }
+}
+
 /** Gives an order to a rider and starts the trip. Undefined when the order or the rider can't take it. */
 export function dispatchOrder(
   map: CityMap,
@@ -121,11 +143,5 @@ export function dispatchOrder(
   orderId: string,
   riderId: string,
 ): { orderQueue: OrderQueue; riders: readonly Rider[] } | undefined {
-  const result = assignOrder(orderQueue.orders, riders, orderId, riderId)
-  if (!result.ok) return undefined
-  const order = result.orders.find((candidate) => candidate.id === orderId)
-  return {
-    orderQueue: { ...orderQueue, orders: result.orders },
-    riders: result.riders.map((rider) => (rider.id === riderId && order ? startTrip(map, rider, order) : rider)),
-  }
+  return dispatchOrders(map, orderQueue, riders, [orderId], riderId)
 }
