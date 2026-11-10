@@ -7,6 +7,7 @@ interface BalanceData {
     kitchen: { cookSec: number }
     shift: { durationSec: number; startHour: number }
     riders: { fleet: string }
+    tools: { reassignPenaltySec: number; callsPerShift: number; callExtendSec: number }
   }
   vehicles: Record<string, { speedKmh: number }>
   clock: { gameSecondsPerRealSecond: number }

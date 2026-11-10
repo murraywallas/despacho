@@ -76,5 +76,17 @@
   "riders.capacity": "lleva {count}",
   "riders.tooSmall": "No le entran {count} pedidos.",
   "orders.addHint": "Shift + clic suma otro pedido del mismo restaurante.",
-  "map.pickedCount": "{count} pedidos elegidos para un mismo viaje."
+  "map.pickedCount": "{count} pedidos elegidos para un mismo viaje.",
+  "selection.pickRider": "Elegí un repartidor para llevarlo.",
+  "selection.reassign": "Va con el repartidor {rider}. Elegí otro para reasignarlo (pierde {minutes} min de plazo).",
+  "selection.onItsWay": "Ya va en camino con el repartidor {rider}: solo se puede llamar al cliente.",
+  "selection.call": "Llamar al cliente (+{minutes} min)",
+  "selection.callTitle": "Llamadas que quedan en el turno: {calls}. Tecla L.",
+  "selection.cancel": "Cancelar la elección (Esc)",
+  "riders.reassign": "Reasignar #{number}",
+  "riders.reassignLabel": "Reasignar el pedido #{number} a otro repartidor",
+  "topbar.calls": "Llamadas",
+  "topbar.callsLabel": "Llamadas al cliente que quedan: {calls}",
+  "riders.hintReassign": "Elegí otro repartidor libre para el pedido #{number}.",
+  "riders.hintOnTheWay": "Ese pedido ya salió del restaurante: no se puede reasignar."
 }

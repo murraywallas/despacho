@@ -49,6 +49,15 @@ export interface PrototypeBalance {
     readonly lossPerSec: number
     readonly coldBelow: number
   }
+  /** The operator's tools. */
+  readonly tools: {
+    /** Reassigning an order costs this much of its deadline. */
+    readonly reassignPenaltySec: number
+    /** How many times per shift the operator can call a customer. */
+    readonly callsPerShift: number
+    /** Extra time a call to the customer adds to the deadline. */
+    readonly callExtendSec: number
+  }
   readonly rating: {
     readonly max: number
     readonly latePenalty: number
