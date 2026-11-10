@@ -11,6 +11,7 @@ import '../map/mapMarkers.css'
 import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
 import { AttributionControl, MapLibreMap, NavigationControl, Popup, type GeoJSONSource, type PositionAnchor } from '../map/maplibre'
 import { FALLBACK_STYLE, loadNightStyle } from '../map/nightStyle'
+import { panelInsets } from './panelInsets'
 import { addRouteLayers, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
 import { selectedOrderIds, useShiftStore } from '../store/shiftStore'
 import { MapMarkerContent } from './MapMarkerContent'
@@ -25,10 +26,13 @@ interface MapViewProps {
   selectedOrderId: string | null
 }
 
-/** Space around the area when the map opens, in CSS pixels. */
+/** Space around the area when the map opens, beyond the floating panels, in CSS pixels. */
 const FIT_PADDING = 24
-/** How far past the area the player can drag the map, as a share of its size. */
-const DRAG_MARGIN = 0.25
+/**
+ * How far past the area the player can drag the map, as a share of its size. The map runs under the panels,
+ * so it needs room to center the area in the part of the screen between them.
+ */
+const DRAG_MARGIN = 0.75
 /** Gap between the popup and the restaurant card (the card stands above its spot), in CSS pixels. */
 const POPUP_OFFSETS: Record<PositionAnchor, [number, number]> = {
   center: [0, -18],
@@ -73,7 +77,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
       container,
       style: FALLBACK_STYLE,
       bounds: areaBounds(streets),
-      fitBoundsOptions: { padding: FIT_PADDING },
+      fitBoundsOptions: { padding: panelInsets(container, FIT_PADDING) },
       maxBounds: areaBounds(streets, DRAG_MARGIN),
       attributionControl: false,
       dragRotate: false,
