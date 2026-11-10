@@ -6,6 +6,7 @@ import { useShiftStore } from '../store/shiftStore'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
 import './operatorTools.css'
+import { Keycap } from './Keycap'
 import { restaurantName } from './restaurantName'
 
 /**
@@ -59,9 +60,17 @@ export function SelectionBar() {
       >
         <Phone size={15} aria-hidden />
         {t('selection.call', { minutes: extra })}
+        <Keycap label="L" />
       </button>
-      <button type="button" className="selection-bar__close" onClick={clearSelection} aria-label={t('selection.cancel')}>
+      <button
+        type="button"
+        className="selection-bar__close"
+        onClick={clearSelection}
+        aria-label={t('selection.cancel')}
+        aria-keyshortcuts="Escape"
+      >
         <X size={15} aria-hidden />
+        <Keycap label="Esc" />
       </button>
     </div>
   )

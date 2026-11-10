@@ -5,7 +5,7 @@ test.describe.configure({ timeout: 90_000 }) // Algunos juegan un turno entero c
 
 /** Plays the current shift to the end without dispatching anything (every order gets cancelled). */
 async function runShiftToEnd(page: Page) {
-  await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
+  await page.getByRole('button', { name: '2x', exact: true }).click()
   await page.clock.runFor((prototype.shift.durationSec * 1000) / 2 + 2000)
   await expect(page.getByTestId('results')).toBeVisible()
 }

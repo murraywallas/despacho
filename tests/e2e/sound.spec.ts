@@ -29,8 +29,11 @@ test('los sonidos cargan al primer clic, sin errores, y el silencio se recuerda 
   await expect(page.getByTestId('sound-mute')).toHaveAttribute('aria-pressed', 'false')
 
   // El volumen también se recuerda.
+  // El volumen está en un panel chico al lado del silencio.
+  await page.getByRole('button', { name: 'Ajustar el volumen' }).click()
   await page.getByRole('slider', { name: 'Volumen' }).fill('30')
   await page.reload()
+  await page.getByRole('button', { name: 'Ajustar el volumen' }).click()
   await expect(page.getByRole('slider', { name: 'Volumen' })).toHaveValue('30')
 
   expect(errors).toEqual([])

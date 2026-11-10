@@ -20,7 +20,7 @@ interface BalanceData {
     }
   >
   vehicles: Record<string, { speedKmh: number }>
-  clock: { gameSecondsPerRealSecond: number }
+  clock: { gameSecondsPerRealSecond: number; speeds: string }
 }
 
 const data = JSON.parse(readFileSync(new URL('../../data/balance.json', import.meta.url), 'utf8')) as BalanceData
@@ -45,6 +45,11 @@ function clockAt(seconds: number): string {
 }
 export const shiftStartsAt = clockAt(0)
 export const shiftEndsAt = clockAt(prototype.shift.durationSec)
+
+/** The clock speeds of the Reglas tab, as the speed buttons show them (always with 1x). */
+export const clockSpeeds = [
+  ...new Set([1, ...data.clock.speeds.split(',').map((speed) => Number(speed.trim()))]),
+].sort((a, b) => a - b)
 
 /** Real seconds the game clock needs to move one minute. */
 export const gameMinuteMs = (60 / data.clock.gameSecondsPerRealSecond) * 1000

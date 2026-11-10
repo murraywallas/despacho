@@ -3,7 +3,7 @@ import { prototype, SHIFT_URL } from './balance.ts'
 
 test('reasignar un pedido a otro repartidor y llamar al cliente una vez por turno', async ({ page }) => {
   await page.goto(SHIFT_URL)
-  await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
+  await page.getByRole('button', { name: '2x', exact: true }).click()
   const orders = page.getByRole('complementary', { name: /Pedidos/ }).getByTestId('order-card')
   await expect(orders).toHaveCount(1, { timeout: (prototype.orders.spawnIntervalSec * 1000) / 2 + 5000 })
   await page.keyboard.press('Space')

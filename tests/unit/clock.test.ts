@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { createClock, remainingSec, setSpeed, tick, togglePause } from '../../src/game/clock'
+import { clock as clockBalance, clockSpeeds } from '../../src/game/balance'
+import { useShiftStore } from '../../src/store/shiftStore'
 
 describe('reloj del turno', () => {
   test('avanza con tick(dt)', () => {
@@ -39,5 +41,23 @@ describe('reloj del turno', () => {
     const clock = createClock(300)
     expect(tick(clock, 0)).toBe(clock)
     expect(tick(clock, -1)).toBe(clock)
+  })
+})
+
+describe('velocidades del reloj desde la planilla', () => {
+  test('la lista de velocidades siempre incluye 1x, sin repetidos y de menor a mayor', () => {
+    expect(clockSpeeds({ speeds: '3, 2, 2' })).toEqual([1, 2, 3])
+    expect(clockSpeeds({ speeds: 'rápido, 0, -1' })).toEqual([1])
+    expect(clockSpeeds(clockBalance)).toContain(clockBalance.fastSpeed)
+  })
+
+  test('el estado solo acepta velocidades de la planilla', () => {
+    useShiftStore.getState().startLevel(null)
+    const fastest = Math.max(...clockSpeeds(clockBalance))
+    useShiftStore.getState().setSpeed(fastest)
+    expect(useShiftStore.getState().clock.speed).toBe(fastest)
+    useShiftStore.getState().setSpeed(fastest + 7)
+    expect(useShiftStore.getState().clock.speed).toBe(fastest)
+    useShiftStore.getState().setSpeed(1)
   })
 })

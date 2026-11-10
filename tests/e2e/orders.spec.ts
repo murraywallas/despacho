@@ -11,7 +11,7 @@ test('llegan pedidos a la cola con restaurante y cuenta regresiva, y el cliente 
   await expect(page.getByRole('region', { name: /0 clientes esperando/ })).toBeVisible()
 
   // A 2x el primer pedido llega en la mitad del intervalo de balance.json.
-  await page.getByRole('button', { name: 'Velocidad del reloj' }).click()
+  await page.getByRole('button', { name: '2x', exact: true }).click()
   const card = panel.getByTestId('order-card').first()
   await expect(card).toBeVisible({ timeout: (prototype.orders.spawnIntervalSec * 1000) / 2 + 5000 })
 

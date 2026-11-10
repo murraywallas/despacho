@@ -10,6 +10,8 @@ interface Shortcuts {
   onCallCustomer: () => void
   /** M turns the sound off and on. */
   onToggleMute: () => void
+  /** ? shows and hides the shortcut legend. */
+  onToggleShortcuts: () => void
   /** Off while the results screen is up, so Space and Enter reach its button. */
   enabled?: boolean
 }
@@ -31,7 +33,7 @@ const RIDER_KEY = /^(?:Digit|Numpad)([1-9])$/
 
 /**
  * Space pauses and resumes (even when a button has focus), 1–9 pick a rider, L calls the customer, M mutes,
- * Escape drops the selection. Typing in a text field is left alone.
+ * ? shows the shortcut legend, Escape drops the selection. Typing in a text field is left alone.
  */
 export function useKeyboardShortcuts({
   onTogglePause,
@@ -39,6 +41,7 @@ export function useKeyboardShortcuts({
   onCancelSelection,
   onCallCustomer,
   onToggleMute,
+  onToggleShortcuts,
   enabled = true,
 }: Shortcuts): void {
   useEffect(() => {
@@ -65,6 +68,10 @@ export function useKeyboardShortcuts({
         onToggleMute()
         return
       }
+      if (event.key === '?' && !event.repeat) {
+        onToggleShortcuts()
+        return
+      }
       if (event.key === 'Escape') onCancelSelection()
     }
     const onKeyUp = (event: KeyboardEvent) => {
@@ -76,5 +83,5 @@ export function useKeyboardShortcuts({
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
     }
-  }, [onTogglePause, onPickRider, onCancelSelection, onCallCustomer, onToggleMute, enabled])
+  }, [onTogglePause, onPickRider, onCancelSelection, onCallCustomer, onToggleMute, onToggleShortcuts, enabled])
 }

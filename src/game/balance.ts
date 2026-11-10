@@ -95,6 +95,17 @@ export interface ClockBalance {
   readonly fastSpeed: number
   /** Game seconds that pass in one real second of play. */
   readonly gameSecondsPerRealSecond: number
+  /** Speeds the player can pick, separated by commas ("1, 2, 3"). */
+  readonly speeds: string
+}
+
+/** The clock speeds the player can pick, from slowest to fastest. Always includes normal speed (1). */
+export function clockSpeeds(balance: Pick<ClockBalance, 'speeds'>): number[] {
+  const listed = balance.speeds
+    .split(',')
+    .map((speed) => Number(speed.trim()))
+    .filter((speed) => Number.isFinite(speed) && speed > 0)
+  return [...new Set([1, ...listed])].sort((a, b) => a - b)
 }
 
 /** A row of the Vehículos tab (only what the game uses so far). */

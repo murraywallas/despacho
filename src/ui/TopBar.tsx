@@ -2,14 +2,24 @@ import { Phone } from 'lucide-react'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
 import { formatGameTime } from './formatClock'
+import { Keycap } from './Keycap'
 import { gameTimeOf, levelName } from './levelText'
+import { ShiftProgress } from './ShiftProgress'
 import { ShiftRating } from './ShiftRating'
 import { SoundControls } from './SoundControls'
+import { TimeControls } from './TimeControls'
 
-export function TopBar() {
+interface TopBarProps {
+  /** Opens the list of keyboard shortcuts (key ?). */
+  onShowShortcuts: () => void
+}
+
+/**
+ * Resources and time: level and stars against the goal on the left, the clock in the middle, calls, sound,
+ * shortcuts and the time controls on the right. A thin bar along the bottom shows the shift passing.
+ */
+export function TopBar({ onShowShortcuts }: TopBarProps) {
   const clock = useShiftStore((state) => state.clock)
-  const togglePause = useShiftStore((state) => state.togglePause)
-  const toggleSpeed = useShiftStore((state) => state.toggleSpeed)
   const callsLeft = useShiftStore((state) => state.callsLeft)
   const levelId = useShiftStore((state) => state.levelId)
   const gameTime = gameTimeOf(levelId)
@@ -50,32 +60,25 @@ export function TopBar() {
       </div>
 
       <div className="top-bar__controls">
-        <SoundControls />
         <span className="top-bar__calls" aria-label={t('topbar.callsLabel', { calls: callsLeft })} data-testid="calls-left">
           <Phone size={14} aria-hidden />
           {callsLeft}
         </span>
+        <SoundControls />
         <button
           type="button"
-          className="top-bar__button"
-          onClick={togglePause}
-          disabled={clock.finished}
-          aria-pressed={clock.paused}
+          className="top-bar__icon-button"
+          onClick={onShowShortcuts}
+          aria-keyshortcuts="Shift+?"
+          aria-label={t('shortcuts.open')}
+          title={t('shortcuts.open')}
         >
-          {clock.paused ? t('topbar.resume') : t('topbar.pause')}
+          <Keycap label="?" />
         </button>
-        <button
-          type="button"
-          className="top-bar__button"
-          onClick={toggleSpeed}
-          disabled={clock.finished}
-          aria-pressed={clock.speed !== 1}
-          aria-label={t('topbar.speedLabel')}
-          title={t('topbar.speedLabel')}
-        >
-          {t('topbar.speedValue', { speed: clock.speed })}
-        </button>
+        <TimeControls />
       </div>
+
+      <ShiftProgress />
     </header>
   )
 }
