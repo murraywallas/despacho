@@ -88,5 +88,10 @@
   "topbar.calls": "Llamadas",
   "topbar.callsLabel": "Llamadas al cliente que quedan: {calls}",
   "riders.hintReassign": "Elegí otro repartidor libre para el pedido #{number}.",
-  "riders.hintOnTheWay": "Ese pedido ya salió del restaurante: no se puede reasignar."
+  "riders.hintOnTheWay": "Ese pedido ya salió del restaurante: no se puede reasignar.",
+  "sound.mute": "Silencio",
+  "sound.muteTitle": "Silenciar el juego (tecla M)",
+  "sound.unmuteTitle": "Volver a escuchar el juego (tecla M)",
+  "sound.volume": "Volumen",
+  "sound.volumeValue": "{percent} %"
 }
