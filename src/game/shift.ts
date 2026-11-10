@@ -15,6 +15,7 @@ import { createRandom, type Random } from './random'
 import { norrebroBikeNetwork, norrebroNetworkFor } from './norrebro'
 import { createRiders, type Rider } from './riders'
 import type { StreetNetwork } from './routing'
+import { reassignOrder } from './tools'
 
 export interface ShiftSettings {
   readonly orders: OrderSettings
@@ -144,4 +145,26 @@ export function dispatchOrder(
   riderId: string,
 ): { orderQueue: OrderQueue; riders: readonly Rider[] } | undefined {
   return dispatchOrders(map, orderQueue, riders, [orderId], riderId)
+}
+
+/**
+ * Takes an order from the rider who was going to pick it up and gives it to another free rider, who starts the
+ * trip. The order loses `penaltySec` of its deadline. Undefined when it can't be done.
+ */
+export function reassignAndStart(
+  map: CityMap,
+  orderQueue: OrderQueue,
+  riders: readonly Rider[],
+  orderId: string,
+  toRiderId: string,
+  penaltySec: number,
+  nowSec: number,
+): { orderQueue: OrderQueue; riders: readonly Rider[] } | undefined {
+  const to = riders.find((candidate) => candidate.id === toRiderId)
+  const result = reassignOrder(orderQueue.orders, riders, orderId, toRiderId, penaltySec, nowSec, to ? capacityOf(to.vehicle) : 1)
+  if (!result.ok) return undefined
+  return {
+    orderQueue: { ...orderQueue, orders: result.orders },
+    riders: result.riders.map((candidate) => (candidate.id === toRiderId ? startTrip(map, candidate, result.orders) : candidate)),
+  }
 }

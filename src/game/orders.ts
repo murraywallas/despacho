@@ -35,6 +35,8 @@ export interface Order {
   readonly deliveredAtSec?: number
   /** Second of the shift when it was cancelled. */
   readonly cancelledAtSec?: number
+  /** The operator called the customer to extend the deadline. */
+  readonly called?: boolean
 }
 
 export interface OrderQueue {

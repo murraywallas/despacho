@@ -48,6 +48,7 @@ describe('despacho en el estado del turno', () => {
       riders: initial.riders,
       selectedOrderId: null,
       selectedRiderId: null,
+      callsLeft: prototype.tools.callsPerShift,
     })
     useShiftStore.getState().tick(interval * 2)
   })
@@ -152,12 +153,47 @@ describe('despacho en el estado del turno', () => {
     expect(useShiftStore.getState().selectedOrderId).toBe(second.id)
   })
 
-  test('un pedido ya asignado no se puede volver a elegir', () => {
+  test('un pedido ya asignado se puede elegir otra vez, para reasignarlo a otro repartidor', () => {
     const { selectOrder, pickRider } = useShiftStore.getState()
     selectOrder(firstOrder().id)
     pickRider(1)
+    const deadline = firstOrder().deadlineAtSec
     selectOrder(firstOrder().id)
-    expect(useShiftStore.getState().selectedOrderId).toBeNull()
+    expect(useShiftStore.getState().selectedOrderId).toBe(firstOrder().id)
+    pickRider(3)
+    const state = useShiftStore.getState()
+    expect(firstOrder()).toMatchObject({
+      status: 'assigned',
+      riderId: 'k3',
+      deadlineAtSec: deadline - prototype.tools.reassignPenaltySec,
+    })
+    expect(state.riders[0].status).toBe('idle')
+    expect(state.riders[2]).toMatchObject({ status: 'toRestaurant', orderIds: [firstOrder().id] })
+    expect(state.selectedOrderId).toBeNull()
+  })
+
+  test('repartidor libre primero y después un pedido de otro repartidor: también lo reasigna', () => {
+    const { selectOrder, pickRider } = useShiftStore.getState()
+    selectOrder(firstOrder().id)
+    pickRider(1)
+    pickRider(2)
+    selectOrder(firstOrder().id)
+    expect(firstOrder()).toMatchObject({ status: 'assigned', riderId: 'k2' })
+  })
+
+  test('una llamada al cliente por turno: extiende el plazo del pedido elegido', () => {
+    const { selectOrder, callCustomer } = useShiftStore.getState()
+    selectOrder(firstOrder().id)
+    const deadline = firstOrder().deadlineAtSec
+    expect(callCustomer()).toBe(true)
+    expect(firstOrder()).toMatchObject({ deadlineAtSec: deadline + prototype.tools.callExtendSec, called: true })
+    expect(useShiftStore.getState().callsLeft).toBe(prototype.tools.callsPerShift - 1)
+    for (let i = 1; i < prototype.tools.callsPerShift; i++) callCustomer()
+    expect(callCustomer()).toBe(false)
+  })
+
+  test('sin pedido elegido no se llama a nadie', () => {
+    expect(useShiftStore.getState().callCustomer()).toBe(false)
   })
 
   test('volver a tocar el pedido elegido lo deselecciona', () => {
@@ -177,6 +213,7 @@ describe('viaje durante el turno', () => {
       riders: initial.riders,
       selectedOrderId: null,
       selectedRiderId: null,
+      callsLeft: prototype.tools.callsPerShift,
     })
     const { tick, selectOrder, pickRider } = useShiftStore.getState()
     tick(interval)
@@ -228,6 +265,7 @@ describe('cancelación durante el turno', () => {
       riders: initial.riders,
       selectedOrderId: null,
       selectedRiderId: null,
+      callsLeft: prototype.tools.callsPerShift,
     })
   })
 

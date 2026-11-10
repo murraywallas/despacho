@@ -1,0 +1,111 @@
+/* Herramientas del operador: la barra del pedido elegido, reasignar y llamar al cliente. */
+
+.selection-bar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 52px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 640px;
+  padding: 8px 8px 8px 12px;
+  border: 1px solid var(--selected);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.18);
+}
+
+.selection-bar__text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.selection-bar__title {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.selection-bar__hint {
+  color: var(--ink-quiet);
+  font-size: 12px;
+}
+
+.selection-bar__call,
+.selection-bar__close,
+.rider-card__reassign {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.selection-bar__call {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.selection-bar__close {
+  flex-shrink: 0;
+  padding: 6px;
+  border-color: transparent;
+}
+
+.selection-bar__call:hover:not(:disabled),
+.selection-bar__close:hover,
+.rider-card__reassign:hover {
+  background: var(--surface);
+}
+
+.selection-bar__call:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.selection-bar__call:focus-visible,
+.selection-bar__close:focus-visible,
+.rider-card__reassign:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.rider-card__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0 0;
+}
+
+.rider-card__reassign {
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.top-bar__calls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  color: var(--ink-quiet);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A 1024 px la barra deja solo el título y el botón. */
+@media (max-width: 1100px) {
+  .selection-bar__hint {
+    display: none;
+  }
+}

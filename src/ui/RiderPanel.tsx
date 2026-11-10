@@ -35,9 +35,12 @@ interface RiderCardProps {
   tooSmallFor?: number
   selected: boolean
   onPick: (riderNumber: number) => void
+  /** Picks one of this rider's orders (still at the restaurant) to give it to someone else. */
+  onReassign: (orderId: string) => void
 }
 
-function RiderCard({ rider, etaSec, trip, orders, nowSec, canPick, tooSmallFor, selected, onPick }: RiderCardProps) {
+function RiderCard({ rider, etaSec, trip, orders, nowSec, canPick, tooSmallFor, selected, onPick, onReassign }: RiderCardProps) {
+  const reassignable = trip.filter((stop) => stop.status === 'assigned')
   const vehicleKey = VEHICLE_TEXT[rider.vehicle]
   const order = trip[0]
   return (
@@ -77,6 +80,21 @@ function RiderCard({ rider, etaSec, trip, orders, nowSec, canPick, tooSmallFor, 
           <span className="rider-card__eta">{t('riders.eta', { minutes: gameMinutes(etaSec, gameTime) })}</span>
         )}
       </button>
+      {reassignable.length > 0 && (
+        <div className="rider-card__tools">
+          {reassignable.map((stop) => (
+            <button
+              key={stop.id}
+              type="button"
+              className="rider-card__reassign"
+              onClick={() => onReassign(stop.id)}
+              aria-label={t('riders.reassignLabel', { number: stop.number })}
+            >
+              {t('riders.reassign', { number: stop.number })}
+            </button>
+          ))}
+        </div>
+      )}
       <RiderStops rider={rider} orders={orders} nowSec={nowSec} />
     </li>
   )
@@ -95,18 +113,21 @@ export function RiderPanel() {
   const selectedRiderId = useShiftStore((state) => state.selectedRiderId)
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const pickRider = useShiftStore((state) => state.pickRider)
+  const selectOrder = useShiftStore((state) => state.selectOrder)
   const selectedOrder = orders.find((order) => order.id === selectedOrderId)
+  // A picked-up order can't change hands; an assigned one is being reassigned.
+  const onTheWay = selectedOrder?.status === 'pickedUp'
   const idle = riders.filter((rider) => rider.status === 'idle').length
 
   const count = selectedOrder ? 1 + addedOrderIds.length : 0
   const ranked = useMemo(
-    () => (selectedOrder ? rankRiders(map, riders, selectedOrder, settings.movement.metersPerSec, count) : []),
-    [map, riders, selectedOrder, count],
+    () => (selectedOrder && !onTheWay ? rankRiders(map, riders, selectedOrder, settings.movement.metersPerSec, count) : []),
+    [map, riders, selectedOrder, onTheWay, count],
   )
   const etaOf = new Map(ranked.map((entry) => [entry.rider.id, entry.etaSec]))
   const fits = (rider: Rider) => capacityOf(rider.vehicle) >= Math.max(1, count)
   // Free riders by ETA first; then free ones whose vehicle is too small for the trip; busy ones last.
-  const ordered = selectedOrder
+  const ordered = selectedOrder && !onTheWay
     ? [
         ...ranked.map((entry) => entry.rider),
         ...riders.filter((rider) => rider.status === 'idle' && !fits(rider)),
@@ -123,7 +144,15 @@ export function RiderPanel() {
         </span>
       </h2>
       <p className="side-panel__hint">
-        {selectedOrder ? t('riders.hintByEta') : selectedRiderId ? t('riders.hintPickedRider') : t('riders.hintPickFirst')}
+        {onTheWay
+          ? t('riders.hintOnTheWay')
+          : selectedOrder?.status === 'assigned'
+            ? t('riders.hintReassign', { number: selectedOrder.number })
+            : selectedOrder
+              ? t('riders.hintByEta')
+              : selectedRiderId
+                ? t('riders.hintPickedRider')
+                : t('riders.hintPickFirst')}
       </p>
       <ol className="side-panel__list">
         {ordered.map((rider) => (
@@ -134,10 +163,11 @@ export function RiderPanel() {
             trip={ordersOf(rider, orders)}
             orders={orders}
             nowSec={nowSec}
-            canPick={rider.status === 'idle' && fits(rider)}
-            tooSmallFor={rider.status === 'idle' && !fits(rider) ? count : undefined}
+            canPick={rider.status === 'idle' && fits(rider) && !onTheWay}
+            tooSmallFor={rider.status === 'idle' && !fits(rider) && !onTheWay ? count : undefined}
             selected={rider.id === selectedRiderId}
             onPick={pickRider}
+            onReassign={selectOrder}
           />
         ))}
       </ol>

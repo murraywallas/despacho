@@ -49,7 +49,7 @@ test('un repartidor ocupado se ve deshabilitado y el clic en otro asigna el pedi
   await page.keyboard.press('1')
 
   await orders.first().getByRole('button').click()
-  const riderOne = riderPanel.locator('[data-rider-number="1"]').getByRole('button')
+  const riderOne = riderPanel.getByRole('button', { name: /^Repartidor 1 / })
   await expect(riderOne).toBeDisabled()
 
   await riderPanel.locator('[data-rider-number="2"]').getByRole('button').click()

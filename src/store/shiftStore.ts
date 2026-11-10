@@ -6,7 +6,8 @@ import { reorderStops } from '../game/movement'
 import { waitingAt, type OrderQueue, type OrderSettings } from '../game/orders'
 import type { Random } from '../game/random'
 import type { Rider } from '../game/riders'
-import { advanceShift, capacityOf, createShift, dispatchOrders, shiftSettingsFrom } from '../game/shift'
+import { advanceShift, capacityOf, createShift, dispatchOrders, reassignAndStart, shiftSettingsFrom } from '../game/shift'
+import { callCustomer } from '../game/tools'
 
 interface ShiftState {
   map: CityMap
@@ -43,6 +44,13 @@ interface ShiftState {
   sendRiderTo: (restaurantId: string, fill?: boolean) => boolean
   /** Changes the order of a busy rider's remaining stops (drag and drop in the rider card). */
   reorderStops: (riderNumber: number, orderIds: readonly string[]) => void
+  /** Calls left this shift to extend a customer's deadline. */
+  callsLeft: number
+  /**
+   * Calls the customer of the selected order to extend its deadline (key L). Returns false when there is no
+   * order picked, no calls left, or the order is already delivered.
+   */
+  callCustomer: () => boolean
   /** Drops every selection (Esc). */
   clearSelection: () => void
   /** "Jugar otra vez": starts the shift over (clock, orders, riders and stars). */
@@ -67,14 +75,14 @@ let random: Random
 
 type ShiftData = Pick<
   ShiftState,
-  'map' | 'riders' | 'clock' | 'orderQueue' | 'selectedOrderId' | 'addedOrderIds' | 'selectedRiderId'
+  'map' | 'riders' | 'clock' | 'orderQueue' | 'selectedOrderId' | 'addedOrderIds' | 'selectedRiderId' | 'callsLeft'
 >
 
 /** A fresh shift: clock at the start, no orders, riders at their starting spots. */
 function newShift(): ShiftData {
   const fresh = createShift(prototype, prototype.seed)
   random = fresh.random
-  return { ...fresh.shift, ...NOTHING_SELECTED }
+  return { ...fresh.shift, ...NOTHING_SELECTED, callsLeft: prototype.tools.callsPerShift }
 }
 
 export const useShiftStore = create<ShiftState>()((set, get) => ({
@@ -84,14 +92,18 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
     set((state) => {
       const next = advanceShift(state, dtSec, random, settings)
       if (next === state) return state
-      const stillPending = (id: string) => next.orderQueue.orders.find((order) => order.id === id)?.status === 'pending'
+      const statusOf = (id: string) => next.orderQueue.orders.find((order) => order.id === id)?.status
+      const stillPending = (id: string) => statusOf(id) === 'pending'
       const rider = next.riders.find((candidate) => candidate.id === state.selectedRiderId)
-      const firstLeft = state.selectedOrderId && stillPending(state.selectedOrderId)
+      // An order picked on its way (to reassign it or call its customer) stays picked until it is delivered.
+      const firstStatus = state.selectedOrderId ? statusOf(state.selectedOrderId) : undefined
+      const firstOpen = firstStatus === 'pending' || firstStatus === 'assigned' || firstStatus === 'pickedUp'
+      const firstLeft = firstStatus === 'pending'
       return {
         clock: next.clock,
         riders: next.riders,
         orderQueue: next.orderQueue,
-        selectedOrderId: firstLeft ? state.selectedOrderId : null,
+        selectedOrderId: firstOpen ? state.selectedOrderId : null,
         addedOrderIds: keepIfSame(state.addedOrderIds, firstLeft ? state.addedOrderIds.filter(stillPending) : NO_ORDERS),
         selectedRiderId: rider?.status === 'idle' ? state.selectedRiderId : null,
       }
@@ -113,7 +125,14 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
         return { addedOrderIds: [...state.addedOrderIds, orderId] }
       }
       if (orderId === state.selectedOrderId) return { selectedOrderId: null, addedOrderIds: NO_ORDERS }
-      if (order?.status !== 'pending' || state.clock.finished) return state
+      if (!order || state.clock.finished) return state
+      if (order.status === 'assigned' && state.selectedRiderId) {
+        // Rider first, then an order already going with someone else: it is reassigned to the rider.
+        const result = reassignAndStart(state.map, state.orderQueue, state.riders, orderId, state.selectedRiderId, prototype.tools.reassignPenaltySec, state.clock.elapsedSec)
+        return result ? { ...result, ...NOTHING_SELECTED } : state
+      }
+      if (order.status === 'assigned' || order.status === 'pickedUp') return { selectedOrderId: orderId, addedOrderIds: NO_ORDERS, selectedRiderId: null }
+      if (order.status !== 'pending') return state
       if (state.selectedRiderId) {
         const result = dispatchOrders(state.map, state.orderQueue, state.riders, [orderId], state.selectedRiderId)
         return result ? { ...result, ...NOTHING_SELECTED } : state
@@ -125,6 +144,13 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
       const rider = state.riders.find((candidate) => candidate.number === riderNumber)
       if (!rider || state.clock.finished) return state
       const picked = selectedOrderIds(state)
+      const first = state.orderQueue.orders.find((order) => order.id === picked[0])
+      if (first?.status === 'assigned') {
+        const result = reassignAndStart(state.map, state.orderQueue, state.riders, first.id, rider.id, prototype.tools.reassignPenaltySec, state.clock.elapsedSec)
+        return result ? { ...result, ...NOTHING_SELECTED } : state
+      }
+      // The food is already on its way: that order can only get a call to its customer.
+      if (first?.status === 'pickedUp') return state
       if (picked.length > 0) {
         const result = dispatchOrders(state.map, state.orderQueue, state.riders, picked, rider.id)
         return result ? { ...result, ...NOTHING_SELECTED } : state
@@ -147,6 +173,14 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
     set((state) => ({
       riders: state.riders.map((rider) => (rider.number === riderNumber ? reorderStops(rider, orderIds) : rider)),
     })),
+  callCustomer: () => {
+    const state = get()
+    if (!state.selectedOrderId || state.callsLeft <= 0 || state.clock.finished) return false
+    const orders = callCustomer(state.orderQueue.orders, state.selectedOrderId, prototype.tools.callExtendSec)
+    if (orders === state.orderQueue.orders) return false
+    set({ orderQueue: { ...state.orderQueue, orders }, callsLeft: state.callsLeft - 1 })
+    return true
+  },
   clearSelection: () => set(NOTHING_SELECTED),
 }))
 

@@ -145,9 +145,14 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   )
   const elements = useMapMarkers(instanceRef, ready, markers, describe, onAction)
 
-  // The card shows the selected order's restaurant, or the one the player opened.
+  // The card shows the selected order's restaurant (while it waits for a rider), or the one the player opened.
+  // An order already on a trip is picked to reassign it or call the customer: the selection bar handles that.
   const selectedOrder = orders.find((order) => order.id === selectedOrderId)
-  const shownRestaurant = selectedOrder ? restaurantOf(map, selectedOrder) : map.restaurants.find((r) => r.id === openRestaurantId)
+  const shownRestaurant = selectedOrder
+    ? selectedOrder.status === 'pending'
+      ? restaurantOf(map, selectedOrder)
+      : undefined
+    : map.restaurants.find((r) => r.id === openRestaurantId)
   const closePopup = useCallback(() => {
     setOpenRestaurantId(null)
     if (selectedOrderId) selectOrder(selectedOrderId)

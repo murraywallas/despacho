@@ -1,3 +1,4 @@
+import { Phone } from 'lucide-react'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
 import { formatGameTime } from './formatClock'
@@ -8,6 +9,7 @@ export function TopBar() {
   const clock = useShiftStore((state) => state.clock)
   const togglePause = useShiftStore((state) => state.togglePause)
   const toggleSpeed = useShiftStore((state) => state.toggleSpeed)
+  const callsLeft = useShiftStore((state) => state.callsLeft)
 
   const status = clock.finished ? t('topbar.finished') : clock.paused ? t('topbar.paused') : null
   const now = formatGameTime(clock.elapsedSec, gameTime)
@@ -40,6 +42,10 @@ export function TopBar() {
       </div>
 
       <div className="top-bar__controls">
+        <span className="top-bar__calls" aria-label={t('topbar.callsLabel', { calls: callsLeft })} data-testid="calls-left">
+          <Phone size={14} aria-hidden />
+          {callsLeft}
+        </span>
         <button
           type="button"
           className="top-bar__button"
