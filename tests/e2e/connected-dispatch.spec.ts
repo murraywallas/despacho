@@ -66,7 +66,7 @@ test('los controles chicos tienen al menos 32 × 32 px de área de clic', async 
   const controls = [
     page.getByRole('button', { name: 'Acercar' }),
     page.getByRole('button', { name: 'Alejar' }),
-    page.getByRole('button', { name: 'Ajustar el volumen' }),
+    page.getByRole('button', { name: /Menú de pausa/ }),
     page.getByTestId('sound-mute'),
     page.getByRole('button', { name: /Atajos de teclado/ }),
   ]

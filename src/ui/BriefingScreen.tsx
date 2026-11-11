@@ -1,15 +1,33 @@
 import { ArrowLeft, Play } from 'lucide-react'
-import { levels, shift as shiftBalance } from '../game/balance'
+import { levels, shift as shiftBalance, vehicles } from '../game/balance'
 import { balanceFor, briefingOf } from '../game/levels'
-import { shiftSettingsFrom } from '../game/shift'
-import { t } from '../i18n'
+import { positionOf } from '../game/cityMap'
+import { createShift, shiftSettingsFrom } from '../game/shift'
+import { hasText, t } from '../i18n'
 import { useScreenStore } from '../store/screenStore'
 import { useShiftStore } from '../store/shiftStore'
 import { formatGameTime, gameMinutes } from './formatClock'
 import { formatRating } from './formatRating'
-import { levelHours, levelName, gameTimeOf, neighborhoodName } from './levelText'
+import { levelHours, levelName, gameTimeOf, neighborhoodName, PANEL_INSET } from './levelText'
 import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
+import { BackdropMap, type BackdropPin } from './BackdropMap'
 import './levels.css'
+
+const pinsByLevel = new Map<string, readonly BackdropPin[]>()
+
+/** The level's restaurants, where its shift puts them (same seed, same places). Worked out once per level. */
+function restaurantPins(levelId: string): readonly BackdropPin[] {
+  const known = pinsByLevel.get(levelId)
+  if (known) return known
+  const { map } = createShift(balanceFor(levelId), balanceFor(levelId).seed).shift
+  const pins = map.restaurants.map((restaurant) => ({
+    key: restaurant.id,
+    label: restaurant.label,
+    lngLat: positionOf(map, restaurant.node),
+  }))
+  pinsByLevel.set(levelId, pins)
+  return pins
+}
 
 /** What's coming before a shift: the fleet, how many orders, the deadline and the rush hour. */
 export function BriefingScreen() {
@@ -20,6 +38,7 @@ export function BriefingScreen() {
   if (!levelId || !levels[levelId]) return null
 
   const balance = balanceFor(levelId)
+  const pins = restaurantPins(levelId)
   const briefing = briefingOf(balance, shiftSettingsFrom(balance).orders)
   const time = gameTimeOf(levelId)
   const start = () => {
@@ -29,7 +48,8 @@ export function BriefingScreen() {
 
   return (
     <main className="levels" aria-labelledby="briefing-title">
-      <section className="briefing" data-testid="briefing">
+      <BackdropMap pins={pins} leftInset={PANEL_INSET} />
+      <section className="briefing levels__panel floating-panel" data-testid="briefing">
         <p className="levels__app">{t('briefing.eyebrow')}</p>
         <h1 className="levels__title" id="briefing-title">
           {levelName(levelId)}
@@ -64,13 +84,25 @@ export function BriefingScreen() {
         <ol className="briefing__fleet" data-testid="briefing-fleet">
           {briefing.fleet.map((vehicle, index) => {
             const key = VEHICLE_TEXT[vehicle]
+            const row = vehicles[vehicle]
+            const noteKey = `vehicles.${vehicle}.note`
             return (
               <li key={`${vehicle}-${index}`} className="briefing__rider">
                 <span className="briefing__badge" aria-hidden>
                   {index + 1}
                 </span>
                 <VehicleIcon vehicle={vehicle} size={18} aria-hidden />
-                {t('riders.name', { number: index + 1 })} · {key ? t(key) : vehicle}
+                <span className="briefing__rider-body">
+                  <span className="briefing__rider-name">
+                    {t('riders.name', { number: index + 1 })} · {key ? t(key) : vehicle}
+                  </span>
+                  {hasText(noteKey) && <span className="briefing__rider-note">{t(noteKey)}</span>}
+                </span>
+                {row && (
+                  <span className="briefing__rider-stats">
+                    {t('briefing.vehicleStats', { speed: row.speedKmh, capacity: row.capacity })}
+                  </span>
+                )}
               </li>
             )
           })}

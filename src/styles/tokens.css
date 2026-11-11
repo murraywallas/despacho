@@ -127,3 +127,34 @@
     --panel-right-w: 236px;
   }
 }
+
+/*
+ * Paleta para daltonismo (ajuste del menú de pausa): azul con tiempo, naranja urgente y magenta tarde, que se
+ * distinguen con protanopia y deuteranopia (colores de Okabe e Ito).
+ */
+:root[data-palette='colorblind'] {
+  --ok: #0072b2;
+  --win: #0072b2;
+  --urgent: #a35200;
+  --urgent-bg: rgb(230 159 0 / 0.22);
+  --late: #a3306f;
+  --late-bg: rgb(204 121 167 / 0.22);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-palette='colorblind'] {
+    --ok: #56b4e9;
+    --win: #56b4e9;
+    --urgent: #e69f00;
+    --urgent-bg: rgb(230 159 0 / 0.14);
+    --late: #e07bb5;
+    --late-bg: rgb(204 121 167 / 0.16);
+  }
+}
+
+/* El mapa es oscuro en los dos temas: sus clientes usan los colores oscuros de la paleta. */
+:root[data-palette='colorblind'] .map-view {
+  --customer-ok: #56b4e9;
+  --customer-urgent: #e69f00;
+  --customer-late: #e07bb5;
+}

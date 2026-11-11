@@ -8,6 +8,7 @@ import { BriefingScreen } from './ui/BriefingScreen'
 import { LevelSelect } from './ui/LevelSelect'
 import { ShiftScreen } from './ui/ShiftScreen'
 import { useRecordProgress } from './ui/useRecordProgress'
+import { useApplySettings } from './ui/useApplySettings'
 import { useSounds } from './ui/useSounds'
 
 /** `?level=<id>` opens that level straight away, if it is unlocked (handy to share or test a level). */
@@ -16,6 +17,7 @@ const LEVEL_PARAM = 'level'
 export default function App() {
   const screen = useScreenStore((state) => state.screen)
   useSounds()
+  useApplySettings()
   useRecordProgress()
 
   useEffect(() => {
