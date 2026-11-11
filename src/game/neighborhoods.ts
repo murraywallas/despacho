@@ -7,13 +7,22 @@ import norrebro from '../../data/streets/norrebro.json'
 import vesterbro from '../../data/streets/vesterbro.json'
 import { routing, vehicles } from './balance'
 import { bikeProfile, createNetwork, vehicleProfile, type StreetNetwork } from './routing'
-import type { StreetGraphFile } from './streetGraph'
+import type { LonLat, StreetGraphFile } from './streetGraph'
 
 /** Neighborhoods with streets, by the id of the Barrios tab. */
 export const STREETS: Readonly<Record<string, StreetGraphFile>> = {
   norrebro: norrebro as unknown as StreetGraphFile,
   vesterbro: vesterbro as unknown as StreetGraphFile,
   frederiksberg: frederiksberg as unknown as StreetGraphFile,
+}
+
+/**
+ * Zones a level can pack restaurants into (Niveles tab, column zone): the middle of each, as [lon, lat].
+ * Places, not game numbers: how many restaurants and how close is in the Niveles tab.
+ */
+export const ZONES: Readonly<Record<string, LonLat>> = {
+  // Kødbyen, the old meatpacking district of Vesterbro, full of restaurants.
+  kodbyen: [12.5605, 55.6688],
 }
 
 /** The first neighborhood: the prototype shift and the levels without one play here. */

@@ -75,18 +75,38 @@ export function findAddresses(network: StreetNetwork, kind?: 'major', others: re
   return [...nodes].sort((a, b) => a - b)
 }
 
-/** Picks `count` different crossings on main streets for the restaurants. */
+/** Several restaurants close together (Kødbyen in Vesterbro): many orders leave from the same corner. */
+export interface RestaurantCluster {
+  readonly center: LonLat
+  readonly radiusM: number
+  /** How many of the restaurants stand inside the circle. */
+  readonly count: number
+}
+
+/**
+ * Picks `count` different crossings for the restaurants: first the cluster's, on any street inside its circle,
+ * then the rest on main streets anywhere. The cluster's restaurants get the first letters (A, B…).
+ */
 export function placeRestaurants(
   network: StreetNetwork,
   count: number,
   random: Random,
   others: readonly StreetNetwork[] = [],
+  cluster?: RestaurantCluster,
 ): Restaurant[] {
   const spots = findAddresses(network, 'major', others)
-  if (count > spots.length) throw new Error(`No entran ${count} restaurantes en las avenidas del barrio.`)
+  const inCluster = Math.min(cluster?.count ?? 0, count)
+  const clusterSpots = cluster
+    ? findAddresses(network, undefined, others).filter(
+        (node) => distanceM(network.streets.nodes[node], cluster.center) <= cluster.radiusM,
+      )
+    : []
+  if (inCluster > clusterSpots.length) throw new Error(`No entran ${inCluster} restaurantes en la zona elegida.`)
+  if (count - inCluster > spots.length) throw new Error(`No entran ${count} restaurantes en las avenidas del barrio.`)
   const restaurants: Restaurant[] = []
   while (restaurants.length < count) {
-    const node = spots[randomInt(random, spots.length)]
+    const from = restaurants.length < inCluster ? clusterSpots : spots
+    const node = from[randomInt(random, from.length)]
     if (restaurants.some((restaurant) => restaurant.node === node)) continue
     const number = restaurants.length + 1
     restaurants.push({ id: `r${number}`, label: String.fromCharCode(FIRST_LABEL + number - 1), node })
@@ -100,12 +120,13 @@ export function createCityMap(
   restaurantCount: number,
   random: Random,
   networks: Readonly<Record<string, StreetNetwork>> = {},
+  cluster?: RestaurantCluster,
 ): CityMap {
   const others = Object.values(networks)
   return {
     network,
     networks,
-    restaurants: placeRestaurants(network, restaurantCount, random, others),
+    restaurants: placeRestaurants(network, restaurantCount, random, others, cluster),
     addresses: findAddresses(network, undefined, others),
   }
 }

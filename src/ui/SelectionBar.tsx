@@ -8,6 +8,7 @@ import { gameTime } from './gameTime'
 import './operatorTools.css'
 import { Keycap } from './Keycap'
 import { restaurantName } from './restaurantName'
+import { useNeighborhood } from './useNeighborhood'
 
 /**
  * A strip over the map while an order is picked: what it is, what can be done with it now, and the call to the
@@ -17,6 +18,7 @@ export function SelectionBar() {
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const riders = useShiftStore((state) => state.riders)
   const restaurants = useShiftStore((state) => state.map.restaurants)
+  const neighborhood = useNeighborhood()
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
   const callsLeft = useShiftStore((state) => state.callsLeft)
@@ -44,7 +46,7 @@ export function SelectionBar() {
       <div className="selection-bar__text">
         <span className="selection-bar__title">
           {t('orders.number', { number: order.number })}
-          {restaurant && ` · ${restaurantName(restaurant)}`}
+          {restaurant && ` · ${restaurantName(restaurant, neighborhood)}`}
           {' · '}
           {left > 0 ? t('orders.minutesLeft', { minutes: gameMinutes(left, gameTime) }) : t('orders.late')}
         </span>

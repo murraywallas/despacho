@@ -11,6 +11,7 @@ import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
 import { restaurantName } from './restaurantName'
+import { useNeighborhood } from './useNeighborhood'
 
 
 interface RestaurantPopupProps {
@@ -26,6 +27,7 @@ interface RestaurantPopupProps {
  */
 export function RestaurantPopup({ restaurant, onClose, onDispatched }: RestaurantPopupProps) {
   const map = useShiftStore((state) => state.map)
+  const neighborhood = useNeighborhood()
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const riders = useShiftStore((state) => state.riders)
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
@@ -35,7 +37,7 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
   const selectOrder = useShiftStore((state) => state.selectOrder)
   const pickRider = useShiftStore((state) => state.pickRider)
 
-  const name = restaurantName(restaurant)
+  const name = restaurantName(restaurant, neighborhood)
   const waiting = waitingAt(orders, restaurant.id)
   const selectedOrder = waiting.find((order) => order.id === selectedOrderId)
   const selectedRider = riders.find((rider) => rider.id === selectedRiderId)

@@ -280,3 +280,49 @@
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
+
+/* Barrios con turnos: uno se ve a la vez (el mapa de barrios llega con la #61). */
+.levels__areas {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0 12px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  width: fit-content;
+}
+
+.levels__area {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 3px);
+  background: transparent;
+  color: var(--ink-quiet);
+  font: 600 calc(13px * var(--text-scale)) / 1.2 var(--font-sans, inherit);
+  cursor: pointer;
+}
+
+.levels__area:hover {
+  color: var(--ink);
+}
+
+.levels__area[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.levels__area:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.briefing__zone {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent, var(--ink));
+  background: var(--surface);
+  font-size: calc(13px * var(--text-scale));
+}

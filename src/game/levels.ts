@@ -2,8 +2,9 @@
  * The levels of a neighborhood and the player's progress through them: which ones are open, the best stars of
  * each, and what the briefing tells before a shift. Pure.
  */
-import { fleetOf, levelBalance, levels, prototype, type PrototypeBalance } from './balance'
-import { bikeNetworkOf, DEFAULT_NEIGHBORHOOD, networkOf } from './neighborhoods'
+import { fleetOf, levelBalance, levelIds, levels, prototype, type PrototypeBalance } from './balance'
+import type { RestaurantCluster } from './cityMap'
+import { bikeNetworkOf, DEFAULT_NEIGHBORHOOD, networkOf, ZONES } from './neighborhoods'
 import { spawnIntervalAt, type OrderSettings } from './orders'
 import { createShift } from './shift'
 
@@ -77,9 +78,32 @@ export function neighborhoodOf(levelId: string | null): string {
   return level?.neighborhood ?? DEFAULT_NEIGHBORHOOD
 }
 
+/** Where a level packs restaurants together, if it does. */
+export function clusterOf(balance: PrototypeBalance): RestaurantCluster | undefined {
+  const { zone, zoneRestaurants, zoneRadiusM } = balance.restaurants
+  if (!zone || !zoneRestaurants || !zoneRadiusM) return undefined
+  const center = ZONES[zone]
+  if (!center) throw new Error(`La zona ${zone} de la hoja Niveles no está en neighborhoods.ts.`)
+  return { center, radiusM: zoneRadiusM, count: zoneRestaurants }
+}
+
+/** A fresh shift with these rules and seed, on the streets of a neighborhood. */
+export function createAreaShift(balance: PrototypeBalance, seed: number, area: string): ReturnType<typeof createShift> {
+  return createShift(balance, seed, bikeNetworkOf(area), (vehicle) => networkOf(area, vehicle), clusterOf(balance))
+}
+
 /** A fresh shift of a level, on its neighborhood's streets. */
 export function createLevelShift(levelId: string | null): ReturnType<typeof createShift> {
   const balance = balanceFor(levelId)
-  const area = neighborhoodOf(levelId)
-  return createShift(balance, balance.seed, bikeNetworkOf(area), (vehicle) => networkOf(area, vehicle))
+  return createAreaShift(balance, balance.seed, neighborhoodOf(levelId))
+}
+
+/** Neighborhoods with levels, in the order they are played. */
+export function levelNeighborhoods(ids: readonly string[] = levelIds): string[] {
+  return [...new Set(ids.map((id) => neighborhoodOf(id)))]
+}
+
+/** The levels of a neighborhood, in order. */
+export function levelsOf(neighborhood: string, ids: readonly string[] = levelIds): string[] {
+  return ids.filter((id) => neighborhoodOf(id) === neighborhood)
 }

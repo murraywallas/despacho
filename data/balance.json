@@ -389,6 +389,78 @@
       "deadlineSec": 114,
       "seed": 202,
       "light": "night"
+    },
+    "vesterbro_lunch": {
+      "order": 4,
+      "neighborhood": "vesterbro",
+      "startHour": 12,
+      "durationSec": 420,
+      "restaurants": 4,
+      "fleet": [
+        "bike",
+        "skateboard",
+        "rollers",
+        "e_scooter"
+      ],
+      "spawnIntervalSec": 12,
+      "peakFromSec": 120,
+      "peakToSec": 240,
+      "peakIntervalSec": 9,
+      "deadlineSec": 144,
+      "seed": 301,
+      "light": "noon",
+      "zone": "kodbyen",
+      "zoneRestaurants": 3,
+      "zoneRadiusM": 300
+    },
+    "vesterbro_dinner": {
+      "order": 5,
+      "neighborhood": "vesterbro",
+      "startHour": 19,
+      "durationSec": 420,
+      "restaurants": 5,
+      "fleet": [
+        "bike",
+        "bike",
+        "skateboard",
+        "rollers",
+        "e_scooter"
+      ],
+      "spawnIntervalSec": 9,
+      "peakFromSec": 150,
+      "peakToSec": 300,
+      "peakIntervalSec": 6,
+      "deadlineSec": 126,
+      "seed": 404,
+      "light": "dusk",
+      "zone": "kodbyen",
+      "zoneRestaurants": 4,
+      "zoneRadiusM": 300
+    },
+    "vesterbro_friday": {
+      "order": 6,
+      "neighborhood": "vesterbro",
+      "startHour": 21,
+      "durationSec": 420,
+      "restaurants": 5,
+      "fleet": [
+        "bike",
+        "bike",
+        "skateboard",
+        "rollers",
+        "e_scooter",
+        "e_scooter"
+      ],
+      "spawnIntervalSec": 7,
+      "peakFromSec": 120,
+      "peakToSec": 330,
+      "peakIntervalSec": 5,
+      "deadlineSec": 114,
+      "seed": 521,
+      "light": "night",
+      "zone": "kodbyen",
+      "zoneRestaurants": 4,
+      "zoneRadiusM": 300
     }
   }
 }

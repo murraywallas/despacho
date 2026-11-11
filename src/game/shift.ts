@@ -4,7 +4,7 @@
  */
 import { clock as clockBalance, fleetOf, vehicles, type PrototypeBalance } from './balance'
 import { cancelExpired, closeShift } from './cancellation'
-import { createCityMap, type CityMap } from './cityMap'
+import { createCityMap, type CityMap, type RestaurantCluster } from './cityMap'
 import { createClock, tick, type ShiftClock } from './clock'
 import { assignOrders, capacityOf } from './dispatch'
 
@@ -78,11 +78,12 @@ export function createShift(
   seed: number,
   network: StreetNetwork = norrebroBikeNetwork(),
   networkOf: (vehicle: string) => StreetNetwork = norrebroNetworkFor,
+  cluster?: RestaurantCluster,
 ): { shift: ShiftSnapshot; random: Random } {
   const random = createRandom(seed)
   const fleet = fleetOf(balance)
   const networks = Object.fromEntries(fleet.map((vehicle) => [vehicle, networkOf(vehicle)]))
-  const map = createCityMap(network, balance.restaurants.count, random, networks)
+  const map = createCityMap(network, balance.restaurants.count, random, networks, cluster)
   return {
     random,
     shift: {

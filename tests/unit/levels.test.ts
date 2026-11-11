@@ -1,7 +1,17 @@
 import { describe, expect, test } from 'vitest'
-import { autoplay, firstComeBot, triageBot, type AutoplayOptions, type Bot } from '../../src/game/autoplay'
+import { autoplay, batchingBot, firstComeBot, triageBot, type AutoplayOptions, type Bot } from '../../src/game/autoplay'
 import { fleetOf, levelIds, levels, progression, prototype, shift as shiftBalance } from '../../src/game/balance'
-import { balanceFor, briefingOf, expectedOrders, isUnlocked, nextLevel, recordResult } from '../../src/game/levels'
+import {
+  balanceFor,
+  briefingOf,
+  expectedOrders,
+  isUnlocked,
+  levelNeighborhoods,
+  levelsOf,
+  neighborhoodOf,
+  nextLevel,
+  recordResult,
+} from '../../src/game/levels'
 import { spawnIntervalAt, type OrderSettings } from '../../src/game/orders'
 import { summarizeShift } from '../../src/game/results'
 import { shiftSettingsFrom } from '../../src/game/shift'
@@ -10,9 +20,17 @@ import { useShiftStore } from '../../src/store/shiftStore'
 const UNLOCK = progression.unlockAvgRating
 
 describe('la pestaña Niveles', () => {
-  test('Nørrebro tiene tres niveles: almuerzo, cena y viernes a la noche', () => {
-    expect(levelIds).toEqual(['lunch', 'dinner', 'friday'])
-    for (const id of levelIds) expect(levels[id].neighborhood).toBe('norrebro')
+  test('Nørrebro y después Vesterbro, con tres niveles cada uno: almuerzo, cena y viernes a la noche', () => {
+    expect(levelNeighborhoods()).toEqual(['norrebro', 'vesterbro'])
+    expect(levelsOf('norrebro')).toEqual(['lunch', 'dinner', 'friday'])
+    expect(levelsOf('vesterbro')).toEqual(['vesterbro_lunch', 'vesterbro_dinner', 'vesterbro_friday'])
+    expect(levelIds).toEqual([...levelsOf('norrebro'), ...levelsOf('vesterbro')])
+  })
+
+  test('la flota de Vesterbro trae rollers, y bici, patineta y monopatín', () => {
+    for (const id of levelsOf('vesterbro')) {
+      expect(new Set(levels[id].fleet)).toEqual(new Set(['bike', 'skateboard', 'rollers', 'e_scooter']))
+    }
   })
 
   test('cada nivel pone sus números sobre los del prototipo', () => {
@@ -26,11 +44,12 @@ describe('la pestaña Niveles', () => {
     expect(balanceFor(null)).toBe(prototype)
   })
 
-  test('cada nivel es más exigente que el anterior: más pedidos, menos plazo, más flota', () => {
-    const counts = levelIds.map((id) => expectedOrders(shiftSettingsFrom(balanceFor(id)).orders))
-    const deadlines = levelIds.map((id) => levels[id].deadlineSec)
-    const fleets = levelIds.map((id) => levels[id].fleet.length)
-    for (let i = 1; i < levelIds.length; i++) {
+  test.each(levelNeighborhoods())('%s: cada nivel es más exigente que el anterior: más pedidos, menos plazo, más flota', (area) => {
+    const ids = levelsOf(area)
+    const counts = ids.map((id) => expectedOrders(shiftSettingsFrom(balanceFor(id)).orders))
+    const deadlines = ids.map((id) => levels[id].deadlineSec)
+    const fleets = ids.map((id) => levels[id].fleet.length)
+    for (let i = 1; i < ids.length; i++) {
       expect(counts[i]).toBeGreaterThan(counts[i - 1])
       expect(deadlines[i]).toBeLessThan(deadlines[i - 1])
       expect(fleets[i]).toBeGreaterThanOrEqual(fleets[i - 1])
@@ -74,6 +93,13 @@ describe('progreso', () => {
     expect(isUnlocked(levelIds, {}, 'nope', UNLOCK)).toBe(false)
   })
 
+  test('Vesterbro se abre ganando el viernes de Nørrebro', () => {
+    const norrebro = { lunch: 5, dinner: 5 }
+    expect(isUnlocked(levelIds, norrebro, 'vesterbro_lunch', UNLOCK)).toBe(false)
+    expect(isUnlocked(levelIds, { ...norrebro, friday: UNLOCK }, 'vesterbro_lunch', UNLOCK)).toBe(true)
+    expect(nextLevel(levelIds, 'friday')).toBe('vesterbro_lunch')
+  })
+
   test('se guarda el mejor resultado de cada nivel', () => {
     const first = recordResult({}, 'lunch', 3.5)
     expect(first).toEqual({ lunch: 3.5 })
@@ -83,7 +109,7 @@ describe('progreso', () => {
 
   test('siguiente nivel', () => {
     expect(nextLevel(levelIds, 'lunch')).toBe('dinner')
-    expect(nextLevel(levelIds, 'friday')).toBeUndefined()
+    expect(nextLevel(levelIds, 'vesterbro_friday')).toBeUndefined()
   })
 
   test('el estado arranca un nivel con su flota y "Jugar otra vez" repite el mismo nivel', () => {
@@ -106,24 +132,34 @@ describe('pilar 1 en cada nivel', () => {
   const seeds = [11, 23, 37, 41, 59, 67, 73, 89]
   const play = (levelId: string, bot: Bot, seed?: number) => {
     const balance = balanceFor(levelId)
-    const end = autoplay(balance, shiftSettingsFrom(balance), seed ?? balance.seed, bot, options)
+    const end = autoplay(balance, shiftSettingsFrom(balance), seed ?? balance.seed, bot, options, neighborhoodOf(levelId))
     return summarizeShift(end.orderQueue.orders, balance.heat, balance.rating, shiftBalance)
   }
+  // Jugar con cuidado en cada barrio es usar lo que el barrio enseña: en Vesterbro, juntar pedidos de un mismo lugar.
+  const carefulBot = (levelId: string): Bot => (neighborhoodOf(levelId) === 'vesterbro' ? batchingBot : triageBot)
+  const averageOf = (levelId: string, bot: Bot) =>
+    seeds.reduce((sum, seed) => sum + (play(levelId, bot, seed).average ?? 0), 0) / seeds.length
 
   test.each(levelIds)('%s: despachar sin pensar no gana; con cuidado se gana, pero no sale perfecto', (levelId) => {
     expect(play(levelId, firstComeBot).outcome).not.toBe('win')
-    const careful = play(levelId, triageBot)
+    const careful = play(levelId, carefulBot(levelId))
     expect(careful.outcome).toBe('win')
     expect(careful.average).toBeLessThan(prototype.rating.max)
     expect(careful.cancelled).toBeGreaterThan(0)
   })
 
-  test('la dificultad crece: el bot cuidadoso saca menos estrellas en cada nivel', { timeout: 120_000 }, () => {
-    const averages = levelIds.map(
-      (levelId) => seeds.reduce((sum, seed) => sum + (play(levelId, triageBot, seed).average ?? 0), 0) / seeds.length,
-    )
-    for (let i = 1; i < averages.length; i++) expect(averages[i]).toBeLessThan(averages[i - 1])
-    // El primero se gana en promedio; el último, ya no siempre.
-    expect(averages[0]).toBeGreaterThanOrEqual(shiftBalance.winAtLeast)
+  test.each(levelNeighborhoods())(
+    '%s: la dificultad crece, el bot cuidadoso saca menos estrellas en cada nivel',
+    { timeout: 120_000 },
+    (area) => {
+      const averages = levelsOf(area).map((levelId) => averageOf(levelId, carefulBot(levelId)))
+      for (let i = 1; i < averages.length; i++) expect(averages[i]).toBeLessThan(averages[i - 1])
+      // El primero se gana en promedio.
+      expect(averages[0]).toBeGreaterThanOrEqual(shiftBalance.winAtLeast)
+    },
+  )
+
+  test.each(levelsOf('vesterbro'))('%s: juntar dos pedidos del mismo restaurante saca más estrellas que llevarlos de a uno', { timeout: 120_000 }, (levelId) => {
+    expect(averageOf(levelId, batchingBot)).toBeGreaterThan(averageOf(levelId, triageBot))
   })
 })

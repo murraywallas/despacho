@@ -10,6 +10,7 @@ import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
 import { restaurantName } from './restaurantName'
+import { useNeighborhood } from './useNeighborhood'
 import { RIDER_DRAG_TYPE } from './RiderCard'
 import { SuggestedRider } from './SuggestedRider'
 
@@ -120,6 +121,7 @@ function OrderCard({ order, nowSec, restaurantName, selected, onSelect, onDropRi
 export function OrderPanel() {
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const restaurants = useShiftStore((state) => state.map.restaurants)
+  const neighborhood = useNeighborhood()
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
   const addedOrderIds = useShiftStore((state) => state.addedOrderIds)
@@ -130,7 +132,7 @@ export function OrderPanel() {
   const cancelled = orders.filter((order) => order.status === 'cancelled').length
   const nameOf = (id: string) => {
     const restaurant = restaurants.find((candidate) => candidate.id === id)
-    return restaurant ? restaurantName(restaurant) : '?'
+    return restaurant ? restaurantName(restaurant, neighborhood) : '?'
   }
 
   return (
