@@ -4,14 +4,18 @@
  */
 import type { PrototypeBalance } from './balance'
 import { networkFor } from './cityMap'
-import { rankRiders, restaurantOf, travelTimeSec } from './dispatch'
+import { capacityOf, rankRiders, restaurantOf, travelTimeSec } from './dispatch'
 import { speedOf } from './movement'
 import { parkingSecOf } from './parking'
-import { advanceShift, createShift, dispatchOrder, type ShiftSettings, type ShiftSnapshot } from './shift'
+import { createAreaShift } from './levels'
+import { DEFAULT_NEIGHBORHOOD } from './neighborhoods'
+import { advanceShift, dispatchOrders, type ShiftSettings, type ShiftSnapshot } from './shift'
 
 export interface BotPick {
   readonly orderId: string
   readonly riderId: string
+  /** Other orders of the same restaurant the rider takes on the same trip. */
+  readonly withOrderIds?: readonly string[]
 }
 
 /** Picks the next order and rider, or undefined to wait. */
@@ -53,6 +57,25 @@ export const triageBot: Bot = (shift, settings) => {
   return best?.pick
 }
 
+/**
+ * Careful dispatching that also batches: like triageBot, but when the rider carries more than one order, it takes
+ * the other most urgent orders waiting at the same restaurant on the same trip.
+ */
+export const batchingBot: Bot = (shift, settings) => {
+  const pick = triageBot(shift, settings)
+  if (!pick) return undefined
+  const rider = shift.riders.find((candidate) => candidate.id === pick.riderId)
+  const order = shift.orderQueue.orders.find((candidate) => candidate.id === pick.orderId)
+  if (!rider || !order) return pick
+  const room = capacityOf(rider.vehicle) - 1
+  if (room <= 0) return pick
+  const others = pendingOrders(shift)
+    .filter((candidate) => candidate.id !== order.id && candidate.restaurantId === order.restaurantId)
+    .sort((x, y) => x.deadlineAtSec - y.deadlineAtSec)
+    .slice(0, room)
+  return others.length > 0 ? { ...pick, withOrderIds: others.map((other) => other.id) } : pick
+}
+
 export interface AutoplayOptions {
   /** Seconds of play between two looks at the screen (a player doesn't react instantly). */
   readonly reactionSec: number
@@ -62,15 +85,16 @@ export interface AutoplayOptions {
   readonly stepSec: number
 }
 
-/** Plays a whole shift at normal speed with the given bot and returns how it ended. */
+/** Plays a whole shift at normal speed with the given bot, on a neighborhood's streets, and returns how it ended. */
 export function autoplay(
   balance: PrototypeBalance,
   settings: ShiftSettings,
   seed: number,
   bot: Bot,
   options: AutoplayOptions,
+  neighborhood: string = DEFAULT_NEIGHBORHOOD,
 ): ShiftSnapshot {
-  const created = createShift(balance, seed)
+  const created = createAreaShift(balance, seed, neighborhood)
   let shift = created.shift
   let nextLookSec = 0
 
@@ -80,7 +104,8 @@ export function autoplay(
       for (let picks = 0; picks < options.picksPerLook; picks++) {
         const pick = bot(shift, settings)
         if (!pick) break
-        const result = dispatchOrder(shift.map, shift.orderQueue, shift.riders, pick.orderId, pick.riderId)
+        const orderIds = [pick.orderId, ...(pick.withOrderIds ?? [])]
+        const result = dispatchOrders(shift.map, shift.orderQueue, shift.riders, orderIds, pick.riderId)
         if (!result) break
         shift = { ...shift, ...result }
       }

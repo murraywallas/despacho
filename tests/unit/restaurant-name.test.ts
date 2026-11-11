@@ -3,8 +3,14 @@ import { hasText } from '../../src/i18n'
 import { restaurantName } from '../../src/ui/restaurantName'
 
 describe('nombres de restaurantes', () => {
-  test('letra del mapa y nombre inventado', () => {
+  test('letra del mapa y nombre inventado, propio de cada barrio', () => {
     expect(restaurantName({ id: 'r1', label: 'A' })).toBe('A · Pho Søndag')
+    expect(restaurantName({ id: 'r1', label: 'A' }, 'norrebro')).toBe('A · Pho Søndag')
+    expect(restaurantName({ id: 'r1', label: 'A' }, 'vesterbro')).toBe('A · Grill Slagterhallen')
+  })
+
+  test('cada restaurante de Vesterbro tiene nombre', () => {
+    for (let number = 1; number <= 5; number++) expect(hasText(`restaurants.vesterbro.r${number}`)).toBe(true)
   })
 
   test('sin nombre en es.json, "Restaurante" y la letra', () => {
@@ -12,8 +18,8 @@ describe('nombres de restaurantes', () => {
   })
 
   test('hasText solo reconoce claves que existen', () => {
-    expect(hasText('restaurants.r2')).toBe(true)
-    expect(hasText('restaurants.r99')).toBe(false)
+    expect(hasText('restaurants.norrebro.r2')).toBe(true)
+    expect(hasText('restaurants.norrebro.r99')).toBe(false)
     expect(hasText('toString')).toBe(false)
   })
 })

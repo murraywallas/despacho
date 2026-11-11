@@ -1,4 +1,5 @@
 import { Ban, Bike, CircleAlert, PackageCheck, Radio, ReceiptText } from 'lucide-react'
+import { neighborhoodOf } from '../game/levels'
 import type { RadioKind } from '../game/radio'
 import { t } from '../i18n'
 import { useRadioStore } from '../store/radioStore'
@@ -26,6 +27,7 @@ export function RadioFeed() {
   const toggleHidden = useRadioStore((state) => state.toggleHidden)
   const restaurants = useShiftStore((state) => state.map.restaurants)
   const levelId = useShiftStore((state) => state.levelId)
+  const neighborhood = neighborhoodOf(levelId)
   const time = gameTimeOf(levelId)
   const shown = entries.slice(-SHOWN)
 
@@ -50,7 +52,7 @@ export function RadioFeed() {
               <li key={id} className={`radio__line radio__line--${item.kind}${item.mood ? ` radio__line--${item.mood}` : ''}`}>
                 <span className="radio__time">{formatGameTime(item.atSec, time)}</span>
                 <Icon size={ICON_SIZE} aria-hidden className="radio__icon" />
-                <span className="radio__text">{radioText(item, restaurants)}</span>
+                <span className="radio__text">{radioText(item, restaurants, neighborhood)}</span>
               </li>
             )
           })}

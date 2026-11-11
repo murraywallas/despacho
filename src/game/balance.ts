@@ -21,6 +21,10 @@ export interface PrototypeBalance {
   }
   readonly restaurants: {
     readonly count: number
+    /** A zone of the neighborhood (Kødbyen…) where zoneRestaurants of them stand within zoneRadiusM of its middle. */
+    readonly zone?: string
+    readonly zoneRestaurants?: number
+    readonly zoneRadiusM?: number
   }
   readonly orders: {
     readonly spawnIntervalSec: number
@@ -137,6 +141,10 @@ export interface LevelBalance {
   readonly startHour: number
   readonly durationSec: number
   readonly restaurants: number
+  /** Zone where zoneRestaurants of them stand together, within zoneRadiusM of its middle (optional). */
+  readonly zone?: string
+  readonly zoneRestaurants?: number
+  readonly zoneRadiusM?: number
   /** One rider per vehicle, in order (ids of the Vehículos tab). */
   readonly fleet: readonly string[]
   readonly spawnIntervalSec: number
@@ -167,7 +175,10 @@ export function levelBalance(base: PrototypeBalance, level: LevelBalance): Proto
     ...base,
     seed: level.seed,
     shift: { startHour: level.startHour, durationSec: level.durationSec },
-    restaurants: { count: level.restaurants },
+    restaurants: {
+      count: level.restaurants,
+      ...(level.zone ? { zone: level.zone, zoneRestaurants: level.zoneRestaurants, zoneRadiusM: level.zoneRadiusM } : {}),
+    },
     riders: { fleet: level.fleet.join(', ') },
     orders: {
       ...base.orders,

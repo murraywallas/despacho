@@ -9,9 +9,9 @@ function numbers(item: RadioItem): string {
 }
 
 /** One line of the radio, in words. */
-export function radioText(item: RadioItem, restaurants: readonly Restaurant[]): string {
+export function radioText(item: RadioItem, restaurants: readonly Restaurant[], neighborhood?: string): string {
   const restaurant = restaurants.find((candidate) => candidate.id === item.restaurantId)
-  const place = restaurant ? restaurantName(restaurant) : ''
+  const place = restaurant ? restaurantName(restaurant, neighborhood) : ''
   const many = item.orderNumbers.length > 1
   switch (item.kind) {
     case 'newOrder':

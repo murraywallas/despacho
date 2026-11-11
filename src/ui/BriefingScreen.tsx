@@ -13,6 +13,12 @@ import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
 import { BackdropMap, type BackdropPin } from './BackdropMap'
 import './levels.css'
 
+/** "Kødbyen"; the id itself when es.json has no name for it. */
+function zoneName(zone: string): string {
+  const key = `zones.${zone}`
+  return hasText(key) ? t(key) : zone
+}
+
 const pinsByLevel = new Map<string, readonly BackdropPin[]>()
 
 /** The level's restaurants, where its shift puts them (same seed, same places). Worked out once per level. */
@@ -79,6 +85,16 @@ export function BriefingScreen() {
             </dd>
           </div>
         </dl>
+
+        {balance.restaurants.zone && balance.restaurants.zoneRestaurants !== undefined && (
+          <p className="briefing__zone" data-testid="briefing-zone">
+            {t('briefing.zone', {
+              count: balance.restaurants.zoneRestaurants,
+              total: balance.restaurants.count,
+              zone: zoneName(balance.restaurants.zone),
+            })}
+          </p>
+        )}
 
         <h2 className="briefing__subtitle">{t('briefing.fleet')}</h2>
         <ol className="briefing__fleet" data-testid="briefing-fleet">

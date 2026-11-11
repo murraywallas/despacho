@@ -8,8 +8,8 @@ import { mapLightOf } from '../../src/ui/levelText'
 import { nodeAt, smallCity } from './smallCity'
 
 describe('la luz de Copenhague', () => {
-  test('cada nivel de Nørrebro tiene su luz, y sale de la pestaña Niveles', () => {
-    expect(levelIds.map((id) => mapLightOf(id))).toEqual(['noon', 'dusk', 'night'])
+  test('cada barrio tiene mediodía, atardecer y noche, y la luz sale de la pestaña Niveles', () => {
+    expect(levelIds.map((id) => mapLightOf(id))).toEqual(['noon', 'dusk', 'night', 'noon', 'dusk', 'night'])
     for (const id of levelIds) expect(mapLightOf(id)).toBe(levels[id].light)
     expect(mapLightOf(null)).toBe('night')
   })

@@ -20,6 +20,8 @@ import { selectedOrderIds, useShiftStore } from '../store/shiftStore'
 import { MapMarkerContent } from './MapMarkerContent'
 import { RestaurantPopup } from './RestaurantPopup'
 import { restaurantName } from './restaurantName'
+import { useNeighborhood } from './useNeighborhood'
+import { neighborhoodName } from './levelText'
 import { useMapMarkers, type MarkerAction } from './useMapMarkers'
 
 interface MapViewProps {
@@ -70,6 +72,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   const selectOrder = useShiftStore((state) => state.selectOrder)
   const pickRider = useShiftStore((state) => state.pickRider)
   const sendRiderTo = useShiftStore((state) => state.sendRiderTo)
+  const neighborhood = useNeighborhood()
   const streets = map.network.streets
   // The level's light: noon at lunch, dusk at dinner, night on Friday.
   const palette = LIGHTS[mapLightOf(useShiftStore((state) => state.levelId))]
@@ -140,7 +143,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     (marker: MapMarker) => {
       if (marker.kind === 'restaurant') {
         const restaurant = map.restaurants.find((candidate) => candidate.id === marker.id)
-        const name = restaurant ? restaurantName(restaurant) : marker.label
+        const name = restaurant ? restaurantName(restaurant, neighborhood) : marker.label
         return marker.waiting ? t('map.waiting', { name, count: marker.waiting.count }) : name
       }
       if (marker.kind === 'customer') {
@@ -152,7 +155,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
       }
       return t('riders.name', { number: marker.label })
     },
-    [map],
+    [map, neighborhood],
   )
 
   const onAction = useCallback<MarkerAction>(
@@ -234,7 +237,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
       className="map-view"
       role="region"
       data-testid="map"
-      aria-label={t('map.description', { restaurants: map.restaurants.length, riders: riders.length, customers })}
+      aria-label={t('map.description', { neighborhood: neighborhoodName(neighborhood), restaurants: map.restaurants.length, riders: riders.length, customers })}
     >
       {markers.map((marker) => {
         const element = elements.get(marker.key)
