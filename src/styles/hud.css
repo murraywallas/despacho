@@ -253,3 +253,14 @@
   color: var(--ink-quiet);
   font-size: var(--text-sm);
 }
+
+/* Condiciones del turno: la luz del nivel (y más adelante el clima y los eventos). */
+.conditions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-quiet);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}

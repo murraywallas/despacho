@@ -10,7 +10,8 @@ import { t } from '../i18n'
 import '../map/mapMarkers.css'
 import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
 import { AttributionControl, MapLibreMap, NavigationControl, Popup, type GeoJSONSource, type PositionAnchor } from '../map/maplibre'
-import { FALLBACK_STYLE, loadNightStyle } from '../map/nightStyle'
+import { fallbackStyle, LIGHTS, loadNightStyle } from '../map/nightStyle'
+import { mapLightOf } from './levelText'
 import { panelInsets } from './panelInsets'
 import { useDeliveryFx } from './useDeliveryFx'
 import { addRouteLayers, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
@@ -70,6 +71,8 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   const pickRider = useShiftStore((state) => state.pickRider)
   const sendRiderTo = useShiftStore((state) => state.sendRiderTo)
   const streets = map.network.streets
+  // The level's light: noon at lunch, dusk at dinner, night on Friday.
+  const palette = LIGHTS[mapLightOf(useShiftStore((state) => state.levelId))]
 
   useEffect(() => {
     const container = containerRef.current
@@ -77,7 +80,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     let cancelled = false
     const instance = new MapLibreMap({
       container,
-      style: FALLBACK_STYLE,
+      style: fallbackStyle(palette),
       bounds: areaBounds(streets),
       fitBoundsOptions: { padding: panelInsets(container, FIT_PADDING) },
       maxBounds: areaBounds(streets, DRAG_MARGIN),
@@ -106,7 +109,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     instance.once('remove', () => window.removeEventListener('keydown', closeOnEscape))
     instanceRef.current = instance
     setReady(true)
-    void loadNightStyle().then(({ style, online }) => {
+    void loadNightStyle(fetch, palette).then(({ style, online }) => {
       if (!cancelled && online) instance.setStyle(style)
     })
     return () => {
@@ -115,7 +118,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
       instance.remove()
       instanceRef.current = null
     }
-  }, [streets])
+  }, [streets, palette])
 
   const addedOrderIds = useShiftStore((state) => state.addedOrderIds)
   const pickedIds = useMemo(

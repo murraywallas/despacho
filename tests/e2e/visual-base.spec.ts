@@ -41,7 +41,7 @@ test('la pantalla de turno: el mapa de borde a borde, sin scroll y sin textos de
   const orders = page.getByRole('complementary', { name: /Pedidos/ }).getByTestId('order-card')
   await expect(orders).toHaveCount(1, { timeout: (prototype.orders.spawnIntervalSec * 1000) / 2 + 5000 })
   await page.keyboard.press('Space')
-  await orders.first().getByRole('button').click()
+  await orders.first().getByRole('button').first().click()
 
   // El mapa ocupa toda la ventana; los paneles flotan encima.
   const viewport = page.viewportSize()

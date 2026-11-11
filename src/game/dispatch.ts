@@ -109,3 +109,8 @@ export function assignOrder(
 ): AssignResult {
   return assignOrders(orders, riders, [orderId], riderId)
 }
+
+/** The free rider who reaches the order's restaurant soonest: the suggestion shown next to an urgent order. */
+export function suggestRider(map: CityMap, riders: readonly Rider[], order: Order, speeds: Speeds): RankedRider | undefined {
+  return rankRiders(map, riders, order, speeds)[0]
+}

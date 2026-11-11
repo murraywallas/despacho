@@ -339,7 +339,8 @@
       "peakToSec": 240,
       "peakIntervalSec": 15,
       "deadlineSec": 150,
-      "seed": 101
+      "seed": 101,
+      "light": "noon"
     },
     "dinner": {
       "order": 2,
@@ -358,7 +359,8 @@
       "peakToSec": 300,
       "peakIntervalSec": 9,
       "deadlineSec": 132,
-      "seed": 2026
+      "seed": 2026,
+      "light": "dusk"
     },
     "friday": {
       "order": 3,
@@ -378,7 +380,8 @@
       "peakToSec": 330,
       "peakIntervalSec": 7,
       "deadlineSec": 114,
-      "seed": 202
+      "seed": 202,
+      "light": "night"
     }
   }
 }

@@ -78,7 +78,7 @@ test('los repartidores son tarjetas: libres en claro, y al despachar pasan a est
   await expect(map.getByTestId('rider-marker').first().locator('svg')).toBeVisible()
 
   await page.clock.runFor(10_000)
-  await page.getByTestId('order-card').first().getByRole('button').click()
+  await page.getByTestId('order-card').first().getByRole('button').first().click()
   // El pedido elegido marca su restaurante y su cliente en el mapa.
   await expect(map.locator('.map-marker--selected')).toHaveCount(2)
   await page.keyboard.press('1')

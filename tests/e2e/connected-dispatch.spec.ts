@@ -17,11 +17,11 @@ const busy = (page: Page) => riderPanel(page).getByLabel(/de 3 repartidores libr
 test('solo con teclado: ↓ elige el pedido más urgente y la tecla del repartidor lo manda', async ({ page }) => {
   const orders = await waitForOrders(page, 2)
   await page.keyboard.press('ArrowDown')
-  await expect(orders.first().getByRole('button')).toHaveAttribute('aria-pressed', 'true')
+  await expect(orders.first().getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
   await page.keyboard.press('ArrowDown')
-  await expect(orders.nth(1).getByRole('button')).toHaveAttribute('aria-pressed', 'true')
+  await expect(orders.nth(1).getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
   await page.keyboard.press('ArrowUp')
-  await expect(orders.first().getByRole('button')).toHaveAttribute('aria-pressed', 'true')
+  await expect(orders.first().getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
 
   const closest = await riderPanel(page).getByTestId('rider-card').first().getAttribute('data-rider-number')
   await page.keyboard.press(closest ?? '1')
@@ -33,11 +33,11 @@ test('arrastrando un repartidor libre a un pedido, o un pedido a un repartidor',
   const orders = await waitForOrders(page, 2)
   const card = (number: number) => riderPanel(page).locator(`[data-rider-number="${number}"]`).getByRole('button').first()
 
-  await card(1).dragTo(orders.first().getByRole('button'))
+  await card(1).dragTo(orders.first().getByRole('button').first())
   await expect(orders).toHaveCount(1)
   await expect(riderPanel(page).locator('[data-rider-number="1"]')).toContainText(/pedido #\d+/)
 
-  await orders.first().getByRole('button').dragTo(card(2))
+  await orders.first().getByRole('button').first().dragTo(card(2))
   await expect(orders).toHaveCount(0)
   await expect(busy(page)).toHaveAttribute('aria-label', '1 de 3 repartidores libres')
 })
@@ -49,15 +49,15 @@ test('la lista, el mapa y la barra del pedido muestran la misma elección', asyn
     (await orders.nth(index).locator('.order-card__number').textContent())?.replace(/\D/g, '')
 
   const first = await numberOf(0)
-  await orders.first().getByRole('button').click()
+  await orders.first().getByRole('button').first().click()
   await expect(map.getByRole('button', { name: new RegExp(`^Cliente del pedido #${first}\\b`) })).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByTestId('selection-bar')).toContainText(`Pedido #${first}`)
 
   const second = await numberOf(1)
-  await orders.nth(1).getByRole('button').click()
+  await orders.nth(1).getByRole('button').first().click()
   await expect(map.getByRole('button', { name: new RegExp(`^Cliente del pedido #${second}\\b`) })).toHaveAttribute('aria-pressed', 'true')
   await expect(map.getByRole('button', { name: new RegExp(`^Cliente del pedido #${first}\\b`) })).toHaveAttribute('aria-pressed', 'false')
-  await expect(orders.first().getByRole('button')).toHaveAttribute('aria-pressed', 'false')
+  await expect(orders.first().getByRole('button').first()).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByTestId('selection-bar')).toContainText(`Pedido #${second}`)
 })
 
