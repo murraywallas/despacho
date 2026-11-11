@@ -17,7 +17,7 @@ export function panelInsets(element: Element, extra = 0): Insets {
   return {
     top: tokenPx(style, '--topbar-h') + extra,
     right: tokenPx(style, '--panel-right-w') + extra,
-    bottom: extra,
+    bottom: tokenPx(style, '--radio-h') + extra,
     left: tokenPx(style, '--panel-left-w') + extra,
   }
 }

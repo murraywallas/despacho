@@ -144,5 +144,20 @@
   "shortcuts.dragKey": "arrastrar",
   "map.zoomIn": "Acercar",
   "map.zoomOut": "Alejar",
-  "map.toggleAttribution": "Mostrar u ocultar los créditos del mapa"
+  "map.toggleAttribution": "Mostrar u ocultar los créditos del mapa",
+  "radio.title": "Radio del turno",
+  "radio.show": "Mostrar la radio del turno",
+  "radio.hide": "Ocultar la radio del turno",
+  "radio.empty": "Sin novedades todavía.",
+  "radio.number": "#{number}",
+  "radio.newOrder": "{orders} · pedido nuevo de {place}",
+  "radio.newOrders": "{count} pedidos nuevos",
+  "radio.pickedUp": "Repartidor {rider} · salió de {place} con {orders}",
+  "radio.delivered": "{orders} · entregado a tiempo",
+  "radio.deliveredLate": "{orders} · entregado tarde",
+  "radio.deliveredCold": "{orders} · entregado frío",
+  "radio.late": "{orders} · ya está tarde",
+  "radio.cancelled": "{orders} · se canceló",
+  "delivery.good": "+{stars} ★",
+  "delivery.bad": "{stars} ★"
 }

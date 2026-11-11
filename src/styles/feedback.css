@@ -1,0 +1,291 @@
+/*
+ * Respuesta y avisos: la radio del turno, el momento de entrega, la entrada de los pedidos nuevos y el pulso
+ * de urgencia. Solo se anima transform y opacity; con movimiento reducido, solo fundidos.
+ */
+
+/* Radio: abajo del mapa, entre los paneles, encima de la atribución. */
+.radio {
+  position: absolute;
+  left: calc(var(--panel-left-w) + var(--gutter));
+  right: calc(var(--panel-right-w) + var(--gutter));
+  bottom: 28px;
+  z-index: var(--z-panels);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--gap);
+  pointer-events: none;
+}
+
+.radio > * {
+  pointer-events: auto;
+}
+
+.radio__toggle {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-solid);
+  color: var(--ink-quiet);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.radio__toggle[aria-pressed='true'] {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.radio__toggle:active {
+  transform: scale(0.97);
+}
+
+.radio__lines {
+  display: grid;
+  gap: 2px;
+  width: min(520px, 100%);
+  margin: 0;
+  padding: 6px var(--pad);
+  border-radius: var(--radius-lg);
+  list-style: none;
+}
+
+.radio__line {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: var(--gap);
+  min-width: 0;
+  font-size: var(--text-sm);
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.radio__line--empty {
+  display: block;
+  color: var(--ink-quiet);
+}
+
+.radio__time {
+  color: var(--ink-quiet);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.radio__text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.radio__line--newOrder .radio__icon {
+  color: var(--ink);
+}
+
+.radio__line--pickedUp .radio__icon {
+  color: var(--map-rider);
+}
+
+.radio__line--delivered .radio__icon {
+  color: var(--ok);
+}
+
+.radio__line--late .radio__icon,
+.radio__line--cancelled .radio__icon,
+.radio__line--delivered.radio__line--late .radio__icon {
+  color: var(--late);
+}
+
+.radio__line--delivered.radio__line--cold .radio__icon {
+  color: var(--cold);
+}
+
+/* Momento de entrega: las estrellas suben desde el cliente, una vez. */
+/* Por encima de todos los marcadores, incluido el repartidor que acaba de entregar. */
+.delivery-fx {
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.delivery-fx__stars {
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font: 700 13px/1.3 var(--font-mono);
+  white-space: nowrap;
+  animation: delivery-rise 1000ms var(--ease-out) forwards;
+}
+
+.delivery-fx--good .delivery-fx__stars {
+  background: #d8ff54;
+  color: #132018;
+}
+
+.delivery-fx--late .delivery-fx__stars {
+  background: #ff7a6b;
+  color: #1f0a07;
+}
+
+.delivery-fx--cold .delivery-fx__stars {
+  background: #85dbff;
+  color: #04202d;
+}
+
+/* Vapor: tres hilos que suben y se apagan detrás de las estrellas. */
+.delivery-fx__steam {
+  position: absolute;
+  bottom: 4px;
+  width: 4px;
+  height: 14px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.7);
+  animation: delivery-steam 800ms var(--ease-out) forwards;
+}
+
+.delivery-fx__steam:nth-of-type(2) {
+  margin-left: -14px;
+  animation-delay: 60ms;
+}
+
+.delivery-fx__steam:nth-of-type(3) {
+  margin-left: 14px;
+  animation-delay: 120ms;
+}
+
+@keyframes delivery-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.95);
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-22px) scale(1);
+  }
+}
+
+@keyframes delivery-steam {
+  from {
+    opacity: 0.8;
+    transform: translateY(0) scaleY(0.6);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-26px) scaleY(1);
+  }
+}
+
+/* Pedido nuevo: entra deslizándose 8 px con un fundido. */
+.order-card {
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+
+  @starting-style {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+/* Pulso de urgencia: un solo anillo que se expande y se apaga cuando el pedido pasa a urgente. */
+.order-card {
+  position: relative;
+}
+
+.order-card--urgent::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px solid var(--urgent);
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  animation: urgent-pulse 700ms var(--ease-out) 1;
+}
+
+@keyframes urgent-pulse {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+/* Movimiento reducido: nada se desplaza ni crece; solo fundidos. */
+@media (prefers-reduced-motion: reduce) {
+  .radio__line,
+  .order-card {
+    @starting-style {
+      transform: none;
+    }
+  }
+
+  .delivery-fx__stars {
+    animation-name: delivery-fade;
+  }
+
+  .delivery-fx__steam {
+    display: none;
+  }
+
+  .order-card--urgent::after {
+    animation-name: urgent-fade;
+  }
+
+  .order-card:active,
+  .rider-card:active:enabled,
+  .radio__toggle:active {
+    transform: none;
+  }
+}
+
+@keyframes delivery-fade {
+  0% {
+    opacity: 0;
+  }
+
+  20%,
+  80% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes urgent-fade {
+  from {
+    opacity: 0.9;
+  }
+
+  to {
+    opacity: 0;
+  }
+}

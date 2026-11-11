@@ -8,10 +8,7 @@
   background: var(--surface);
   color: inherit;
   text-align: left;
-  transition:
-    border-color var(--duration-fast) ease,
-    background-color var(--duration-fast) ease,
-    transform var(--duration-fast) var(--ease-out);
+  transition: transform var(--duration-fast) var(--ease-out);
 }
 
 .order-card:active,

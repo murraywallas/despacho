@@ -66,6 +66,8 @@
   --topbar-h: 56px;
   --panel-left-w: 248px;
   --panel-right-w: 272px;
+  /* Lugar que ocupa la radio abajo del mapa (tres renglones). */
+  --radio-h: 84px;
   --blur: 12px;
   --shadow-panel: 0 1px 0 rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.18);
 
