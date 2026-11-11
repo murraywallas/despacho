@@ -18,6 +18,8 @@ export interface Trip {
   readonly traveledM: number
   /** Seconds left at the kitchen (only while "atKitchen"). */
   readonly kitchenLeftSec: number
+  /** Seconds still to park at the end of this leg, before the stop (motorbike, car). Missing means none. */
+  readonly parkLeftSec?: number
 }
 
 export interface Rider {

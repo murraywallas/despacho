@@ -6,6 +6,7 @@ import { networkFor, type CityMap, type NodeId } from './cityMap'
 import { restaurantOf, travelTimeSec } from './dispatch'
 import { ordersOf, speedOf, type Speeds } from './movement'
 import type { Order } from './orders'
+import { parkingSecOf } from './parking'
 import type { Rider } from './riders'
 
 export interface StopEta {
@@ -20,7 +21,9 @@ export function stopEtas(map: CityMap, rider: Rider, orders: readonly Order[], s
   if (!trip || stops.length === 0) return []
   const network = networkFor(map, rider.vehicle)
   const speed = speedOf(speeds, rider.vehicle)
-  const leftOfLeg = (trip.pathMeters[trip.pathMeters.length - 1] - trip.traveledM) / speed
+  // The rest of the current leg, including the parking still to do at its end.
+  const leftOfLeg = (trip.pathMeters[trip.pathMeters.length - 1] - trip.traveledM) / speed + (trip.parkLeftSec ?? 0)
+  const park = parkingSecOf(rider.vehicle)
   const etas: StopEta[] = []
   let at = nowSec
   let from: NodeId
@@ -43,7 +46,7 @@ export function stopEtas(map: CityMap, rider: Rider, orders: readonly Order[], s
   }
 
   for (const stop of stops) {
-    at += travelTimeSec(network, from, stop.customer, speed)
+    at += travelTimeSec(network, from, stop.customer, speed) + park
     etas.push({ orderId: stop.id, atSec: at })
     from = stop.customer
   }
