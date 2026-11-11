@@ -120,6 +120,10 @@ export interface VehicleBalance {
   readonly allowedInPedestrian?: boolean
   /** Battery range, for electric vehicles. */
   readonly rangeKm?: number
+  /** Minutes of game time it takes to park at each stop. */
+  readonly parkingMin?: number
+  /** Streets it rides: "bike" (cycle tracks and streets) or "car" (the car network, no cycle tracks). */
+  readonly roads?: string
 }
 
 /**

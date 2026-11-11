@@ -7,6 +7,7 @@ import { speedOf, type Speeds } from './movement'
 import type { Order } from './orders'
 import type { Rider } from './riders'
 import { vehicles } from './balance'
+import { parkingSecOf } from './parking'
 import { findRoute, type StreetNetwork } from './routing'
 
 /** How many orders a vehicle carries at once (1 for a vehicle not in the Vehículos tab). */
@@ -22,7 +23,8 @@ export function travelTimeSec(network: StreetNetwork, from: NodeId, to: NodeId, 
 
 /** Seconds of play a rider needs to ride from where they are to a crossing, on their vehicle. */
 export function riderTimeSec(map: CityMap, rider: Rider, to: NodeId, speeds: Speeds): number {
-  return travelTimeSec(networkFor(map, rider.vehicle), rider.node, to, speedOf(speeds, rider.vehicle))
+  // Parking at the restaurant counts: the rider can't pick up the food until parked.
+  return travelTimeSec(networkFor(map, rider.vehicle), rider.node, to, speedOf(speeds, rider.vehicle)) + parkingSecOf(rider.vehicle)
 }
 
 export function restaurantOf(map: CityMap, order: Order): Restaurant {

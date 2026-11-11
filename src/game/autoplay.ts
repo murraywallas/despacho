@@ -6,6 +6,7 @@ import type { PrototypeBalance } from './balance'
 import { networkFor } from './cityMap'
 import { rankRiders, restaurantOf, travelTimeSec } from './dispatch'
 import { speedOf } from './movement'
+import { parkingSecOf } from './parking'
 import { advanceShift, createShift, dispatchOrder, type ShiftSettings, type ShiftSnapshot } from './shift'
 
 export interface BotPick {
@@ -43,7 +44,7 @@ export const triageBot: Bot = (shift, settings) => {
     const restaurant = restaurantOf(shift.map, order).node
     const ride = travelTimeSec(networkFor(shift.map, vehicle), restaurant, order.customer, speedOf(speeds, vehicle))
     const pickUpAtSec = Math.max(now + closest.etaSec, order.readyAtSec)
-    const arrivesAtSec = pickUpAtSec + ride
+    const arrivesAtSec = pickUpAtSec + ride + parkingSecOf(vehicle)
     const savable = arrivesAtSec <= order.deadlineAtSec
     const better =
       !best || (savable && !best.savable) || (savable === best.savable && closest.etaSec < best.etaSec)

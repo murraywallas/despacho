@@ -92,7 +92,8 @@
       "cobblestoneSpeedPct": 0,
       "parkingMin": 0,
       "usesBikeLanes": true,
-      "unlockable": false
+      "unlockable": false,
+      "roads": "bike"
     },
     "cargo_bike": {
       "speedKmh": 14,
@@ -104,7 +105,8 @@
       "cobblestoneSpeedPct": 0,
       "parkingMin": 0,
       "usesBikeLanes": true,
-      "unlockable": true
+      "unlockable": true,
+      "roads": "bike"
     },
     "e_scooter": {
       "speedKmh": 20,
@@ -116,7 +118,8 @@
       "parkingMin": 0,
       "usesBikeLanes": true,
       "rangeKm": 25,
-      "unlockable": false
+      "unlockable": false,
+      "roads": "bike"
     },
     "rollers": {
       "speedKmh": 15,
@@ -126,7 +129,8 @@
       "canRideInSnow": false,
       "cobblestoneSpeedPct": -0.5,
       "parkingMin": 0,
-      "unlockable": false
+      "unlockable": false,
+      "roads": "bike"
     },
     "skateboard": {
       "speedKmh": 13,
@@ -137,7 +141,8 @@
       "cobblestoneSpeedPct": -0.5,
       "parkingMin": 0,
       "allowedInPedestrian": true,
-      "unlockable": false
+      "unlockable": false,
+      "roads": "bike"
     },
     "motorcycle": {
       "speedKmh": 30,
@@ -149,7 +154,8 @@
       "cobblestoneSpeedPct": 0,
       "parkingMin": 1,
       "usesBikeLanes": false,
-      "unlockable": false
+      "unlockable": false,
+      "roads": "car"
     },
     "car": {
       "speedKmh": 25,
@@ -162,7 +168,8 @@
       "parkingMin": 2,
       "usesBikeLanes": false,
       "allowedInPedestrian": false,
-      "unlockable": false
+      "unlockable": false,
+      "roads": "car"
     }
   },
   "neighborhoods": {

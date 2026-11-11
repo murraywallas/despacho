@@ -29,6 +29,18 @@ const MIN_SPEED_FACTOR = 0.1
 
 /** The streets and speeds of a vehicle of the Vehículos tab. */
 export function vehicleProfile(id: string, vehicle: VehicleBalance, balance: RoutingBalance): RoutingProfile {
+  // Motorbike and car: the streets cars may use (one-way for cars), never cycle tracks or pedestrian ways.
+  if (vehicle.roads === 'car') {
+    const onCobblesByCar = Math.max(MIN_SPEED_FACTOR, 1 + (vehicle.cobblestoneSpeedPct ?? 0))
+    return {
+      id,
+      allowedFlags: FLAG.car,
+      onewayFlag: FLAG.carOneway,
+      factor: () => 1,
+      speedFactor: (flags) => (flags & FLAG.cobblestone ? onCobblesByCar : 1),
+      minFactor: 1,
+    }
+  }
   const lanes = vehicle.usesBikeLanes === true
   const pedestrian = vehicle.allowedInPedestrian === true
   const onCobbles = Math.max(MIN_SPEED_FACTOR, 1 + (vehicle.cobblestoneSpeedPct ?? 0))

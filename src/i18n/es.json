@@ -194,5 +194,9 @@
   "conditions.noon": "Mediodía",
   "conditions.dusk": "Atardecer",
   "conditions.night": "Noche",
-  "conditions.title": "Condiciones del turno: la luz, y más adelante el clima y los eventos de la ciudad"
+  "conditions.title": "Condiciones del turno: la luz, y más adelante el clima y los eventos de la ciudad",
+  "vehicles.rollers": "Rollers",
+  "vehicles.motorcycle": "Moto",
+  "vehicles.rollers.note": "Entra al edificio sin estacionar; en adoquines va más lenta.",
+  "vehicles.motorcycle.note": "Vuela por las avenidas, pero no usa ciclovías y estaciona en cada parada."
 }
