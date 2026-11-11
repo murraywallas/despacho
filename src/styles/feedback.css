@@ -238,7 +238,8 @@
 }
 
 /* Movimiento reducido: nada se desplaza ni crece; solo fundidos. */
-@media (prefers-reduced-motion: reduce) {
+/* Lo pide el sistema o el ajuste del menú de pausa (useApplySettings pone el atributo). */
+:root[data-motion='reduced'] {
   .radio__line,
   .order-card {
     @starting-style {

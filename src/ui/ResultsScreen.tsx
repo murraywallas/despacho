@@ -1,7 +1,7 @@
 import { ArrowRight, List, RotateCcw, Star } from 'lucide-react'
 import { levelIds, progression, prototype, shift } from '../game/balance'
 import { isUnlocked, nextLevel } from '../game/levels'
-import { summarizeShift, type ShiftOutcome } from '../game/results'
+import { averageLost, biggestLoss, starsLost, summarizeShift, type ShiftOutcome, type StarsLost } from '../game/results'
 import { t, type TextKey } from '../i18n'
 import { useProgressStore } from '../store/progressStore'
 import { useScreenStore } from '../store/screenStore'
@@ -11,6 +11,20 @@ import './ResultsScreen.css'
 
 const STAR_SIZE = 28
 const ICON_SIZE = 18
+
+const LOSS_CAUSES = ['late', 'cold', 'cancelled'] as const
+const LOSS_TEXT: Record<keyof StarsLost, TextKey> = {
+  late: 'results.lostLate',
+  cold: 'results.lostCold',
+  cancelled: 'results.lostCancelled',
+}
+/** One concrete tip for the next shift, about what cost the most stars. */
+const TIP_TEXT: Record<keyof StarsLost | 'none', TextKey> = {
+  late: 'results.tipLate',
+  cold: 'results.tipCold',
+  cancelled: 'results.tipCancelled',
+  none: 'results.tipNone',
+}
 
 const OUTCOME_TEXT: Record<ShiftOutcome, TextKey> = {
   win: 'results.outcome.win',
@@ -27,6 +41,7 @@ export function ResultsScreen() {
   const showBriefing = useScreenStore((state) => state.showBriefing)
   const showLevels = useScreenStore((state) => state.showLevels)
   const results = summarizeShift(orders, prototype.heat, prototype.rating, shift)
+  const lost = averageLost(starsLost(orders, prototype.heat, prototype.rating), results.delivered + results.cancelled)
   // The next level, once this one has opened it (now or in an earlier game).
   const following = levelId === null ? undefined : nextLevel(levelIds, levelId)
   const next =
@@ -79,6 +94,23 @@ export function ResultsScreen() {
             </div>
           ))}
         </dl>
+
+        <div className="results__lost" data-testid="results-lost">
+          <h3 className="results__lost-title">{t('results.lostTitle')}</h3>
+          <ul className="results__lost-list">
+            {LOSS_CAUSES.map((cause) => (
+              <li key={cause} className={`results__lost-row${lost[cause] > 0 ? ' results__lost-row--hit' : ''}`}>
+                <span>{t(LOSS_TEXT[cause])}</span>
+                <span className="results__lost-value">
+                  {lost[cause] > 0 ? t('results.lostValue', { stars: formatRating(lost[cause]) }) : t('results.lostNone')}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="results__tip" data-testid="results-tip">
+            {t(TIP_TEXT[biggestLoss(lost)])}
+          </p>
+        </div>
 
         <div className="results__actions">
           {next && (

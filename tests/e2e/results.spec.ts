@@ -21,6 +21,10 @@ test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia t
   await expect(results.getByTestId('results-delivered').locator('dd')).toHaveText('0')
   await expect(results.getByTestId('results-late').locator('dd')).toHaveText('0')
   await expect(results.getByTestId('results-cancelled').locator('dd')).toHaveText(/^[1-9]\d*$/)
+  // Todo lo que se perdió fue por cancelados (4 estrellas de promedio), y el consejo habla de eso.
+  const lost = results.getByTestId('results-lost')
+  await expect(lost.locator('.results__lost-row--hit')).toHaveText(/Por pedidos cancelados\s*−4,0 ★/)
+  await expect(results.getByTestId('results-tip')).toContainText('llamá al cliente (L)')
   await expect(results.getByText('Se gana con 4,0 estrellas o más; con menos de 3,0, se pierde.')).toBeVisible()
   await expect(page.getByTestId('shift-time')).toHaveText(shiftEndsAt)
 

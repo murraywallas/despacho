@@ -5,7 +5,8 @@ import { t } from '../i18n'
 import { useProgressStore } from '../store/progressStore'
 import { useScreenStore } from '../store/screenStore'
 import { formatRating } from './formatRating'
-import { levelHours, levelName, levelTagline, neighborhoodName } from './levelText'
+import { levelHours, levelName, levelTagline, neighborhoodName, PANEL_INSET } from './levelText'
+import { BackdropMap } from './BackdropMap'
 import './levels.css'
 
 /** The start screen: the neighborhood's shifts, locked until the one before is won. */
@@ -17,6 +18,8 @@ export function LevelSelect() {
 
   return (
     <main className="levels" aria-labelledby="levels-title">
+      <BackdropMap leftInset={PANEL_INSET} />
+      <div className="levels__panel floating-panel">
       <header className="levels__header">
         <p className="levels__app">{t('app.title')}</p>
         <h1 className="levels__title" id="levels-title">
@@ -66,6 +69,7 @@ export function LevelSelect() {
           )
         })}
       </ol>
+      </div>
     </main>
   )
 }

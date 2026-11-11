@@ -32,3 +32,6 @@ export function neighborhoodName(id: string): string {
   const key = `neighborhoods.${id}`
   return hasText(key) ? t(key) : id
 }
+
+/** Width of the floating panel of the start and briefing screens, plus its margin: the map shows beside it. */
+export const PANEL_INSET = 460
