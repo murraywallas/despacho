@@ -182,6 +182,30 @@ export function routesKey(riders: readonly Rider[]): string {
     .join('|')
 }
 
+/** The neighborhood's limits as a closed line, to draw where its streets end. */
+export function areaOutline(streets: StreetGraphFile): FeatureCollection<LineString> {
+  const [south, west, north, east] = streets.bbox
+  return {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [west, south],
+            [east, south],
+            [east, north],
+            [west, north],
+            [west, south],
+          ],
+        },
+      },
+    ],
+  }
+}
+
 /** The area's box as [[west, south], [east, north]], grown by `margin` of its size on each side. */
 export function areaBounds(streets: StreetGraphFile, margin = 0): [[number, number], [number, number]] {
   const [south, west, north, east] = streets.bbox

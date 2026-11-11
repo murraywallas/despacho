@@ -8,13 +8,13 @@ import { urgencyOf, type Order } from '../game/orders'
 import type { Rider } from '../game/riders'
 import { t } from '../i18n'
 import '../map/mapMarkers.css'
-import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
+import { areaBounds, areaOutline, buildMarkers, previewGeoJson, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
 import { AttributionControl, MapLibreMap, NavigationControl, Popup, type GeoJSONSource, type PositionAnchor } from '../map/maplibre'
 import { fallbackStyle, LIGHTS, loadNightStyle } from '../map/nightStyle'
 import { mapLightOf } from './levelText'
 import { panelInsets } from './panelInsets'
 import { useDeliveryFx } from './useDeliveryFx'
-import { addRouteLayers, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
+import { addRouteLayers, AREA_SOURCE, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
 import { usePointerStore } from '../store/pointerStore'
 import { selectedOrderIds, useShiftStore } from '../store/shiftStore'
 import { MapMarkerContent } from './MapMarkerContent'
@@ -221,6 +221,11 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   useEffect(() => {
     instanceRef.current?.getSource<GeoJSONSource>(PREVIEW_SOURCE)?.setData(preview)
   }, [preview, styleVersion])
+
+  // Where the neighborhood's streets end.
+  useEffect(() => {
+    instanceRef.current?.getSource<GeoJSONSource>(AREA_SOURCE)?.setData(areaOutline(streets))
+  }, [streets, styleVersion])
 
   const customers = markers.filter((marker) => marker.kind === 'customer').length
   return (
