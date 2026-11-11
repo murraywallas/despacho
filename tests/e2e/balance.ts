@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 /** The numbers from data/balance.json the browser tests need, so they follow the balance sheet. */
 interface BalanceData {
   prototype: {
-    orders: { spawnIntervalSec: number; deadlineSec: number; cancelAfterSec: number }
+    orders: { spawnIntervalSec: number; deadlineSec: number; cancelAfterSec: number; urgentBelowSec: number }
     kitchen: { cookSec: number }
     shift: { durationSec: number; startHour: number }
     riders: { fleet: string }

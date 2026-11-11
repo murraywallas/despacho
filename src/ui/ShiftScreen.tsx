@@ -4,6 +4,7 @@ import { useShiftStore } from '../store/shiftStore'
 import { useSoundStore } from '../store/soundStore'
 import { MapView } from './MapView'
 import { OrderPanel } from './OrderPanel'
+import { RadioFeed } from './RadioFeed'
 import { ResultsScreen } from './ResultsScreen'
 import { RiderPanel } from './RiderPanel'
 import { SelectionBar } from './SelectionBar'
@@ -11,6 +12,7 @@ import { ShortcutLegend } from './ShortcutLegend'
 import { TopBar } from './TopBar'
 import { useGameLoop } from './useGameLoop'
 import { useKeyboardShortcuts } from './useKeyboardShortcuts'
+import { useRadio } from './useRadio'
 
 /** The shift being played: top bar, orders, map, riders, and the results when the clock runs out. */
 export function ShiftScreen() {
@@ -36,6 +38,7 @@ export function ShiftScreen() {
   }, [showShortcuts, selectOrder])
 
   useGameLoop(tick)
+  useRadio()
   useKeyboardShortcuts({
     onTogglePause: togglePause,
     onPickRider: pickRider,
@@ -54,6 +57,7 @@ export function ShiftScreen() {
         <OrderPanel />
         <main className="shift-screen__map" aria-label={t('shift.mapArea')}>
           <SelectionBar />
+          <RadioFeed />
           <MapView map={map} orders={orders} riders={riders} selectedOrderId={selectedOrderId} />
         </main>
         <RiderPanel />

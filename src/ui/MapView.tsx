@@ -12,6 +12,7 @@ import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, routesKey, typ
 import { AttributionControl, MapLibreMap, NavigationControl, Popup, type GeoJSONSource, type PositionAnchor } from '../map/maplibre'
 import { FALLBACK_STYLE, loadNightStyle } from '../map/nightStyle'
 import { panelInsets } from './panelInsets'
+import { useDeliveryFx } from './useDeliveryFx'
 import { addRouteLayers, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
 import { usePointerStore } from '../store/pointerStore'
 import { selectedOrderIds, useShiftStore } from '../store/shiftStore'
@@ -164,6 +165,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     [pickRider, selectOrder, sendRiderTo],
   )
   const elements = useMapMarkers(instanceRef, ready, markers, describe, onAction)
+  useDeliveryFx(instanceRef, ready, map)
 
   // The card shows the selected order's restaurant (while it waits for a rider), or the one the player opened.
   // An order already on a trip is picked to reassign it or call the customer: the selection bar handles that.
