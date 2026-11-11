@@ -141,6 +141,8 @@ export interface LevelBalance {
   readonly peakIntervalSec?: number
   readonly deadlineSec: number
   readonly seed: number
+  /** Light of the map: "noon", "dusk" or "night" (the interface knows the colors of each). */
+  readonly light?: string
 }
 
 export interface ProgressionBalance {

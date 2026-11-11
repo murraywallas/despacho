@@ -290,3 +290,58 @@
     opacity: 0;
   }
 }
+
+/* Guía del primer turno: un globo junto al panel del paso (pedidos a la izquierda, repartidores a la derecha). */
+.guide {
+  position: absolute;
+  top: calc(var(--topbar-h) + 72px);
+  z-index: var(--z-toasts);
+  display: grid;
+  gap: 4px;
+  width: 280px;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+}
+
+.guide--wait,
+.guide--pickOrder {
+  left: calc(var(--panel-left-w) + var(--gutter));
+}
+
+.guide--pickRider {
+  right: calc(var(--panel-right-w) + var(--gutter) + 44px);
+}
+
+.guide__step {
+  margin: 0;
+  color: var(--ink-quiet);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+}
+
+.guide__text {
+  margin: 0;
+  font-weight: 600;
+}
+
+.guide__skip {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-quiet);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.guide__skip:hover {
+  background: var(--surface-2);
+}

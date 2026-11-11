@@ -12,7 +12,7 @@ test('reasignar un pedido a otro repartidor y llamar al cliente una vez por turn
   const card = (number: number) => riderPanel.locator(`[data-rider-number="${number}"]`)
 
   // El pedido #1 va con el repartidor 2.
-  await orders.first().getByRole('button').click()
+  await orders.first().getByRole('button').first().click()
   await page.keyboard.press('2')
   await expect(card(2)).toContainText('pedido #1')
 

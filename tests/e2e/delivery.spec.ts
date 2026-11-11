@@ -19,7 +19,7 @@ test('el repartidor va al restaurante por las calles, retira la comida, entrega 
 
   const orderPanel = page.getByRole('complementary', { name: /Pedidos/ })
   const riderPanel = page.getByRole('complementary', { name: /Repartidores/ })
-  await orderPanel.getByTestId('order-card').first().getByRole('button').click()
+  await orderPanel.getByTestId('order-card').first().getByRole('button').first().click()
   const closest = (await riderPanel.getByTestId('rider-card').first().getAttribute('data-rider-number')) ?? '1'
   await page.keyboard.press(closest)
 

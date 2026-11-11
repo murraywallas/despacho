@@ -1,4 +1,5 @@
-import { clock } from '../game/balance'
+import { clock, levels } from '../game/balance'
+import type { MapLight } from '../map/nightStyle'
 import { balanceFor } from '../game/levels'
 import { hasText, t } from '../i18n'
 import { formatGameTime, type GameTime } from './formatClock'
@@ -35,3 +36,9 @@ export function neighborhoodName(id: string): string {
 
 /** Width of the floating panel of the start and briefing screens, plus its margin: the map shows beside it. */
 export const PANEL_INSET = 460
+
+/** The map's light for a level (Niveles tab); night for the prototype or an unknown value. */
+export function mapLightOf(levelId: string | null): MapLight {
+  const light = levelId === null ? undefined : levels[levelId]?.light
+  return light === 'noon' || light === 'dusk' || light === 'night' ? light : 'night'
+}

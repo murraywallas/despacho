@@ -8,7 +8,7 @@ import { useScreenStore } from '../store/screenStore'
 import { useShiftStore } from '../store/shiftStore'
 import { formatGameTime, gameMinutes } from './formatClock'
 import { formatRating } from './formatRating'
-import { levelHours, levelName, gameTimeOf, neighborhoodName, PANEL_INSET } from './levelText'
+import { levelHours, levelName, gameTimeOf, mapLightOf, neighborhoodName, PANEL_INSET } from './levelText'
 import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
 import { BackdropMap, type BackdropPin } from './BackdropMap'
 import './levels.css'
@@ -33,7 +33,7 @@ function restaurantPins(levelId: string): readonly BackdropPin[] {
 export function BriefingScreen() {
   const levelId = useScreenStore((state) => state.briefingLevelId)
   const showLevels = useScreenStore((state) => state.showLevels)
-  const showShift = useScreenStore((state) => state.showShift)
+  const startFromBriefing = useScreenStore((state) => state.startFromBriefing)
   const startLevel = useShiftStore((state) => state.startLevel)
   if (!levelId || !levels[levelId]) return null
 
@@ -43,12 +43,12 @@ export function BriefingScreen() {
   const time = gameTimeOf(levelId)
   const start = () => {
     startLevel(levelId)
-    showShift()
+    startFromBriefing()
   }
 
   return (
     <main className="levels" aria-labelledby="briefing-title">
-      <BackdropMap pins={pins} leftInset={PANEL_INSET} />
+      <BackdropMap pins={pins} leftInset={PANEL_INSET} light={mapLightOf(levelId)} />
       <section className="briefing levels__panel floating-panel" data-testid="briefing">
         <p className="levels__app">{t('briefing.eyebrow')}</p>
         <h1 className="levels__title" id="briefing-title">

@@ -11,6 +11,7 @@ import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
 import { restaurantName } from './restaurantName'
 import { RIDER_DRAG_TYPE } from './RiderCard'
+import { SuggestedRider } from './SuggestedRider'
 
 /** Type of the drag data when an order is dragged onto a rider. */
 const ORDER_DRAG_TYPE = 'application/x-despacho-order'
@@ -107,6 +108,7 @@ function OrderCard({ order, nowSec, restaurantName, selected, onSelect, onDropRi
           {tag && <span className={`order-card__tag order-card__tag--${urgency}`}>{t(tag)}</span>}
         </span>
       </button>
+      {urgency === 'urgent' && <SuggestedRider order={order} />}
     </li>
   )
 }

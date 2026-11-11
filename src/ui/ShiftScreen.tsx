@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
 import { useSoundStore } from '../store/soundStore'
+import { FirstShiftGuide } from './FirstShiftGuide'
 import { MapView } from './MapView'
 import { OrderPanel } from './OrderPanel'
 import { PauseMenu } from './PauseMenu'
@@ -78,6 +79,7 @@ export function ShiftScreen() {
         <main className="shift-screen__map" aria-label={t('shift.mapArea')}>
           <SelectionBar />
           <RadioFeed />
+          <FirstShiftGuide />
           <MapView map={map} orders={orders} riders={riders} selectedOrderId={selectedOrderId} />
         </main>
         <RiderPanel />

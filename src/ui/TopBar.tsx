@@ -1,6 +1,7 @@
 import { Menu, Phone } from 'lucide-react'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
+import { ConditionsSlot } from './ConditionsSlot'
 import { formatGameTime } from './formatClock'
 import { Keycap } from './Keycap'
 import { gameTimeOf, levelName } from './levelText'
@@ -39,6 +40,7 @@ export function TopBar({ onShowShortcuts, onOpenMenu }: TopBarProps) {
             {levelName(levelId)}
           </span>
         )}
+        <ConditionsSlot />
         <ShiftRating />
       </div>
 

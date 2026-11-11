@@ -183,5 +183,16 @@
   "vehicles.bike.note": "Va por ciclovías y puede llevar varios pedidos.",
   "vehicles.skateboard.note": "Corta por peatonales; en adoquines va más lenta.",
   "vehicles.e_scooter.note": "La más rápida; no entra en peatonales.",
-  "results.lostNone": "—"
+  "results.lostNone": "—",
+  "orders.suggestion": "{vehicle} · llega en {minutes} min",
+  "orders.suggestionLabel": "Mandar el pedido #{order} con el repartidor {rider} ({vehicle}, llega en {minutes} min)",
+  "guide.progress": "Primer turno · despacho {done} de {total}",
+  "guide.wait": "Esperá un momento: el primer pedido llega en unos segundos a la cola de la izquierda.",
+  "guide.pickOrder": "← Elegí un pedido de la cola (clic o ↓). Los de arriba son los que vencen antes.",
+  "guide.pickRider": "Ahora elegí quién lo lleva → (clic o su número). Arriba está el que llega primero al restaurante.",
+  "guide.skip": "Saltar la guía",
+  "conditions.noon": "Mediodía",
+  "conditions.dusk": "Atardecer",
+  "conditions.night": "Noche",
+  "conditions.title": "Condiciones del turno: la luz, y más adelante el clima y los eventos de la ciudad"
 }

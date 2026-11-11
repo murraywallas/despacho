@@ -10,6 +10,9 @@ interface ScreenState {
   showLevels: () => void
   showBriefing: (levelId: string) => void
   showShift: () => void
+  /** The shift was started from the briefing (not from a link): the first one can show the guide. */
+  fromBriefing: boolean
+  startFromBriefing: () => void
 }
 
 export const useScreenStore = create<ScreenState>()((set) => ({
@@ -17,5 +20,7 @@ export const useScreenStore = create<ScreenState>()((set) => ({
   briefingLevelId: null,
   showLevels: () => set({ screen: 'levels' }),
   showBriefing: (levelId) => set({ screen: 'briefing', briefingLevelId: levelId }),
-  showShift: () => set({ screen: 'shift' }),
+  showShift: () => set({ screen: 'shift', fromBriefing: false }),
+  fromBriefing: false,
+  startFromBriefing: () => set({ screen: 'shift', fromBriefing: true }),
 }))

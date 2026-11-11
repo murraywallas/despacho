@@ -18,10 +18,10 @@ test('elegir un pedido muestra la ETA de los repartidores y la tecla del primero
   const riders = riderPanel.getByTestId('rider-card')
 
   // Sin pedido elegido, los libres se pueden elegir primero (el pedido viene después, en el mapa).
-  await expect(riders.first().getByRole('button')).toBeEnabled()
+  await expect(riders.first().getByRole('button').first()).toBeEnabled()
 
-  await orders.first().getByRole('button').click()
-  await expect(orders.first().getByRole('button')).toHaveAttribute('aria-pressed', 'true')
+  await orders.first().getByRole('button').first().click()
+  await expect(orders.first().getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
   await expect(riderPanel.getByText('Ordenados por llegada al restaurante.')).toBeVisible()
 
   // Los tres muestran su ETA y están ordenados de menor a mayor.
@@ -45,21 +45,21 @@ test('un repartidor ocupado se ve deshabilitado y el clic en otro asigna el pedi
   const orders = await waitForOrders(page, 2)
   const riderPanel = page.getByRole('complementary', { name: /Repartidores/ })
 
-  await orders.first().getByRole('button').click()
+  await orders.first().getByRole('button').first().click()
   await page.keyboard.press('1')
 
-  await orders.first().getByRole('button').click()
+  await orders.first().getByRole('button').first().click()
   const riderOne = riderPanel.getByRole('button', { name: /^Repartidor 1 / })
   await expect(riderOne).toBeDisabled()
 
-  await riderPanel.locator('[data-rider-number="2"]').getByRole('button').click()
+  await riderPanel.locator('[data-rider-number="2"]').getByRole('button').first().click()
   await expect(orders).toHaveCount(0)
   await expect(riderPanel.getByLabel('1 de 3 repartidores libres')).toBeVisible()
 })
 
 test('Escape cancela la elección del pedido', async ({ page }) => {
   const orders = await waitForOrders(page, 1)
-  await orders.first().getByRole('button').click()
+  await orders.first().getByRole('button').first().click()
   await page.keyboard.press('Escape')
-  await expect(orders.first().getByRole('button')).toHaveAttribute('aria-pressed', 'false')
+  await expect(orders.first().getByRole('button').first()).toHaveAttribute('aria-pressed', 'false')
 })
