@@ -18,7 +18,7 @@ export function LevelSelect() {
 
   return (
     <main className="levels" aria-labelledby="levels-title">
-      <BackdropMap leftInset={PANEL_INSET} />
+      <BackdropMap leftInset={PANEL_INSET} neighborhood={neighborhood || undefined} />
       <div className="levels__panel floating-panel">
       <header className="levels__header">
         <p className="levels__app">{t('app.title')}</p>

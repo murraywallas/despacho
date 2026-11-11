@@ -3,7 +3,9 @@
  * each, and what the briefing tells before a shift. Pure.
  */
 import { fleetOf, levelBalance, levels, prototype, type PrototypeBalance } from './balance'
+import { bikeNetworkOf, DEFAULT_NEIGHBORHOOD, networkOf } from './neighborhoods'
 import { spawnIntervalAt, type OrderSettings } from './orders'
+import { createShift } from './shift'
 
 /** Best average stars reached in each level, by level id. A level never finished is missing. */
 export type Progress = Readonly<Record<string, number>>
@@ -67,4 +69,17 @@ export function briefingOf(balance: PrototypeBalance, settings: OrderSettings): 
     deadlineSec: settings.deadlineSec,
     ...(peak ? { peak: { fromSec: peak.fromSec, toSec: peak.toSec } } : {}),
   }
+}
+
+/** Neighborhood a level plays in; the prototype plays in the first one. */
+export function neighborhoodOf(levelId: string | null): string {
+  const level = levelId === null ? undefined : levels[levelId]
+  return level?.neighborhood ?? DEFAULT_NEIGHBORHOOD
+}
+
+/** A fresh shift of a level, on its neighborhood's streets. */
+export function createLevelShift(levelId: string | null): ReturnType<typeof createShift> {
+  const balance = balanceFor(levelId)
+  const area = neighborhoodOf(levelId)
+  return createShift(balance, balance.seed, bikeNetworkOf(area), (vehicle) => networkOf(area, vehicle))
 }

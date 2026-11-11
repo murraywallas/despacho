@@ -13,6 +13,9 @@ export const ROUTE_COLORS = {
 
 export const ROUTES_SOURCE = 'routes'
 export const PREVIEW_SOURCE = 'preview'
+/** The outline of the neighborhood: where the game's streets end. */
+export const AREA_SOURCE = 'area'
+const AREA_COLOR = '#d8ff54'
 
 const legIs = (...legs: string[]): LineLayerSpecification['filter'] => ['in', ['get', 'leg'], ['literal', legs]]
 const legColor: LineLayerSpecification['paint'] = {
@@ -22,6 +25,13 @@ const ROUND = { 'line-cap': 'round', 'line-join': 'round' } as const
 
 /** Layers from bottom to top. */
 const LAYERS: LineLayerSpecification[] = [
+  {
+    id: 'area-limit',
+    type: 'line',
+    source: AREA_SOURCE,
+    layout: ROUND,
+    paint: { 'line-color': AREA_COLOR, 'line-width': 1.5, 'line-opacity': 0.35, 'line-dasharray': [4, 3] },
+  },
   {
     id: 'preview-line',
     type: 'line',
@@ -74,7 +84,7 @@ const LAYERS: LineLayerSpecification[] = [
 
 /** Adds the route sources and layers on top of the base map (again after every style change). */
 export function addRouteLayers(map: MapLibreMap): void {
-  for (const id of [PREVIEW_SOURCE, ROUTES_SOURCE]) {
+  for (const id of [AREA_SOURCE, PREVIEW_SOURCE, ROUTES_SOURCE]) {
     if (!map.getSource(id)) map.addSource(id, { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
   }
   for (const layer of LAYERS) if (!map.getLayer(layer.id)) map.addLayer(layer)

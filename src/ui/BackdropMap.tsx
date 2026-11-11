@@ -1,7 +1,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useEffect, useRef } from 'react'
 import type { LonLat } from '../game/streetGraph'
-import { norrebroStreets } from '../game/norrebro'
+import { DEFAULT_NEIGHBORHOOD, streetsOf } from '../game/neighborhoods'
 import '../map/mapMarkers.css'
 import { areaBounds } from '../map/mapData'
 import { AttributionControl, MapLibreMap, Marker } from '../map/maplibre'
@@ -25,13 +25,15 @@ interface BackdropMapProps {
   leftInset?: number
   /** The level's light (the briefing shows the light of its shift). */
   light?: MapLight
+  /** The neighborhood to show (the level's). */
+  neighborhood?: string
 }
 
 /**
  * The neighborhood's night map as the background of the screens around the shift (start, briefing). It doesn't
  * move or take clicks: it sets the scene and, in the briefing, shows where the restaurants are.
  */
-export function BackdropMap({ pins = [], leftInset = 0, light = 'night' }: BackdropMapProps) {
+export function BackdropMap({ pins = [], leftInset = 0, light = 'night', neighborhood = DEFAULT_NEIGHBORHOOD }: BackdropMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function BackdropMap({ pins = [], leftInset = 0, light = 'night' }: Backd
     const instance = new MapLibreMap({
       container,
       style: fallbackStyle(LIGHTS[light]),
-      bounds: areaBounds(norrebroStreets),
+      bounds: areaBounds(streetsOf(neighborhood)),
       fitBoundsOptions: {
         padding: { top: FIT_PADDING, bottom: FIT_PADDING, right: FIT_PADDING, left: leftInset + FIT_PADDING },
       },
@@ -66,7 +68,7 @@ export function BackdropMap({ pins = [], leftInset = 0, light = 'night' }: Backd
       cancelled = true
       instance.remove()
     }
-  }, [pins, leftInset, light])
+  }, [pins, leftInset, light, neighborhood])
 
   return <div className="backdrop-map map-view" ref={containerRef} data-testid="backdrop-map" />
 }

@@ -6,8 +6,8 @@ import { reorderStops } from '../game/movement'
 import { waitingAt, type Order, type OrderQueue, type OrderSettings } from '../game/orders'
 import type { Random } from '../game/random'
 import type { Rider } from '../game/riders'
-import { advanceShift, capacityOf, createShift, dispatchOrders, reassignAndStart, shiftSettingsFrom } from '../game/shift'
-import { balanceFor } from '../game/levels'
+import { advanceShift, capacityOf, dispatchOrders, reassignAndStart, shiftSettingsFrom } from '../game/shift'
+import { balanceFor, createLevelShift } from '../game/levels'
 import { callCustomer } from '../game/tools'
 
 interface ShiftState {
@@ -111,7 +111,7 @@ type ShiftData = Pick<
 function newShift(levelId: string | null): ShiftData {
   const balance = balanceFor(levelId)
   levelSettings = shiftSettingsFrom(balance)
-  const fresh = createShift(balance, balance.seed)
+  const fresh = createLevelShift(levelId)
   random = fresh.random
   return { ...fresh.shift, ...NOTHING_SELECTED, callsLeft: balance.tools.callsPerShift, levelId }
 }

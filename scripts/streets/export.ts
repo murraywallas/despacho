@@ -1,6 +1,7 @@
 /**
  * npm run streets: downloads the streets of each game area from OpenStreetMap (Overpass API)
  * and writes the game's street graph (data/streets/<area>.json). No API key needed.
+ * npm run streets -- vesterbro frederiksberg: only those areas.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { buildStreetGraph, type OverpassAnswer, type StreetGraphFile } from './convert.ts'
@@ -63,7 +64,11 @@ function serialize(graph: StreetGraphFile): string {
 
 async function main(): Promise<void> {
   const config = JSON.parse(await readFile(configUrl, 'utf8')) as StreetsConfig
-  for (const area of config.areas) {
+  // npm run streets -- vesterbro: only the areas named (all of them without names).
+  const wanted = process.argv.slice(2)
+  const unknown = wanted.filter((id) => !config.areas.some((area) => area.id === id))
+  if (unknown.length > 0) throw new Error(`No hay barrios con ese ID en scripts/streets/config.json: ${unknown.join(', ')}.`)
+  for (const area of config.areas.filter((candidate) => wanted.length === 0 || wanted.includes(candidate.id))) {
     const graph = buildStreetGraph(await download(config, area), area.bbox)
     const outputUrl = new URL(`../../${area.output}`, import.meta.url)
     await mkdir(new URL('.', outputUrl), { recursive: true })

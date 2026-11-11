@@ -5,8 +5,35 @@
     {
       "id": "norrebro",
       "name": "Nørrebro",
-      "bbox": [55.6835, 12.525, 55.7055, 12.567],
+      "bbox": [
+        55.6835,
+        12.525,
+        55.7055,
+        12.567
+      ],
       "output": "data/streets/norrebro.json"
+    },
+    {
+      "id": "vesterbro",
+      "name": "Vesterbro",
+      "bbox": [
+        55.662,
+        12.532,
+        55.6775,
+        12.566
+      ],
+      "output": "data/streets/vesterbro.json"
+    },
+    {
+      "id": "frederiksberg",
+      "name": "Frederiksberg",
+      "bbox": [
+        55.6715,
+        12.505,
+        55.688,
+        12.544
+      ],
+      "output": "data/streets/frederiksberg.json"
     }
   ]
 }

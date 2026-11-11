@@ -1,8 +1,8 @@
 import { ArrowLeft, Play } from 'lucide-react'
 import { levels, shift as shiftBalance, vehicles } from '../game/balance'
-import { balanceFor, briefingOf } from '../game/levels'
+import { balanceFor, briefingOf, createLevelShift, neighborhoodOf } from '../game/levels'
 import { positionOf } from '../game/cityMap'
-import { createShift, shiftSettingsFrom } from '../game/shift'
+import { shiftSettingsFrom } from '../game/shift'
 import { hasText, t } from '../i18n'
 import { useScreenStore } from '../store/screenStore'
 import { useShiftStore } from '../store/shiftStore'
@@ -19,7 +19,7 @@ const pinsByLevel = new Map<string, readonly BackdropPin[]>()
 function restaurantPins(levelId: string): readonly BackdropPin[] {
   const known = pinsByLevel.get(levelId)
   if (known) return known
-  const { map } = createShift(balanceFor(levelId), balanceFor(levelId).seed).shift
+  const { map } = createLevelShift(levelId).shift
   const pins = map.restaurants.map((restaurant) => ({
     key: restaurant.id,
     label: restaurant.label,
@@ -48,7 +48,7 @@ export function BriefingScreen() {
 
   return (
     <main className="levels" aria-labelledby="briefing-title">
-      <BackdropMap pins={pins} leftInset={PANEL_INSET} light={mapLightOf(levelId)} />
+      <BackdropMap pins={pins} leftInset={PANEL_INSET} light={mapLightOf(levelId)} neighborhood={neighborhoodOf(levelId)} />
       <section className="briefing levels__panel floating-panel" data-testid="briefing">
         <p className="levels__app">{t('briefing.eyebrow')}</p>
         <h1 className="levels__title" id="briefing-title">
