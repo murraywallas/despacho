@@ -19,6 +19,13 @@ function zoneName(zone: string): string {
   return hasText(key) ? t(key) : zone
 }
 
+const METERS_PER_KM = 1000
+
+/** "1,1": kilometers with one decimal, the Spanish way. */
+function formatKm(meters: number): string {
+  return (meters / METERS_PER_KM).toLocaleString('es', { maximumFractionDigits: 1 })
+}
+
 const pinsByLevel = new Map<string, readonly BackdropPin[]>()
 
 /** The level's restaurants, where its shift puts them (same seed, same places). Worked out once per level. */
@@ -93,6 +100,12 @@ export function BriefingScreen() {
               total: balance.restaurants.count,
               zone: zoneName(balance.restaurants.zone),
             })}
+          </p>
+        )}
+
+        {levels[levelId].minCustomerDistanceM !== undefined && (
+          <p className="briefing__zone" data-testid="briefing-far">
+            {t('briefing.far', { km: formatKm(balance.orders.minCustomerDistanceM) })}
           </p>
         )}
 

@@ -85,7 +85,8 @@ export interface RestaurantCluster {
 
 /**
  * Picks `count` different crossings for the restaurants: first the cluster's, on any street inside its circle,
- * then the rest on main streets anywhere. The cluster's restaurants get the first letters (A, B…).
+ * then the rest on main streets anywhere. The cluster's restaurants get the first letters (A, B…). No two stand
+ * closer than minSpacingM, so their pins don't cover each other on the map.
  */
 export function placeRestaurants(
   network: StreetNetwork,
@@ -93,6 +94,7 @@ export function placeRestaurants(
   random: Random,
   others: readonly StreetNetwork[] = [],
   cluster?: RestaurantCluster,
+  minSpacingM = 0,
 ): Restaurant[] {
   const spots = findAddresses(network, 'major', others)
   const inCluster = Math.min(cluster?.count ?? 0, count)
@@ -107,7 +109,10 @@ export function placeRestaurants(
   while (restaurants.length < count) {
     const from = restaurants.length < inCluster ? clusterSpots : spots
     const node = from[randomInt(random, from.length)]
-    if (restaurants.some((restaurant) => restaurant.node === node)) continue
+    const position = network.streets.nodes[node]
+    const tooClose = (restaurant: Restaurant) =>
+      restaurant.node === node || distanceM(network.streets.nodes[restaurant.node], position) < minSpacingM
+    if (restaurants.some(tooClose)) continue
     const number = restaurants.length + 1
     restaurants.push({ id: `r${number}`, label: String.fromCharCode(FIRST_LABEL + number - 1), node })
   }
@@ -121,12 +126,13 @@ export function createCityMap(
   random: Random,
   networks: Readonly<Record<string, StreetNetwork>> = {},
   cluster?: RestaurantCluster,
+  minSpacingM = 0,
 ): CityMap {
   const others = Object.values(networks)
   return {
     network,
     networks,
-    restaurants: placeRestaurants(network, restaurantCount, random, others, cluster),
+    restaurants: placeRestaurants(network, restaurantCount, random, others, cluster, minSpacingM),
     addresses: findAddresses(network, undefined, others),
   }
 }

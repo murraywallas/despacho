@@ -83,7 +83,7 @@ export function createShift(
   const random = createRandom(seed)
   const fleet = fleetOf(balance)
   const networks = Object.fromEntries(fleet.map((vehicle) => [vehicle, networkOf(vehicle)]))
-  const map = createCityMap(network, balance.restaurants.count, random, networks, cluster)
+  const map = createCityMap(network, balance.restaurants.count, random, networks, cluster, balance.restaurants.minSpacingM)
   return {
     random,
     shift: {

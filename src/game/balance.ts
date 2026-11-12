@@ -21,6 +21,8 @@ export interface PrototypeBalance {
   }
   readonly restaurants: {
     readonly count: number
+    /** No two restaurants closer than this, in meters (optional), so their pins don't cover each other. */
+    readonly minSpacingM?: number
     /** A zone of the neighborhood (Kødbyen…) where zoneRestaurants of them stand within zoneRadiusM of its middle. */
     readonly zone?: string
     readonly zoneRestaurants?: number
@@ -152,6 +154,8 @@ export interface LevelBalance {
   readonly peakToSec?: number
   readonly peakIntervalSec?: number
   readonly deadlineSec: number
+  /** Customers live at least this far from the restaurant, in meters (optional: the Reglas tab's otherwise). */
+  readonly minCustomerDistanceM?: number
   readonly seed: number
   /** Light of the map: "noon", "dusk" or "night" (the interface knows the colors of each). */
   readonly light?: string
@@ -176,6 +180,7 @@ export function levelBalance(base: PrototypeBalance, level: LevelBalance): Proto
     seed: level.seed,
     shift: { startHour: level.startHour, durationSec: level.durationSec },
     restaurants: {
+      ...base.restaurants,
       count: level.restaurants,
       ...(level.zone ? { zone: level.zone, zoneRestaurants: level.zoneRestaurants, zoneRadiusM: level.zoneRadiusM } : {}),
     },
@@ -187,6 +192,7 @@ export function levelBalance(base: PrototypeBalance, level: LevelBalance): Proto
       peakFromSec: level.peakFromSec,
       peakToSec: level.peakToSec,
       peakIntervalSec: level.peakIntervalSec,
+      minCustomerDistanceM: level.minCustomerDistanceM ?? base.orders.minCustomerDistanceM,
     },
   }
 }

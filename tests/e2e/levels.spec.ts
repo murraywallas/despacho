@@ -90,7 +90,7 @@ test('un nivel bloqueado no se abre desde la dirección', async ({ page }) => {
 test('Vesterbro aparece bloqueado hasta ganar el viernes de Nørrebro', async ({ page }) => {
   await page.goto('/')
   const tabs = page.getByTestId('neighborhood-tab')
-  await expect(tabs).toHaveText(['Nørrebro', 'Vesterbro'])
+  await expect(tabs).toHaveText(['Nørrebro', 'Vesterbro', 'Frederiksberg'])
   await expect(tabs.nth(0)).toHaveAttribute('aria-pressed', 'true')
   await tabs.nth(1).click()
   await expect(page.getByRole('heading', { name: 'Vesterbro' })).toBeVisible()
@@ -116,4 +116,18 @@ test('con Vesterbro abierto, la pantalla de inicio arranca ahí: Kødbyen en el 
   await expect(page.getByLabel('4 de 4 repartidores libres')).toBeVisible()
   await expect(page.getByLabel(/^Mapa de Vesterbro/)).toBeAttached()
   await expect(page.getByRole('button', { name: /^A · Grill Slagterhallen/ })).toBeAttached()
+})
+
+test('ganando el viernes de Vesterbro se abre Frederiksberg: clientes lejos y la moto en la flota', async ({ page }) => {
+  await withProgress(page, { lunch: 5, dinner: 5, friday: 5, vesterbro_lunch: 5, vesterbro_dinner: 5, vesterbro_friday: 4.1 })
+  await page.goto('/')
+  await expect(page.getByTestId('neighborhood-tab')).toHaveText(['Nørrebro', 'Vesterbro', 'Frederiksberg'])
+  await expect(page.getByRole('heading', { name: 'Frederiksberg' })).toBeVisible()
+  await page.getByTestId('level-card').first().click()
+  const briefing = page.getByTestId('briefing')
+  await expect(briefing.getByTestId('briefing-far')).toContainText('a 1,1 km o más del restaurante')
+  await expect(briefing.getByTestId('briefing-fleet')).toContainText('Moto')
+  await briefing.getByRole('button', { name: 'Empezar turno' }).click()
+  await expect(page.getByLabel('5 de 5 repartidores libres')).toBeVisible()
+  await expect(page.getByLabel(/^Mapa de Frederiksberg/)).toBeAttached()
 })
