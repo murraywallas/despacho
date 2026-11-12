@@ -23,17 +23,46 @@ export function nextLevel(levelIds: readonly string[], levelId: string): string 
   return index < 0 ? undefined : levelIds[index + 1]
 }
 
-/** The first level is always open; each next one opens with enough stars in the one before. */
+/**
+ * Average of the best stars in a neighborhood's levels. A level never played counts as zero, so the average only
+ * gets there by playing them all (and playing more never lowers it: progress keeps the best of each).
+ */
+export function neighborhoodAverage(progress: Progress, neighborhood: string, ids: readonly string[] = levelIds): number {
+  const own = levelsOf(neighborhood, ids)
+  if (own.length === 0) return 0
+  return own.reduce((sum, id) => sum + (progress[id] ?? 0), 0) / own.length
+}
+
+/** The first neighborhood is always open; each next one opens with enough average stars in the one before. */
+export function isNeighborhoodOpen(
+  ids: readonly string[],
+  progress: Progress,
+  neighborhood: string,
+  unlockAvgRating: number,
+): boolean {
+  const order = levelNeighborhoods(ids)
+  const index = order.indexOf(neighborhood)
+  if (index < 0) return false
+  if (index === 0) return true
+  return neighborhoodAverage(progress, order[index - 1], ids) >= unlockAvgRating
+}
+
+/**
+ * The first level of a neighborhood opens with the neighborhood; each next one opens with enough stars in the one
+ * before it.
+ */
 export function isUnlocked(
-  levelIds: readonly string[],
+  ids: readonly string[],
   progress: Progress,
   levelId: string,
   unlockAvgRating: number,
 ): boolean {
-  const index = levelIds.indexOf(levelId)
-  if (index < 0) return false
-  if (index === 0) return true
-  return (progress[levelIds[index - 1]] ?? 0) >= unlockAvgRating
+  if (!ids.includes(levelId)) return false
+  const neighborhood = neighborhoodOf(levelId)
+  if (!isNeighborhoodOpen(ids, progress, neighborhood, unlockAvgRating)) return false
+  const own = levelsOf(neighborhood, ids)
+  const index = own.indexOf(levelId)
+  return index === 0 || (progress[own[index - 1]] ?? 0) >= unlockAvgRating
 }
 
 /** Keeps the best result of each level. Returns the same progress when the new result is not better. */

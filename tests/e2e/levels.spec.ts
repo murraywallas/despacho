@@ -87,15 +87,45 @@ test('un nivel bloqueado no se abre desde la dirección', async ({ page }) => {
   await expect(page.getByTestId('level-card')).toHaveCount(3)
 })
 
-test('Vesterbro aparece bloqueado hasta ganar el viernes de Nørrebro', async ({ page }) => {
+test('el mapa de barrios muestra Vesterbro bloqueado hasta tener 4 estrellas de promedio en Nørrebro', async ({ page }) => {
+  await withProgress(page, { lunch: 5, dinner: 5 })
   await page.goto('/')
-  const tabs = page.getByTestId('neighborhood-tab')
-  await expect(tabs).toHaveText(['Nørrebro', 'Vesterbro', 'Frederiksberg'])
-  await expect(tabs.nth(0)).toHaveAttribute('aria-pressed', 'true')
-  await tabs.nth(1).click()
+  const areas = page.getByTestId('neighborhood')
+  await expect(areas).toHaveCount(3)
+  await expect(areas.nth(0)).toContainText('Nørrebro')
+  await expect(areas.nth(0)).toHaveAttribute('aria-pressed', 'true')
+  // 5, 5 y el viernes sin jugar: un promedio de 3,3.
+  await expect(areas.nth(0)).toContainText('3,3 de promedio')
+  await expect(areas.nth(1)).toContainText('Bloqueado')
+  await areas.nth(1).click()
   await expect(page.getByRole('heading', { name: 'Vesterbro' })).toBeVisible()
+  await expect(page.getByTestId('neighborhood-status')).toContainText('Un turno sin jugar cuenta como cero')
   await expect(page.getByTestId('level-card').first()).toBeDisabled()
-  await expect(page.getByTestId('level-card').first()).toContainText('Se abre con 4,0 estrellas en Viernes a la noche')
+  await expect(page.getByTestId('level-card').first()).toContainText('Se abre con 4,0 de promedio en Nørrebro')
+})
+
+test('con Nørrebro ganado se abre Vesterbro; se elige con el teclado y el progreso sobrevive a recargar', async ({ page }) => {
+  await withProgress(page, { lunch: 5, dinner: 4, friday: 3 })
+  await page.goto('/')
+  const vesterbro = page.getByRole('button', { name: /^Vesterbro: / })
+  await expect(vesterbro).toContainText('Sin jugar')
+
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Vesterbro' })).toBeVisible()
+  // Con el teclado: foco en Nørrebro, Enter lo elige.
+  await page.getByRole('button', { name: /^Nørrebro: 4,0 de promedio/ }).focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('heading', { name: 'Nørrebro' })).toBeVisible()
+  await expect(page.getByTestId('level-card').nth(2)).toContainText('Tu mejor: 3,0 estrellas')
+  // El foco pasa al primer turno del barrio; volviendo atrás están los otros barrios.
+  await expect(page.getByTestId('level-card').first()).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await page.keyboard.press('Shift+Tab')
+  await expect(vesterbro).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('heading', { name: 'Vesterbro' })).toBeVisible()
+  await expect(page.getByTestId('level-card').first()).toBeEnabled()
+  await expect(page.getByTestId('level-card').nth(1)).toBeDisabled()
 })
 
 test('con Vesterbro abierto, la pantalla de inicio arranca ahí: Kødbyen en el briefing y restaurantes con nombre propio', async ({ page }) => {
@@ -121,7 +151,7 @@ test('con Vesterbro abierto, la pantalla de inicio arranca ahí: Kødbyen en el 
 test('ganando el viernes de Vesterbro se abre Frederiksberg: clientes lejos y la moto en la flota', async ({ page }) => {
   await withProgress(page, { lunch: 5, dinner: 5, friday: 5, vesterbro_lunch: 5, vesterbro_dinner: 5, vesterbro_friday: 4.1 })
   await page.goto('/')
-  await expect(page.getByTestId('neighborhood-tab')).toHaveText(['Nørrebro', 'Vesterbro', 'Frederiksberg'])
+  await expect(page.getByTestId('neighborhood')).toHaveCount(3)
   await expect(page.getByRole('heading', { name: 'Frederiksberg' })).toBeVisible()
   await page.getByTestId('level-card').first().click()
   const briefing = page.getByTestId('briefing')
