@@ -52,8 +52,9 @@ test('inicio y briefing sobre el mapa del barrio; el briefing marca los restaura
   page,
 }) => {
   await page.goto('/')
-  await expect(page.getByTestId('backdrop-map')).toBeVisible()
+  await expect(page.getByTestId('city-map')).toBeVisible()
   await page.getByTestId('level-card').first().click()
+  await expect(page.getByTestId('backdrop-map')).toBeVisible()
   const briefing = page.getByTestId('briefing')
   await expect(briefing.getByRole('listitem').first()).toContainText(/\d+ km\/h · lleva \d+/)
   await expect(page.locator('.backdrop-pin')).toHaveCount(4)

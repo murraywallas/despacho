@@ -32,7 +32,7 @@
   max-height: calc(100% - 48px);
   height: fit-content;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px;
   border-radius: var(--radius-lg);
 }
 
@@ -60,7 +60,7 @@
 .levels__list {
   display: grid;
   gap: var(--pad);
-  margin: 20px 0 0;
+  margin: 12px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -68,10 +68,10 @@
 .level-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   height: 100%;
-  padding: 12px 14px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);
@@ -99,6 +99,13 @@
   opacity: 0.55;
 }
 
+.level-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .level-card__number {
   font-size: calc(12px * var(--text-scale));
   font-weight: 600;
@@ -108,7 +115,7 @@
 }
 
 .level-card__name {
-  font-size: calc(22px * var(--text-scale));
+  font-size: calc(20px * var(--text-scale));
   font-weight: 700;
 }
 
@@ -128,8 +135,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 8px;
-  padding-top: 10px;
+  margin-top: 4px;
+  padding-top: 6px;
   border-top: 1px solid var(--line);
   font-size: calc(13px * var(--text-scale));
   font-weight: 600;
@@ -281,48 +288,79 @@
   outline-offset: 2px;
 }
 
-/* Barrios con turnos: uno se ve a la vez (el mapa de barrios llega con la #61). */
-.levels__areas {
-  display: flex;
-  gap: 4px;
-  margin: 4px 0 12px;
-  padding: 3px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  width: fit-content;
-}
-
-.levels__area {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border: 0;
-  border-radius: calc(var(--radius-lg) - 3px);
-  background: transparent;
-  color: var(--ink-quiet);
-  font: 600 calc(13px * var(--text-scale)) / 1.2 var(--font-sans, inherit);
-  cursor: pointer;
-}
-
-.levels__area:hover {
-  color: var(--ink);
-}
-
-.levels__area[aria-pressed='true'] {
-  background: var(--surface);
-  color: var(--ink);
-}
-
-.levels__area:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
-
 .briefing__zone {
   margin: 12px 0 0;
   padding: 8px 10px;
   border-left: 3px solid var(--accent, var(--ink));
   background: var(--surface);
   font-size: calc(13px * var(--text-scale));
+}
+
+/* Mapa de barrios: Copenhague de fondo y un botón por barrio, en el medio de sus calles. */
+.city-map__outline {
+  position: absolute;
+  z-index: var(--z-markers);
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+}
+
+.city-map__areas {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-markers);
+  pointer-events: none;
+}
+
+.city-map__area {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: border-color 120ms ease;
+}
+
+.city-map__area:hover,
+.city-map__area[aria-pressed='true'] {
+  border-color: var(--accent);
+}
+
+.city-map__area[aria-pressed='true'] {
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.city-map__area[data-open='false'] {
+  color: var(--ink-quiet);
+}
+
+.city-map__area:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.city-map__name {
+  font-size: calc(14px * var(--text-scale));
+  font-weight: 700;
+}
+
+.city-map__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: calc(12px * var(--text-scale));
+  font-variant-numeric: tabular-nums;
+}
+
+:root[data-motion='reduced'] .city-map__area {
+  transition: none;
 }

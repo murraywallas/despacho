@@ -162,7 +162,7 @@ export interface LevelBalance {
 }
 
 export interface ProgressionBalance {
-  /** Average stars in a level needed to unlock the next one. */
+  /** Stars needed in a level to open the next one, and average stars in a neighborhood to open the next one. */
   readonly unlockAvgRating: number
 }
 

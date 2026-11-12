@@ -5,10 +5,12 @@ import {
   balanceFor,
   briefingOf,
   expectedOrders,
+  isNeighborhoodOpen,
   isUnlocked,
   levelNeighborhoods,
   levelsOf,
   neighborhoodOf,
+  neighborhoodAverage,
   nextLevel,
   recordResult,
 } from '../../src/game/levels'
@@ -104,11 +106,28 @@ describe('progreso', () => {
     expect(isUnlocked(levelIds, {}, 'nope', UNLOCK)).toBe(false)
   })
 
-  test('Vesterbro se abre ganando el viernes de Nørrebro', () => {
-    const norrebro = { lunch: 5, dinner: 5 }
-    expect(isUnlocked(levelIds, norrebro, 'vesterbro_lunch', UNLOCK)).toBe(false)
-    expect(isUnlocked(levelIds, { ...norrebro, friday: UNLOCK }, 'vesterbro_lunch', UNLOCK)).toBe(true)
+  test('el promedio de un barrio abre el siguiente', () => {
+    expect(isNeighborhoodOpen(levelIds, {}, 'norrebro', UNLOCK)).toBe(true)
+    expect(isNeighborhoodOpen(levelIds, {}, 'vesterbro', UNLOCK)).toBe(false)
+    // 5, 4 y 3: promedio 4. Un turno flojo no frena si los otros compensan.
+    const norrebro = { lunch: 5, dinner: 4, friday: 3 }
+    expect(neighborhoodAverage(norrebro, 'norrebro')).toBeCloseTo(4)
+    expect(isNeighborhoodOpen(levelIds, norrebro, 'vesterbro', UNLOCK)).toBe(true)
+    expect(isUnlocked(levelIds, norrebro, 'vesterbro_lunch', UNLOCK)).toBe(true)
+    expect(isUnlocked(levelIds, norrebro, 'vesterbro_dinner', UNLOCK)).toBe(false)
+    expect(isNeighborhoodOpen(levelIds, { ...norrebro, friday: 2.9 }, 'vesterbro', UNLOCK)).toBe(false)
+    // Frederiksberg mira el promedio de Vesterbro, no el de Nørrebro.
+    expect(isNeighborhoodOpen(levelIds, { lunch: 5, dinner: 5, friday: 5 }, 'frederiksberg', UNLOCK)).toBe(false)
+    expect(isNeighborhoodOpen(levelIds, {}, 'nope', UNLOCK)).toBe(false)
     expect(nextLevel(levelIds, 'friday')).toBe('vesterbro_lunch')
+  })
+
+  test('un nivel sin jugar no cuenta para el promedio: vale cero', () => {
+    const twoOfThree = { lunch: 5, dinner: 5 }
+    expect(neighborhoodAverage(twoOfThree, 'norrebro')).toBeCloseTo(10 / 3)
+    expect(isNeighborhoodOpen(levelIds, twoOfThree, 'vesterbro', UNLOCK)).toBe(false)
+    expect(isUnlocked(levelIds, twoOfThree, 'vesterbro_lunch', UNLOCK)).toBe(false)
+    expect(neighborhoodAverage({}, 'vesterbro')).toBe(0)
   })
 
   test('se guarda el mejor resultado de cada nivel', () => {
