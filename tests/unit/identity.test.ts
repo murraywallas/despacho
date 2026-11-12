@@ -9,7 +9,7 @@ import { nodeAt, smallCity } from './smallCity'
 
 describe('la luz de Copenhague', () => {
   test('cada barrio tiene mediodía, atardecer y noche, y la luz sale de la pestaña Niveles', () => {
-    expect(levelIds.map((id) => mapLightOf(id))).toEqual(['noon', 'dusk', 'night', 'noon', 'dusk', 'night'])
+    expect(levelIds.map((id) => mapLightOf(id))).toEqual(['noon', 'dusk', 'night', 'noon', 'dusk', 'night', 'noon', 'dusk', 'night'])
     for (const id of levelIds) expect(mapLightOf(id)).toBe(levels[id].light)
     expect(mapLightOf(null)).toBe('night')
   })

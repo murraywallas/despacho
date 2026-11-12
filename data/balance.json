@@ -5,7 +5,8 @@
       "durationSec": 420
     },
     "restaurants": {
-      "count": 4
+      "count": 4,
+      "minSpacingM": 60
     },
     "orders": {
       "spawnIntervalSec": 16,
@@ -461,6 +462,73 @@
       "zone": "kodbyen",
       "zoneRestaurants": 4,
       "zoneRadiusM": 300
+    },
+    "frederiksberg_lunch": {
+      "order": 7,
+      "neighborhood": "frederiksberg",
+      "startHour": 12,
+      "durationSec": 420,
+      "restaurants": 4,
+      "fleet": [
+        "bike",
+        "skateboard",
+        "rollers",
+        "e_scooter",
+        "motorcycle"
+      ],
+      "spawnIntervalSec": 12,
+      "peakFromSec": 120,
+      "peakToSec": 240,
+      "peakIntervalSec": 9,
+      "deadlineSec": 150,
+      "seed": 653,
+      "light": "noon",
+      "minCustomerDistanceM": 1100
+    },
+    "frederiksberg_dinner": {
+      "order": 8,
+      "neighborhood": "frederiksberg",
+      "startHour": 19,
+      "durationSec": 420,
+      "restaurants": 5,
+      "fleet": [
+        "bike",
+        "bike",
+        "rollers",
+        "e_scooter",
+        "motorcycle"
+      ],
+      "spawnIntervalSec": 10,
+      "peakFromSec": 150,
+      "peakToSec": 300,
+      "peakIntervalSec": 7,
+      "deadlineSec": 138,
+      "seed": 602,
+      "light": "dusk",
+      "minCustomerDistanceM": 1100
+    },
+    "frederiksberg_friday": {
+      "order": 9,
+      "neighborhood": "frederiksberg",
+      "startHour": 21,
+      "durationSec": 420,
+      "restaurants": 5,
+      "fleet": [
+        "bike",
+        "bike",
+        "skateboard",
+        "rollers",
+        "e_scooter",
+        "motorcycle"
+      ],
+      "spawnIntervalSec": 8,
+      "peakFromSec": 120,
+      "peakToSec": 330,
+      "peakIntervalSec": 6,
+      "deadlineSec": 126,
+      "seed": 603,
+      "light": "night",
+      "minCustomerDistanceM": 1100
     }
   }
 }

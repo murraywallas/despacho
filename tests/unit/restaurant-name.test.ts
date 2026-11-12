@@ -9,8 +9,10 @@ describe('nombres de restaurantes', () => {
     expect(restaurantName({ id: 'r1', label: 'A' }, 'vesterbro')).toBe('A · Grill Slagterhallen')
   })
 
-  test('cada restaurante de Vesterbro tiene nombre', () => {
-    for (let number = 1; number <= 5; number++) expect(hasText(`restaurants.vesterbro.r${number}`)).toBe(true)
+  test('cada restaurante de Vesterbro y Frederiksberg tiene nombre', () => {
+    for (const area of ['vesterbro', 'frederiksberg']) {
+      for (let number = 1; number <= 5; number++) expect(hasText(`restaurants.${area}.r${number}`)).toBe(true)
+    }
   })
 
   test('sin nombre en es.json, "Restaurante" y la letra', () => {

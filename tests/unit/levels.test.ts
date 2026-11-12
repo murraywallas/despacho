@@ -20,11 +20,22 @@ import { useShiftStore } from '../../src/store/shiftStore'
 const UNLOCK = progression.unlockAvgRating
 
 describe('la pestaña Niveles', () => {
-  test('Nørrebro y después Vesterbro, con tres niveles cada uno: almuerzo, cena y viernes a la noche', () => {
-    expect(levelNeighborhoods()).toEqual(['norrebro', 'vesterbro'])
+  test('Nørrebro, Vesterbro y Frederiksberg, con tres niveles cada uno: almuerzo, cena y viernes a la noche', () => {
+    expect(levelNeighborhoods()).toEqual(['norrebro', 'vesterbro', 'frederiksberg'])
     expect(levelsOf('norrebro')).toEqual(['lunch', 'dinner', 'friday'])
     expect(levelsOf('vesterbro')).toEqual(['vesterbro_lunch', 'vesterbro_dinner', 'vesterbro_friday'])
-    expect(levelIds).toEqual([...levelsOf('norrebro'), ...levelsOf('vesterbro')])
+    expect(levelsOf('frederiksberg')).toEqual(['frederiksberg_lunch', 'frederiksberg_dinner', 'frederiksberg_friday'])
+    expect(levelIds).toEqual([...levelsOf('norrebro'), ...levelsOf('vesterbro'), ...levelsOf('frederiksberg')])
+  })
+
+  test('Frederiksberg suma la moto, y sus clientes viven más lejos que en los otros barrios', () => {
+    for (const id of levelsOf('frederiksberg')) {
+      expect(levels[id].fleet).toContain('motorcycle')
+      expect(balanceFor(id).orders.minCustomerDistanceM).toBe(levels[id].minCustomerDistanceM)
+      expect(balanceFor(id).orders.minCustomerDistanceM).toBeGreaterThan(prototype.orders.minCustomerDistanceM)
+    }
+    // Sin la columna, vale la de Reglas.
+    expect(balanceFor('lunch').orders.minCustomerDistanceM).toBe(prototype.orders.minCustomerDistanceM)
   })
 
   test('la flota de Vesterbro trae rollers, y bici, patineta y monopatín', () => {
@@ -109,7 +120,8 @@ describe('progreso', () => {
 
   test('siguiente nivel', () => {
     expect(nextLevel(levelIds, 'lunch')).toBe('dinner')
-    expect(nextLevel(levelIds, 'vesterbro_friday')).toBeUndefined()
+    expect(nextLevel(levelIds, 'vesterbro_friday')).toBe('frederiksberg_lunch')
+    expect(nextLevel(levelIds, 'frederiksberg_friday')).toBeUndefined()
   })
 
   test('el estado arranca un nivel con su flota y "Jugar otra vez" repite el mismo nivel', () => {
@@ -135,8 +147,8 @@ describe('pilar 1 en cada nivel', () => {
     const end = autoplay(balance, shiftSettingsFrom(balance), seed ?? balance.seed, bot, options, neighborhoodOf(levelId))
     return summarizeShift(end.orderQueue.orders, balance.heat, balance.rating, shiftBalance)
   }
-  // Jugar con cuidado en cada barrio es usar lo que el barrio enseña: en Vesterbro, juntar pedidos de un mismo lugar.
-  const carefulBot = (levelId: string): Bot => (neighborhoodOf(levelId) === 'vesterbro' ? batchingBot : triageBot)
+  // Jugar con cuidado en cada barrio es usar lo que enseñó: desde Vesterbro, juntar pedidos de un mismo lugar.
+  const carefulBot = (levelId: string): Bot => (neighborhoodOf(levelId) === 'norrebro' ? triageBot : batchingBot)
   const averageOf = (levelId: string, bot: Bot) =>
     seeds.reduce((sum, seed) => sum + (play(levelId, bot, seed).average ?? 0), 0) / seeds.length
 
