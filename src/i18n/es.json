@@ -195,6 +195,13 @@
   "pause.reducedMotion": "Movimiento reducido",
   "pause.shortcuts": "Ver los atajos de teclado",
   "results.lostTitle": "Qué le restó a tu promedio",
+  "results.money.title": "Dinero del turno",
+  "results.money.pay": "Entregas a tiempo",
+  "results.money.tips": "Propinas",
+  "results.money.cost": "Flota",
+  "results.money.profit": "Ganancia",
+  "results.money.loss": "Pérdida",
+  "results.money.total": "En caja",
   "results.lostLate": "Por llegar tarde",
   "results.lostCold": "Por comida fría",
   "results.lostCancelled": "Por pedidos cancelados",
@@ -232,5 +239,6 @@
   "levels.areaLocked": "Bloqueado",
   "levels.areaAverage": "{rating} de promedio",
   "levels.areaLabel": "{name}: {status}",
-  "briefing.far": "Los clientes viven lejos: a {km} km o más del restaurante. En las avenidas, la moto llega antes aunque estacione."
+  "briefing.far": "Los clientes viven lejos: a {km} km o más del restaurante. En las avenidas, la moto llega antes aunque estacione.",
+  "money.kr": "{amount} kr"
 }

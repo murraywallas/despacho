@@ -206,3 +206,53 @@
   margin: 8px 0 0;
   font-size: var(--text-sm);
 }
+
+/* Dinero del turno: pagos, propinas, flota, ganancia y lo que queda en caja. */
+.results__money {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  text-align: left;
+}
+
+.results__money-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.results__money-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--text-sm);
+}
+
+.results__money-row dt {
+  color: var(--ink-quiet);
+}
+
+.results__money-row dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.results__money-row--profit {
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
+.results__money-row--profit dt,
+.results__money-row--profit dd {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.results__money-row--loss dd {
+  color: var(--late, var(--ink));
+}

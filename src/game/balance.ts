@@ -117,6 +117,8 @@ export function clockSpeeds(balance: Pick<ClockBalance, 'speeds'>): number[] {
 /** A row of the Vehículos tab (only what the game uses so far). */
 export interface VehicleBalance {
   readonly speedKmh: number
+  /** What a rider on this vehicle costs per shift, in kr. */
+  readonly costPerShiftKr: number
   /** Orders it can carry at once. */
   readonly capacity: number
   /** Speed change on cobblestones, as a share (−0.5 = half speed). */
@@ -169,6 +171,18 @@ export interface ProgressionBalance {
 export const prototype: PrototypeBalance = data.prototype
 export const levels: Readonly<Record<string, LevelBalance>> = data.levels
 export const progression: ProgressionBalance = data.progression
+
+/** Money (Reglas tab, group Dinero). */
+export interface EconomyBalance {
+  /** What each delivery on time pays, before the tip, in kr. */
+  readonly deliveryPayKr: number
+  /** Tip per star of the delivery, in kr. */
+  readonly tipPerStarKr: number
+  /** Money the player starts the game with, in kr. */
+  readonly startingKr: number
+}
+
+export const economy: EconomyBalance = data.economy
 
 /** Level ids in the order they are played. */
 export const levelIds: readonly string[] = Object.keys(levels).sort((a, b) => levels[a].order - levels[b].order)
