@@ -62,7 +62,7 @@ export function vehicleProfile(id: string, vehicle: VehicleBalance, balance: Rou
 
 /** A plain bike: cycle tracks, no pedestrian ways, full speed everywhere. */
 export function bikeProfile(balance: RoutingBalance): RoutingProfile {
-  return vehicleProfile('bike', { speedKmh: 0, capacity: 1, usesBikeLanes: true }, balance)
+  return vehicleProfile('bike', { speedKmh: 0, capacity: 1, costPerShiftKr: 0, usesBikeLanes: true }, balance)
 }
 
 export const carProfile: RoutingProfile = {

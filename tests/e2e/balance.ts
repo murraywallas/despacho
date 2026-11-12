@@ -19,7 +19,8 @@ interface BalanceData {
       deadlineSec: number
     }
   >
-  vehicles: Record<string, { speedKmh: number }>
+  vehicles: Record<string, { speedKmh: number; costPerShiftKr: number }>
+  economy: { startingKr: number }
   clock: { gameSecondsPerRealSecond: number; speeds: string }
 }
 
@@ -61,3 +62,7 @@ const slowestKmh = Math.min(...prototype.riders.fleet.split(',').map((vehicle) =
 const metersPerSec = ((slowestKmh * 1000) / 3600) * data.clock.gameSecondsPerRealSecond
 /** Milliseconds of play of the longest ride in the area. */
 export const longestRideMs = (LONGEST_RIDE_M / metersPerSec) * 1000
+
+/** Money the player starts with, and what the level's fleet costs per shift. */
+export const startingKr = data.economy.startingKr
+export const fleetCostKr = level.fleet.reduce((sum, vehicle) => sum + data.vehicles[vehicle].costPerShiftKr, 0)

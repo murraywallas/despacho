@@ -7,6 +7,8 @@ import { useProgressStore } from '../store/progressStore'
 import { useScreenStore } from '../store/screenStore'
 import { useShiftStore } from '../store/shiftStore'
 import { formatRating } from './formatRating'
+import { moneyOfShift } from './moneyOfShift'
+import { ShiftMoneySummary } from './ShiftMoneySummary'
 import './ResultsScreen.css'
 
 const STAR_SIZE = 28
@@ -37,7 +39,9 @@ export function ResultsScreen() {
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const restartShift = useShiftStore((state) => state.restartShift)
   const levelId = useShiftStore((state) => state.levelId)
+  const riders = useShiftStore((state) => state.riders)
   const best = useProgressStore((state) => state.best)
+  const moneyKr = useProgressStore((state) => state.moneyKr)
   const showBriefing = useScreenStore((state) => state.showBriefing)
   const showLevels = useScreenStore((state) => state.showLevels)
   const results = summarizeShift(orders, prototype.heat, prototype.rating, shift)
@@ -94,6 +98,11 @@ export function ResultsScreen() {
             </div>
           ))}
         </dl>
+
+        <ShiftMoneySummary
+          money={moneyOfShift(orders, riders)}
+          totalKr={levelId === null ? undefined : moneyKr}
+        />
 
         <div className="results__lost" data-testid="results-lost">
           <h3 className="results__lost-title">{t('results.lostTitle')}</h3>

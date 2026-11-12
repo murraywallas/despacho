@@ -82,6 +82,11 @@
     "majorWithoutTrackFactor": 1.5,
     "pedestrianFactor": 1.5
   },
+  "economy": {
+    "deliveryPayKr": 40,
+    "tipPerStarKr": 5,
+    "startingKr": 500
+  },
   "vehicles": {
     "bike": {
       "speedKmh": 18,
