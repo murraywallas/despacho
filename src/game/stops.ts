@@ -1,10 +1,12 @@
 /**
  * When a rider reaches each customer of their trip: the rest of the ride to the restaurant, the wait until every
- * order is ready, then each customer in turn. The last customer waits the most: that is the price of batching. Pure.
+ * order is ready, then each customer in turn. The last customer waits the most: that is the price of batching.
+ * Also what a free rider would do with a trip before getting it, so the player can compare riders by when the food
+ * reaches the customer (not by who gets to the restaurant first). Pure.
  */
 import { networkFor, type CityMap, type NodeId } from './cityMap'
-import { restaurantOf, travelTimeSec } from './dispatch'
-import { ordersOf, speedOf, type Speeds } from './movement'
+import { rankRiders, restaurantOf, travelTimeSec, type RankedRider } from './dispatch'
+import { ordersOf, speedOf, startTrip, type Speeds } from './movement'
 import type { Order } from './orders'
 import { parkingSecOf } from './parking'
 import type { Rider } from './riders'
@@ -51,4 +53,51 @@ export function stopEtas(map: CityMap, rider: Rider, orders: readonly Order[], s
     from = stop.customer
   }
   return etas
+}
+
+/**
+ * When a free rider would reach each customer if they got these orders now (same restaurant, in delivery order):
+ * the ride to the restaurant and the parking, the wait until the kitchen has every order, then each customer in
+ * turn. Empty when the rider can't reach the restaurant.
+ */
+export function plannedEtas(map: CityMap, rider: Rider, trip: readonly Order[], speeds: Speeds, nowSec: number): StopEta[] {
+  if (trip.length === 0) return []
+  const restaurant = restaurantOf(map, trip[0]).node
+  if (!Number.isFinite(travelTimeSec(networkFor(map, rider.vehicle), rider.node, restaurant, speedOf(speeds, rider.vehicle)))) return []
+  const planned = startTrip(map, { ...rider, status: 'toRestaurant', orderIds: trip.map((order) => order.id) }, trip)
+  return stopEtas(map, planned, trip, speeds, nowSec)
+}
+
+export interface DeliveryOption extends RankedRider {
+  /** Second of the shift when the first order of the trip would reach its customer. */
+  readonly deliverAtSec: number
+  /** The first order of the trip would arrive after its deadline. */
+  readonly late: boolean
+}
+
+/**
+ * Free riders whose vehicle carries the whole trip, by when the first order would reach its customer (ties: lower
+ * number first). Riders who can't get there at all are left out.
+ */
+export function rankByDelivery(
+  map: CityMap,
+  riders: readonly Rider[],
+  trip: readonly Order[],
+  speeds: Speeds,
+  nowSec: number,
+): DeliveryOption[] {
+  const [first] = trip
+  if (!first) return []
+  return rankRiders(map, riders, first, speeds, trip.length)
+    .flatMap((ranked) => {
+      const eta = plannedEtas(map, ranked.rider, trip, speeds, nowSec)[0]
+      if (!eta || !Number.isFinite(eta.atSec)) return []
+      return [{ ...ranked, deliverAtSec: eta.atSec, late: eta.atSec > first.deadlineAtSec }]
+    })
+    .sort((a, b) => a.deliverAtSec - b.deliverAtSec || a.rider.number - b.rider.number)
+}
+
+/** The free rider who gets the order to its customer soonest: the suggestion shown next to an urgent order. */
+export function suggestRider(map: CityMap, riders: readonly Rider[], order: Order, speeds: Speeds, nowSec: number): DeliveryOption | undefined {
+  return rankByDelivery(map, riders, [order], speeds, nowSec)[0]
 }

@@ -10,11 +10,15 @@ async function runShiftToEnd(page: Page) {
   await expect(page.getByTestId('results')).toBeVisible()
 }
 
-/** Progress saved by an earlier game: the best stars of each level. */
+/**
+ * Progress saved by an earlier game: the best stars of each level, with money and riders enough for any suggested
+ * fleet (the garage has its own tests).
+ */
 async function withProgress(page: Page, best: Record<string, number>) {
   await page.addInitScript((saved) => {
     if (!localStorage.getItem('despacho-progress')) {
-      localStorage.setItem('despacho-progress', JSON.stringify({ state: { best: saved }, version: 0 }))
+      const state = { best: saved, moneyKr: 100_000, hired: 10 }
+      localStorage.setItem('despacho-progress', JSON.stringify({ state, version: 0 }))
     }
   }, best)
 }

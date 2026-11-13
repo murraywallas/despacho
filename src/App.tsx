@@ -5,6 +5,7 @@ import { useProgressStore } from './store/progressStore'
 import { useScreenStore } from './store/screenStore'
 import { useShiftStore } from './store/shiftStore'
 import { BriefingScreen } from './ui/BriefingScreen'
+import { GarageScreen } from './ui/GarageScreen'
 import { LevelSelect } from './ui/LevelSelect'
 import { ShiftScreen } from './ui/ShiftScreen'
 import { useRecordProgress } from './ui/useRecordProgress'
@@ -30,5 +31,6 @@ export default function App() {
 
   if (screen === 'shift') return <ShiftScreen />
   if (screen === 'briefing') return <BriefingScreen />
+  if (screen === 'garage') return <GarageScreen />
   return <LevelSelect />
 }

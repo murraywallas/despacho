@@ -252,6 +252,44 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Minutos hasta que la comida llega al cliente; en rojo y con alerta si llega tarde. */
+.delivery-eta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.delivery-eta--late {
+  color: var(--late);
+}
+
+/* Una sola línea: el vehículo se recorta antes que los minutos. El botón no ensancha la columna de pedidos. */
+.order-suggestion {
+  contain: inline-size;
+}
+
+.order-suggestion__text {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.order-suggestion__eta {
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.order-suggestion--late {
+  border-color: var(--late);
+  background: var(--late-bg);
+}
+
 .rider-card__note {
   color: var(--ink-quiet);
   font-size: var(--text-sm);

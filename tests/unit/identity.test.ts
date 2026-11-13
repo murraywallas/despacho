@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
 import type { StyleSpecification } from 'maplibre-gl'
 import { levelIds, levels } from '../../src/game/balance'
-import { rankRiders, suggestRider } from '../../src/game/dispatch'
 import type { Order } from '../../src/game/orders'
+import { rankByDelivery, suggestRider } from '../../src/game/stops'
 import { DUSK, fallbackStyle, LIGHTS, NIGHT, NOON, toNightStyle } from '../../src/map/nightStyle'
 import { mapLightOf } from '../../src/ui/levelText'
 import { nodeAt, smallCity } from './smallCity'
@@ -29,7 +29,7 @@ describe('la luz de Copenhague', () => {
 })
 
 describe('sugerencia en un pedido urgente', () => {
-  test('propone el primero del ranking por ETA', () => {
+  test('propone el primero del ranking por entrega', () => {
     const map = smallCity([nodeAt(3, 0)])
     const riders = [
       { id: 'k1', number: 1, vehicle: 'bike', node: nodeAt(0, 4), status: 'idle' as const },
@@ -46,8 +46,8 @@ describe('sugerencia en un pedido urgente', () => {
       status: 'pending',
     }
     const speeds = { bike: 5 }
-    expect(suggestRider(map, riders, order, speeds)?.rider.number).toBe(rankRiders(map, riders, order, speeds)[0].rider.number)
-    expect(suggestRider(map, riders, order, speeds)?.rider.number).toBe(2)
-    expect(suggestRider(map, riders.map((rider) => ({ ...rider, status: 'toCustomer' as const })), order, speeds)).toBeUndefined()
+    expect(suggestRider(map, riders, order, speeds, 0)?.rider.number).toBe(rankByDelivery(map, riders, [order], speeds, 0)[0].rider.number)
+    expect(suggestRider(map, riders, order, speeds, 0)?.rider.number).toBe(2)
+    expect(suggestRider(map, riders.map((rider) => ({ ...rider, status: 'toCustomer' as const })), order, speeds, 0)).toBeUndefined()
   })
 })

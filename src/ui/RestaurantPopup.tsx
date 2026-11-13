@@ -1,12 +1,13 @@
 import { UtensilsCrossed, X } from 'lucide-react'
 import { prototype } from '../game/balance'
 import type { Restaurant } from '../game/cityMap'
-import { rankRiders } from '../game/dispatch'
 import { timeLeftSec, urgencyOf, waitingAt } from '../game/orders'
 import { isReady } from '../game/rating'
+import { rankByDelivery } from '../game/stops'
 import { t } from '../i18n'
 
 import { settings, useShiftStore } from '../store/shiftStore'
+import { DeliveryEta } from './DeliveryEta'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
@@ -41,8 +42,10 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
   const waiting = waitingAt(orders, restaurant.id)
   const selectedOrder = waiting.find((order) => order.id === selectedOrderId)
   const selectedRider = riders.find((rider) => rider.id === selectedRiderId)
-  const picked = selectedOrder ? 1 + addedOrderIds.length : 0
-  const ranked = selectedOrder ? rankRiders(map, riders, selectedOrder, settings.movement.metersPerSec, picked) : []
+  // The trip in delivery order: the picked order, then the ones added with Shift.
+  const trip = selectedOrder ? [selectedOrder, ...addedOrderIds.flatMap((id) => waiting.find((order) => order.id === id) ?? [])] : []
+  const picked = trip.length
+  const ranked = rankByDelivery(map, riders, trip, settings.movement.metersPerSec, nowSec)
   const isPicked = (id: string) => id === selectedOrderId || addedOrderIds.includes(id)
 
   return (
@@ -107,7 +110,7 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
           )}
           <p className="map-popup__note">{ranked.length > 0 ? t('map.closestRiders') : t('map.noFreeRiders')}</p>
           <ul className="map-popup__list">
-            {ranked.map(({ rider, etaSec }) => (
+            {ranked.map(({ rider, deliverAtSec, late }) => (
               <li key={rider.id}>
                 <button
                   type="button"
@@ -119,7 +122,7 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
                   }}
                 >
                   <span>{t('riders.name', { number: rider.number })}</span>
-                  <span className="map-popup__eta">{t('riders.eta', { minutes: gameMinutes(etaSec, gameTime) })}</span>
+                  <DeliveryEta className="map-popup__eta" inSec={deliverAtSec - nowSec} late={late} />
                 </button>
               </li>
             ))}

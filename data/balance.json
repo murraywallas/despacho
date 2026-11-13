@@ -85,7 +85,9 @@
   "economy": {
     "deliveryPayKr": 40,
     "tipPerStarKr": 5,
-    "startingKr": 500
+    "startingKr": 600,
+    "startingRiders": 3,
+    "hireRiderKr": 200
   },
   "vehicles": {
     "bike": {

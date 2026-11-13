@@ -5,6 +5,12 @@ import { prototype, SHIFT_URL, shiftEndsAt, shiftStartsAt } from './balance.ts'
 test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
 
 test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia todo', async ({ page }) => {
+  // Plata de sobra: "Jugar otra vez" repite el turno con la misma flota (sin plata, vuelve al briefing).
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('despacho-progress')) {
+      localStorage.setItem('despacho-progress', JSON.stringify({ state: { moneyKr: 100_000 }, version: 0 }))
+    }
+  })
   await page.clock.install()
   await page.goto(SHIFT_URL)
   await page.getByRole('button', { name: '2x', exact: true }).click()

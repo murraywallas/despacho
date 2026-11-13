@@ -22,9 +22,9 @@ test('elegir un pedido muestra la ETA de los repartidores y la tecla del primero
 
   await orders.first().getByRole('button').first().click()
   await expect(orders.first().getByRole('button').first()).toHaveAttribute('aria-pressed', 'true')
-  await expect(riderPanel.getByText('Ordenados por llegada al restaurante.')).toBeVisible()
+  await expect(riderPanel.getByText('Ordenados por quién entrega antes al cliente.')).toBeVisible()
 
-  // Los tres muestran su ETA y están ordenados de menor a mayor.
+  // Los tres muestran en cuántos minutos llega la comida al cliente, de menor a mayor.
   const etas = await riders.locator('.rider-card__eta').allTextContents()
   expect(etas).toHaveLength(3)
   const seconds = etas.map((text) => Number.parseInt(text, 10))

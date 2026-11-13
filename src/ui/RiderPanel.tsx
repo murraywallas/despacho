@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
-import { capacityOf, rankRiders } from '../game/dispatch'
+import { prototype } from '../game/balance'
+import { capacityOf } from '../game/dispatch'
 import { ordersOf } from '../game/movement'
 import type { Rider } from '../game/riders'
+import { rankByDelivery } from '../game/stops'
 import { t } from '../i18n'
 import { usePointerStore } from '../store/pointerStore'
 import { useProgressStore } from '../store/progressStore'
@@ -13,7 +15,8 @@ const HINT_SHIFTS = 2
 
 /**
  * The fleet. A free rider can be picked first (then an order on the map), or after an order: then free riders
- * are sorted by how soon they reach its restaurant (ETA) and clicking one assigns the order. Busy riders go last.
+ * are sorted by how soon the food would reach the customer with them, and clicking one assigns the order. Busy
+ * riders go last.
  */
 export function RiderPanel() {
   const map = useShiftStore((state) => state.map)
@@ -34,11 +37,17 @@ export function RiderPanel() {
   const idle = riders.filter((rider) => rider.status === 'idle').length
 
   const count = selectedOrder ? 1 + addedOrderIds.length : 0
-  const ranked = useMemo(
-    () => (selectedOrder && !onTheWay ? rankRiders(map, riders, selectedOrder, settings.movement.metersPerSec, count) : []),
-    [map, riders, selectedOrder, onTheWay, count],
-  )
-  const etaOf = new Map(ranked.map((entry) => [entry.rider.id, entry.etaSec]))
+  const ranked = useMemo(() => {
+    if (!selectedOrder || onTheWay) return []
+    // Reassigning costs the order part of its deadline: "late" is judged against what will be left.
+    const first =
+      selectedOrder.status === 'assigned'
+        ? { ...selectedOrder, deadlineAtSec: selectedOrder.deadlineAtSec - prototype.tools.reassignPenaltySec }
+        : selectedOrder
+    const added = addedOrderIds.flatMap((id) => orders.find((order) => order.id === id) ?? [])
+    return rankByDelivery(map, riders, [first, ...added], settings.movement.metersPerSec, nowSec)
+  }, [map, riders, orders, selectedOrder, addedOrderIds, onTheWay, nowSec])
+  const deliveryOf = new Map(ranked.map((entry) => [entry.rider.id, { inSec: entry.deliverAtSec - nowSec, late: entry.late }]))
   const fits = (rider: Rider) => capacityOf(rider.vehicle) >= Math.max(1, count)
   // Dragging an order: free riders whose vehicle carries the trip (the whole batch, if the order is in it).
   const draggedCount =
@@ -59,6 +68,8 @@ export function RiderPanel() {
   const ordered = selectedOrder && !onTheWay
     ? [
         ...ranked.map((entry) => entry.rider),
+        // Free and big enough, but with no way to get there: still listed, without an estimate.
+        ...riders.filter((rider) => rider.status === 'idle' && fits(rider) && !deliveryOf.has(rider.id)),
         ...riders.filter((rider) => rider.status === 'idle' && !fits(rider)),
         ...riders.filter((rider) => rider.status !== 'idle'),
       ]
@@ -78,7 +89,7 @@ export function RiderPanel() {
           <RiderCard
             key={rider.id}
             rider={rider}
-            etaSec={etaOf.get(rider.id)}
+            delivery={deliveryOf.get(rider.id)}
             trip={ordersOf(rider, orders)}
             orders={orders}
             nowSec={nowSec}
