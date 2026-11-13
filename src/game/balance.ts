@@ -180,9 +180,21 @@ export interface EconomyBalance {
   readonly tipPerStarKr: number
   /** Money the player starts the game with, in kr. */
   readonly startingKr: number
+  /** Riders the player has hired when the game starts. */
+  readonly startingRiders: number
+  /** What hiring one more rider costs, once, in kr. */
+  readonly hireRiderKr: number
 }
 
 export const economy: EconomyBalance = data.economy
+
+/** A neighborhood of the Barrios tab (only what the game uses). */
+export interface NeighborhoodBalance {
+  /** Vehicles the garage offers there (ids of the Vehículos tab). */
+  readonly vehicles: readonly string[]
+}
+
+export const neighborhoods: Readonly<Record<string, NeighborhoodBalance>> = data.neighborhoods
 
 /** Level ids in the order they are played. */
 export const levelIds: readonly string[] = Object.keys(levels).sort((a, b) => levels[a].order - levels[b].order)

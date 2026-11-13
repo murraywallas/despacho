@@ -46,7 +46,7 @@ test('la guía se puede saltar', async ({ page }) => {
   await expect(page.getByTestId('guide')).toHaveCount(0)
 })
 
-test('un pedido urgente sugiere el repartidor que llega primero, y un clic lo manda', async ({ page }) => {
+test('un pedido urgente sugiere el repartidor que entrega primero, y un clic lo manda', async ({ page }) => {
   await page.clock.install()
   await page.goto(SHIFT_URL)
   const { spawnIntervalSec, deadlineSec, urgentBelowSec } = prototype.orders
@@ -54,7 +54,8 @@ test('un pedido urgente sugiere el repartidor que llega primero, y un clic lo ma
   await page.keyboard.press('Space')
 
   const suggestion = page.getByTestId('order-suggestion').first()
-  await expect(suggestion).toContainText(/llega en \d+ min/)
+  await expect(suggestion).toContainText(/\d+ min/)
+  await expect(suggestion).toHaveAttribute('aria-label', /entrega al cliente en \d+ min/)
   const label = (await suggestion.getAttribute('aria-label')) ?? ''
   const [, order, rider] = /pedido #(\d+) con el repartidor (\d+)/.exec(label) ?? []
   await suggestion.click()

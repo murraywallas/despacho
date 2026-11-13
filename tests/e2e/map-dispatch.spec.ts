@@ -42,7 +42,7 @@ test('con el repartidor elegido, un restaurante sin pedidos abre su tarjeta y el
   await expect(rider).toHaveAttribute('aria-pressed', 'true')
 })
 
-test('primero el pedido en la tarjeta del restaurante, después el repartidor más cercano', async ({ page }) => {
+test('primero el pedido en la tarjeta del restaurante, después el repartidor que entrega antes', async ({ page }) => {
   const { map, waiting } = await firstOrderIn(page)
 
   await waiting.click()
@@ -50,7 +50,7 @@ test('primero el pedido en la tarjeta del restaurante, después el repartidor m�
   await expect(popup).toBeVisible()
   await popup.getByTestId('popup-order').first().click()
 
-  // Aparecen los libres por ETA; el primero es el más cercano.
+  // Aparecen los libres por cuándo entregan al cliente; el primero es el que llega antes.
   const riders = popup.getByTestId('popup-rider')
   await expect(riders).toHaveCount(3)
   const first = (await riders.first().textContent()) ?? ''

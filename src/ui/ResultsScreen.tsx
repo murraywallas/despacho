@@ -1,5 +1,6 @@
 import { ArrowRight, List, RotateCcw, Star } from 'lucide-react'
 import { levelIds, progression, prototype, shift } from '../game/balance'
+import { canStart } from '../game/garage'
 import { isUnlocked, nextLevel } from '../game/levels'
 import { averageLost, biggestLoss, starsLost, summarizeShift, type ShiftOutcome, type StarsLost } from '../game/results'
 import { t, type TextKey } from '../i18n'
@@ -8,6 +9,7 @@ import { useScreenStore } from '../store/screenStore'
 import { useShiftStore } from '../store/shiftStore'
 import { formatRating } from './formatRating'
 import { moneyOfShift } from './moneyOfShift'
+import { vehicleCostKr } from './useGarage'
 import { ShiftMoneySummary } from './ShiftMoneySummary'
 import './ResultsScreen.css'
 
@@ -51,6 +53,9 @@ export function ResultsScreen() {
   const next =
     following && isUnlocked(levelIds, best, following, progression.unlockAvgRating) ? following : undefined
   const rating = formatRating(results.average)
+  // Same fleet again, if the money still pays for it; if not, back to the briefing to change it in the garage.
+  const affordable = canStart(riders.map((rider) => rider.vehicle), moneyKr, vehicleCostKr)
+  const playAgain = levelId !== null && !affordable ? () => showBriefing(levelId) : restartShift
 
   const stats = [
     { key: 'delivered', label: t('results.delivered'), value: results.delivered },
@@ -131,7 +136,7 @@ export function ResultsScreen() {
           <button
             type="button"
             className={next ? 'results__secondary' : 'results__again'}
-            onClick={restartShift}
+            onClick={playAgain}
             autoFocus={!next}
           >
             <RotateCcw size={ICON_SIZE} aria-hidden />

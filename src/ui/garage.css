@@ -1,0 +1,150 @@
+/* Garage: la flota del turno, antes del briefing. */
+
+.garage__money {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin: 12px 0 0;
+}
+
+.garage__money div {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.garage__money dt {
+  color: var(--ink-quiet);
+  font-size: calc(12px * var(--text-scale));
+}
+
+.garage__money dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.garage__fleet {
+  display: grid;
+  gap: 4px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.garage__rider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.garage__select {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2, var(--surface));
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.garage__select:focus-visible,
+.garage__icon-button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.garage__icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-quiet);
+  cursor: pointer;
+}
+
+.garage__icon-button:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.garage__icon-button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.garage__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.garage__tools:empty {
+  display: none;
+}
+
+.garage__hire {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent, var(--ink));
+  background: var(--surface);
+  font-size: var(--text-sm);
+}
+
+.garage__hire p {
+  margin: 0;
+}
+
+.garage__hire button {
+  justify-self: start;
+}
+
+.garage .briefing__back:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.garage__warning,
+.briefing__warning {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--late);
+  background: var(--late-bg);
+  font-size: var(--text-sm);
+}
+
+/* El costo de la flota y la caja, en el briefing. */
+.briefing__fleet-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.briefing__fleet-cost {
+  color: var(--ink-quiet);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.briefing__start:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

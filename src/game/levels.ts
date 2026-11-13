@@ -121,9 +121,14 @@ export function createAreaShift(balance: PrototypeBalance, seed: number, area: s
   return createShift(balance, seed, bikeNetworkOf(area), (vehicle) => networkOf(area, vehicle), clusterOf(balance))
 }
 
-/** A fresh shift of a level, on its neighborhood's streets. */
-export function createLevelShift(levelId: string | null): ReturnType<typeof createShift> {
-  const balance = balanceFor(levelId)
+/** The rules of a level with the fleet chosen in the garage instead of the suggested one. */
+export function withFleet(balance: PrototypeBalance, fleet: readonly string[] | undefined): PrototypeBalance {
+  return fleet ? { ...balance, riders: { ...balance.riders, fleet: fleet.join(', ') } } : balance
+}
+
+/** A fresh shift of a level, on its neighborhood's streets, with the garage's fleet or the suggested one. */
+export function createLevelShift(levelId: string | null, fleet?: readonly string[]): ReturnType<typeof createShift> {
+  const balance = withFleet(balanceFor(levelId), fleet)
   return createAreaShift(balance, balance.seed, neighborhoodOf(levelId))
 }
 

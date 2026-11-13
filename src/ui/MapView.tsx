@@ -21,6 +21,7 @@ import { MapMarkerContent } from './MapMarkerContent'
 import { RestaurantPopup } from './RestaurantPopup'
 import { restaurantName } from './restaurantName'
 import { useNeighborhood } from './useNeighborhood'
+import { VEHICLE_TEXT } from './VehicleIcon'
 import { neighborhoodName } from './levelText'
 import { useMapMarkers, type MarkerAction } from './useMapMarkers'
 
@@ -153,7 +154,10 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
         if (marker.urgency === 'urgent') return `${name} · ${t('orders.urgentTag')}`
         return name
       }
-      return t('riders.name', { number: marker.label })
+      // The icon shows the vehicle; the name says it too.
+      const name = t('riders.name', { number: marker.label })
+      const vehicle = marker.rider ? VEHICLE_TEXT[marker.rider.vehicle] : undefined
+      return vehicle ? `${name} · ${t(vehicle)}` : name
     },
     [map, neighborhood],
   )

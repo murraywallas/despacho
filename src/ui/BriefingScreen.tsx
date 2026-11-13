@@ -1,4 +1,4 @@
-import { ArrowLeft, Play } from 'lucide-react'
+import { ArrowLeft, Play, Wrench } from 'lucide-react'
 import { levels, shift as shiftBalance, vehicles } from '../game/balance'
 import { balanceFor, briefingOf, createLevelShift, neighborhoodOf } from '../game/levels'
 import { positionOf } from '../game/cityMap'
@@ -11,6 +11,9 @@ import { formatRating } from './formatRating'
 import { levelHours, levelName, gameTimeOf, mapLightOf, neighborhoodName, PANEL_INSET } from './levelText'
 import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
 import { BackdropMap, type BackdropPin } from './BackdropMap'
+import { formatKr } from './formatKr'
+import { useGarage } from './useGarage'
+import './garage.css'
 import './levels.css'
 
 /** "Kødbyen"; the id itself when es.json has no name for it. */
@@ -45,17 +48,23 @@ function restaurantPins(levelId: string): readonly BackdropPin[] {
 /** What's coming before a shift: the fleet, how many orders, the deadline and the rush hour. */
 export function BriefingScreen() {
   const levelId = useScreenStore((state) => state.briefingLevelId)
+  if (!levelId || !levels[levelId]) return null
+  return <Briefing levelId={levelId} />
+}
+
+function Briefing({ levelId }: { levelId: string }) {
   const showLevels = useScreenStore((state) => state.showLevels)
+  const showGarage = useScreenStore((state) => state.showGarage)
   const startFromBriefing = useScreenStore((state) => state.startFromBriefing)
   const startLevel = useShiftStore((state) => state.startLevel)
-  if (!levelId || !levels[levelId]) return null
+  const garage = useGarage(levelId)
 
   const balance = balanceFor(levelId)
   const pins = restaurantPins(levelId)
   const briefing = briefingOf(balance, shiftSettingsFrom(balance).orders)
   const time = gameTimeOf(levelId)
   const start = () => {
-    startLevel(levelId)
+    startLevel(levelId, garage.fleet)
     startFromBriefing()
   }
 
@@ -109,9 +118,14 @@ export function BriefingScreen() {
           </p>
         )}
 
-        <h2 className="briefing__subtitle">{t('briefing.fleet')}</h2>
+        <div className="briefing__fleet-head">
+          <h2 className="briefing__subtitle">{t('briefing.fleet')}</h2>
+          <span className="briefing__fleet-cost" data-testid="briefing-cost">
+            {t('briefing.fleetCost', { cost: formatKr(garage.costKr), money: formatKr(garage.moneyKr) })}
+          </span>
+        </div>
         <ol className="briefing__fleet" data-testid="briefing-fleet">
-          {briefing.fleet.map((vehicle, index) => {
+          {garage.fleet.map((vehicle, index) => {
             const key = VEHICLE_TEXT[vehicle]
             const row = vehicles[vehicle]
             const noteKey = `vehicles.${vehicle}.note`
@@ -137,6 +151,12 @@ export function BriefingScreen() {
           })}
         </ol>
 
+        {!garage.canStart && (
+          <p className="briefing__warning" role="status" data-testid="briefing-warning">
+            {t('garage.tooExpensive')}
+          </p>
+        )}
+
         <p className="briefing__goal">{t('briefing.goal', { win: formatRating(shiftBalance.winAtLeast) })}</p>
 
         <div className="briefing__actions">
@@ -144,7 +164,11 @@ export function BriefingScreen() {
             <ArrowLeft size={16} aria-hidden />
             {t('briefing.back')}
           </button>
-          <button type="button" className="briefing__start" onClick={start} autoFocus>
+          <button type="button" className="briefing__back" onClick={showGarage} data-testid="briefing-garage">
+            <Wrench size={16} aria-hidden />
+            {t('briefing.garage')}
+          </button>
+          <button type="button" className="briefing__start" onClick={start} disabled={!garage.canStart} autoFocus>
             <Play size={16} aria-hidden />
             {t('briefing.start')}
           </button>

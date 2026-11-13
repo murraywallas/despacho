@@ -4,6 +4,7 @@ import { isReady } from '../game/rating'
 import type { Rider, RiderStatus } from '../game/riders'
 import { t, type TextKey } from '../i18n'
 import { usePointerStore } from '../store/pointerStore'
+import { DeliveryEta } from './DeliveryEta'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
@@ -23,8 +24,11 @@ const STATUS_TEXT: Record<RiderStatus, TextKey> = {
 
 export interface RiderCardProps {
   rider: Rider
-  /** Seconds to the selected order's restaurant; undefined when nothing is selected or the rider is busy. */
-  etaSec?: number
+  /**
+   * When the selected order would reach its customer with this rider (seconds from now, and whether that is after
+   * the deadline); undefined when nothing is selected or the rider is busy.
+   */
+  delivery?: { readonly inSec: number; readonly late: boolean }
   /** The rider's orders, in delivery order. */
   trip: readonly Order[]
   orders: readonly Order[]
@@ -44,11 +48,11 @@ export interface RiderCardProps {
 }
 
 /**
- * One row of the fleet, in columns: key (1–9), vehicle and load, what they're doing, and the ETA to the selected
- * order's restaurant. A free rider can be dragged onto an order, and an order dropped on them.
+ * One row of the fleet, in columns: key (1–9), vehicle and load, what they're doing, and when the selected order
+ * would reach its customer with them. A free rider can be dragged onto an order, and an order dropped on them.
  */
 export function RiderCard(props: RiderCardProps) {
-  const { rider, etaSec, trip, orders, nowSec, canPick, tooSmallFor, selected, dropTarget, onPick } = props
+  const { rider, delivery, trip, orders, nowSec, canPick, tooSmallFor, selected, dropTarget, onPick } = props
   const dragRider = usePointerStore((state) => state.dragRider)
   const draggedOrderId = usePointerStore((state) => state.draggedOrderId)
   const reassignable = trip.filter((stop) => stop.status === 'assigned')
@@ -109,9 +113,7 @@ export function RiderCard(props: RiderCardProps) {
           {order && isReady(order, nowSec) && <FoodHeat order={order} nowSec={nowSec} />}
           {tooSmallFor !== undefined && <span className="rider-card__note">{t('riders.tooSmall', { count: tooSmallFor })}</span>}
         </span>
-        {etaSec !== undefined && (
-          <span className="rider-card__eta">{t('riders.eta', { minutes: gameMinutes(etaSec, gameTime) })}</span>
-        )}
+        {delivery && <DeliveryEta className="rider-card__eta" inSec={delivery.inSec} late={delivery.late} />}
       </button>
       {reassignable.length > 0 && (
         <div className="rider-card__tools">
