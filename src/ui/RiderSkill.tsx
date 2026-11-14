@@ -1,6 +1,6 @@
 ﻿import { GraduationCap } from 'lucide-react'
 import { experience } from '../game/balance'
-import { levelOf, levelProgress, speedBonusOf } from '../game/experience'
+import { deliveriesToNextLevel, levelOf, levelProgress, speedBonusOf } from '../game/experience'
 import { t } from '../i18n'
 import { useProgressStore } from '../store/progressStore'
 import { formatKr } from './formatKr'
@@ -19,6 +19,7 @@ export function RiderSkill({ place, label }: { place: number; label: string }) {
   const top = level >= experience.maxLevel
   const bonus = Math.round(speedBonusOf(level, experience) * PERCENT)
   const progress = levelProgress(xp, experience)
+  const left = deliveriesToNextLevel(xp, experience)
   return (
     <span className="rider-skill" data-testid="rider-skill">
       <span className="rider-skill__level" data-testid="rider-level">
@@ -35,6 +36,11 @@ export function RiderSkill({ place, label }: { place: number; label: string }) {
       >
         <span style={{ width: `${progress * PERCENT}%` }} />
       </span>
+      {left !== undefined && (
+        <span className="rider-skill__next" data-testid="rider-next-level">
+          {t(left === 1 ? 'garage.nextLevelOne' : 'garage.nextLevel', { count: left, level: level + 1 })}
+        </span>
+      )}
       {!top && (
         <button
           type="button"

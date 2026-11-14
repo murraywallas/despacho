@@ -154,8 +154,9 @@
 .rider-skill {
   display: flex;
   flex-basis: 100%;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 2px 8px;
   padding-left: 30px;
   font-size: calc(12px * var(--text-scale));
 }
@@ -186,6 +187,16 @@
   display: block;
   height: 100%;
   background: var(--accent-strong, var(--ink));
+}
+
+/* Lo que falta para el próximo nivel: en su propia línea, debajo de la barra (no ensancha la fila a 1024 px). */
+.rider-skill__next {
+  order: 1;
+  flex-basis: 100%;
+  color: var(--ink-quiet);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .rider-skill__course {

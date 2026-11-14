@@ -27,10 +27,13 @@ test('el garage muestra el nivel de cada repartidor, un curso lo sube y en el tu
   await expect(levels.nth(0)).toContainText('Nivel 2')
   await expect(levels.nth(0)).toContainText(`+${Math.round(2 * speedBonusPerLevelPct * 100)} %`)
   await expect(levels.nth(1)).toHaveText('Nivel 0')
+  const next = garage.getByTestId('rider-next-level')
+  await expect(next.nth(1)).toHaveText(`${xpPerLevel} entregas para el nivel 1`)
 
   // Curso para el repartidor 2: sube un nivel y se paga.
   await garage.getByRole('button', { name: /^Pagar un curso a Repartidor 2/ }).click()
   await expect(levels.nth(1)).toContainText('Nivel 1')
+  await expect(next.nth(1)).toHaveText(`${xpPerLevel} entregas para el nivel 2`)
   await expect(garage.getByTestId('garage-money')).toHaveText(kr(MONEY - trainingKr))
 
   // Queda guardado.

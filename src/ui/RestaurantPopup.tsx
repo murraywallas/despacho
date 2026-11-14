@@ -3,7 +3,7 @@ import { prototype } from '../game/balance'
 import type { Restaurant } from '../game/cityMap'
 import { timeLeftSec, urgencyOf, waitingAt } from '../game/orders'
 import { isReady } from '../game/rating'
-import { rankByDelivery } from '../game/stops'
+import { firstFree, rankByDelivery } from '../game/stops'
 import { t } from '../i18n'
 
 import { speedsAt, useShiftStore } from '../store/shiftStore'
@@ -47,6 +47,11 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
   const picked = trip.length
   const ranked = rankByDelivery(map, riders, trip, speedsAt(nowSec), nowSec)
   const isPicked = (id: string) => id === selectedOrderId || addedOrderIds.includes(id)
+  // Nobody can take it now: who to wait for.
+  const waitFor =
+    selectedOrder && ranked.length === 0
+      ? firstFree(map, riders, orders, speedsAt(nowSec), nowSec, picked, prototype.riders.rechargeSec ?? 0)
+      : undefined
 
   return (
     <div className="map-popup" role="dialog" aria-label={name} data-testid="map-popup">
@@ -109,6 +114,14 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
             <p className="map-popup__note">{picked > 1 ? t('map.pickedCount', { count: picked }) : t('orders.addHint')}</p>
           )}
           <p className="map-popup__note">{ranked.length > 0 ? t('map.closestRiders') : t('map.noFreeRiders')}</p>
+          {waitFor && (
+            <p className="map-popup__note" data-testid="popup-first-free">
+              {t('map.firstFree', {
+                rider: waitFor.rider.number,
+                minutes: Math.max(1, gameMinutes(Math.max(0, waitFor.atSec - nowSec), gameTime)),
+              })}
+            </p>
+          )}
           <ul className="map-popup__list">
             {ranked.map(({ rider, deliverAtSec, late }) => (
               <li key={rider.id}>

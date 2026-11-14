@@ -138,7 +138,7 @@ export function RiderCard(props: RiderCardProps) {
           {order && isReady(order, nowSec) && <FoodHeat order={order} nowSec={nowSec} />}
           {tooSmallFor !== undefined && <span className="rider-card__note">{t('riders.tooSmall', { count: tooSmallFor })}</span>}
           {noBattery && <span className="rider-card__note">{t('riders.noBattery')}</span>}
-          {freeInSec !== undefined && (
+          {freeInSec !== undefined && refusal?.reason !== 'busy' && (
             <span className="rider-card__note" data-testid="rider-free-in">
               {t('riders.freeIn', { minutes: Math.max(1, gameMinutes(freeInSec, gameTime)) })}
             </span>

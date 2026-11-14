@@ -1,6 +1,5 @@
 import { ArrowRight, List, RotateCcw, Star } from 'lucide-react'
 import { levelIds, progression, prototype, shift } from '../game/balance'
-import { canStart } from '../game/garage'
 import { isUnlocked, nextLevel } from '../game/levels'
 import { averageLost, biggestLoss, starsLost, summarizeShift, type ShiftOutcome, type StarsLost } from '../game/results'
 import { t, type TextKey } from '../i18n'
@@ -9,7 +8,6 @@ import { useScreenStore } from '../store/screenStore'
 import { useShiftStore } from '../store/shiftStore'
 import { formatRating } from './formatRating'
 import { moneyOfShift } from './moneyOfShift'
-import { vehicleCostKr } from './useGarage'
 import { ShiftMoneySummary } from './ShiftMoneySummary'
 import './ResultsScreen.css'
 
@@ -40,7 +38,6 @@ const OUTCOME_TEXT: Record<ShiftOutcome, TextKey> = {
 export function ResultsScreen() {
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const restartShift = useShiftStore((state) => state.restartShift)
-  const startLevel = useShiftStore((state) => state.startLevel)
   const levelId = useShiftStore((state) => state.levelId)
   const riders = useShiftStore((state) => state.riders)
   const best = useProgressStore((state) => state.best)
@@ -54,15 +51,8 @@ export function ResultsScreen() {
   const next =
     following && isUnlocked(levelIds, best, following, progression.unlockAvgRating) ? following : undefined
   const rating = formatRating(results.average)
-  // Same fleet again, if the money still pays for it; if not, back to the briefing to change it in the garage.
-  const affordable = canStart(riders.map((rider) => rider.vehicle), moneyKr, vehicleCostKr)
-  // The riders come back with the experience they just earned.
-  const playAgain =
-    levelId === null
-      ? restartShift
-      : affordable
-        ? () => startLevel(levelId, useShiftStore.getState().fleet ?? undefined, useProgressStore.getState().xp)
-        : () => showBriefing(levelId)
+  // In a level, the same level again through its briefing: the garage is one click away, to change what didn't work.
+  const playAgain = levelId === null ? restartShift : () => showBriefing(levelId)
 
   const stats = [
     { key: 'delivered', label: t('results.delivered'), value: results.delivered },

@@ -2,7 +2,16 @@ import { describe, expect, test } from 'vitest'
 import { autoplay, batchingBot, firstComeBot, triageBot } from '../../src/game/autoplay'
 import { experience, levelIds, prototype, shift as shiftBalance } from '../../src/game/balance'
 import { riderTimeSec } from '../../src/game/dispatch'
-import { addShiftXp, levelOf, levelProgress, speedBonusOf, train, xpOfRiders, type ExperienceRules } from '../../src/game/experience'
+import {
+  addShiftXp,
+  deliveriesToNextLevel,
+  levelOf,
+  levelProgress,
+  speedBonusOf,
+  train,
+  xpOfRiders,
+  type ExperienceRules,
+} from '../../src/game/experience'
 import { balanceFor, createLevelShift, levelNeighborhoods, levelsOf, neighborhoodOf } from '../../src/game/levels'
 import { advanceRider, startTrip } from '../../src/game/movement'
 import type { Order } from '../../src/game/orders'
@@ -94,5 +103,21 @@ describe('pilar 1 con repartidores al nivel máximo', () => {
   test.each(levelIds)('%s: con todos al nivel máximo, despachar con cuidado no sale perfecto', (levelId) => {
     const careful = play(levelId, neighborhoodOf(levelId) === 'norrebro' ? triageBot : batchingBot)
     expect(careful.average).toBeLessThan(prototype.rating.max)
+  })
+})
+
+describe('entregas que faltan para el próximo nivel', () => {
+  const rules: ExperienceRules = { xpPerDelivery: 2, xpPerLevel: 10, maxLevel: 3, speedBonusPerLevelPct: 0.05, trainingKr: 100 }
+
+  test('cuenta las entregas hasta el nivel siguiente, redondeando para arriba', () => {
+    expect(deliveriesToNextLevel(0, rules)).toBe(5)
+    expect(deliveriesToNextLevel(9, rules)).toBe(1)
+    expect(deliveriesToNextLevel(10, rules)).toBe(5)
+    expect(deliveriesToNextLevel(23, rules)).toBe(4)
+  })
+
+  test('en el nivel máximo ya no falta nada', () => {
+    expect(deliveriesToNextLevel(30, rules)).toBeUndefined()
+    expect(deliveriesToNextLevel(99, rules)).toBeUndefined()
   })
 })
