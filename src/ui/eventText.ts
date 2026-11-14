@@ -1,5 +1,6 @@
 ﻿import { eventKinds } from '../game/balance'
 import { hasText, t } from '../i18n'
+import { VEHICLE_TEXT } from './VehicleIcon'
 
 const PERCENT = 100
 
@@ -26,10 +27,17 @@ export function closureName(closure: string): string {
 }
 
 /** What the event does, for the player: "Todos van más lentos… y llegan un 30 % más de pedidos." */
-export function eventEffect(event: { readonly event: string; readonly directionDeg?: number; readonly closure?: string }): string {
+export function eventEffect(event: {
+  readonly event: string
+  readonly directionDeg?: number
+  readonly closure?: string
+  readonly vehicle?: string
+}): string {
   const key = `events.${event.event}.effect`
   const demand = Math.round((eventKinds[event.event]?.demandPct ?? 0) * PERCENT)
   const from = event.directionDeg === undefined ? '' : windFromName(event.directionDeg)
   const route = event.closure === undefined ? '' : closureName(event.closure)
-  return hasText(key) ? t(key, { demand, from, route }) : ''
+  const vehicleKey = event.vehicle === undefined ? undefined : VEHICLE_TEXT[event.vehicle]
+  const vehicle = vehicleKey ? t(vehicleKey).toLocaleLowerCase('es') : (event.vehicle ?? '')
+  return hasText(key) ? t(key, { demand, from, route, vehicle }) : ''
 }

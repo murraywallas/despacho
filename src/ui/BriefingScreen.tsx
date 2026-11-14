@@ -119,12 +119,14 @@ function Briefing({ levelId }: { levelId: string }) {
           .map((event) => (
             <p key={event.id} className="briefing__zone briefing__event" data-testid="briefing-event">
               <EventIcon event={event.event} size={14} />
-              {t('briefing.event', {
-                name: eventName(event.event),
-                from: formatGameTime(event.fromSec, time),
-                to: formatGameTime(event.toSec, time),
-                effect: eventEffect(event),
-              })}
+              {event.fromSec <= 0 && event.toSec >= balance.shift.durationSec
+                ? t('briefing.eventAllShift', { name: eventName(event.event), effect: eventEffect(event) })
+                : t('briefing.event', {
+                    name: eventName(event.event),
+                    from: formatGameTime(event.fromSec, time),
+                    to: formatGameTime(event.toSec, time),
+                    effect: eventEffect(event),
+                  })}
             </p>
           ))}
 

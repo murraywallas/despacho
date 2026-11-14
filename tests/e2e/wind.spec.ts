@@ -1,4 +1,4 @@
-﻿import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 test.describe.configure({ timeout: 90_000 })
 
@@ -18,15 +18,16 @@ test('el almuerzo de Frederiksberg avisa el viento del oeste, y en el turno una 
   await page.locator('[data-level="frederiksberg_lunch"]').click()
 
   const briefing = page.getByTestId('briefing')
-  await expect(briefing.getByTestId('briefing-event')).toContainText('Viento de 12:10 a 13:00')
-  await expect(briefing.getByTestId('briefing-event')).toContainText('Sopla del oeste')
+  const wind = briefing.getByTestId('briefing-event').filter({ hasText: 'Viento' })
+  await expect(wind).toContainText('Viento de 12:10 a 13:00')
+  await expect(wind).toContainText('Sopla del oeste')
   await briefing.getByRole('button', { name: 'Empezar turno' }).click()
 
   await expect(page.getByTestId('shift-time')).toBeVisible()
   await expect(page.getByTestId('wind-arrow')).toHaveCount(0)
 
   await page.clock.runFor(WIND_FROM_SEC * 1000 + 1000)
-  await expect(page.getByTestId('event-notice')).toHaveText('Viento')
+  await expect(page.getByTestId('event-notice').filter({ hasText: 'Viento' })).toBeVisible()
   const arrow = page.getByTestId('wind-arrow')
   await expect(arrow).toBeVisible()
   await expect(arrow).toHaveAttribute('aria-label', /Viento del oeste/)

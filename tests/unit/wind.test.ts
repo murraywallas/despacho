@@ -71,7 +71,8 @@ describe('viento en las calles', () => {
     const after = mapAt(during, settings, wind.toSec)
     expect(before).toBe(map)
     expect(during).not.toBe(map)
-    expect(during.networks.bike).not.toBe(map.networks.bike)
+    // La bici está en huelga en este nivel: la patineta también siente el viento.
+    expect(during.networks.skateboard).not.toBe(map.networks.skateboard)
     expect(during.networks.e_scooter).toBe(map.networks.e_scooter)
     expect(during.networks.motorcycle).toBe(map.networks.motorcycle)
     expect(after).toBe(map)

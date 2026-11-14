@@ -281,5 +281,10 @@
   "wind.from.NO": "del noroeste",
   "events.marathon.name": "Maratón",
   "events.marathon.effect": "{route} queda cortada: nadie pasa por ahí y las rutas la rodean. Quien vive sobre el recorrido igual recibe su pedido, a pie la última parte.",
-  "closures.norrebrogade": "Nørrebrogade"
+  "closures.norrebrogade": "Nørrebrogade",
+  "events.strike.name": "Huelga",
+  "events.strike.effect": "Nadie sale en {vehicle} en este turno: la flota se rearma con los demás vehículos (miralo en el garage).",
+  "briefing.eventAllShift": "{name} todo el turno. {effect}",
+  "garage.strike": "Hay huelga: nadie sale en {vehicle} en este turno.",
+  "garage.optionStruck": "{vehicle} · en huelga"
 }

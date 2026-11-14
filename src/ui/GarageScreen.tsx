@@ -57,6 +57,12 @@ function Garage({ levelId }: { levelId: string }) {
           </div>
         </dl>
 
+        {garage.struck.map((vehicle) => (
+          <p key={vehicle} className="garage__warning" data-testid="garage-strike">
+            {t('garage.strike', { vehicle: vehicleName(vehicle).toLocaleLowerCase('es') })}
+          </p>
+        ))}
+
         <ol className="garage__fleet" data-testid="garage-fleet">
           {fleet.map((vehicle, index) => {
             const row = vehicles[vehicle]
@@ -77,6 +83,11 @@ function Garage({ levelId }: { levelId: string }) {
                   {rules.vehicles.map((option) => (
                     <option key={option} value={option}>
                       {t('garage.option', { vehicle: vehicleName(option), cost: formatKr(vehicleCostKr(option)) })}
+                    </option>
+                  ))}
+                  {garage.struck.map((option) => (
+                    <option key={option} value={option} disabled>
+                      {t('garage.optionStruck', { vehicle: vehicleName(option) })}
                     </option>
                   ))}
                 </select>

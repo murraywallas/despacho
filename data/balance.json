@@ -366,6 +366,13 @@
       "toSec": 300,
       "announced": true,
       "closure": "norrebrogade"
+    },
+    "frederiksberg_lunch_strike": {
+      "event": "strike",
+      "fromSec": 0,
+      "toSec": 420,
+      "announced": true,
+      "vehicle": "bike"
     }
   },
   "levels": {
@@ -529,7 +536,8 @@
       "light": "noon",
       "minCustomerDistanceM": 1100,
       "events": [
-        "frederiksberg_lunch_wind"
+        "frederiksberg_lunch_wind",
+        "frederiksberg_lunch_strike"
       ]
     },
     "frederiksberg_dinner": {
