@@ -40,6 +40,7 @@ const OUTCOME_TEXT: Record<ShiftOutcome, TextKey> = {
 export function ResultsScreen() {
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const restartShift = useShiftStore((state) => state.restartShift)
+  const startLevel = useShiftStore((state) => state.startLevel)
   const levelId = useShiftStore((state) => state.levelId)
   const riders = useShiftStore((state) => state.riders)
   const best = useProgressStore((state) => state.best)
@@ -55,7 +56,13 @@ export function ResultsScreen() {
   const rating = formatRating(results.average)
   // Same fleet again, if the money still pays for it; if not, back to the briefing to change it in the garage.
   const affordable = canStart(riders.map((rider) => rider.vehicle), moneyKr, vehicleCostKr)
-  const playAgain = levelId !== null && !affordable ? () => showBriefing(levelId) : restartShift
+  // The riders come back with the experience they just earned.
+  const playAgain =
+    levelId === null
+      ? restartShift
+      : affordable
+        ? () => startLevel(levelId, useShiftStore.getState().fleet ?? undefined, useProgressStore.getState().xp)
+        : () => showBriefing(levelId)
 
   const stats = [
     { key: 'delivered', label: t('results.delivered'), value: results.delivered },

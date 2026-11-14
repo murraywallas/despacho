@@ -75,8 +75,10 @@ interface ShiftState {
   levelId: string | null
   /** Fleet chosen in the garage for this shift; null is the level's suggested fleet. */
   fleet: readonly string[] | null
+  /** Experience of each rider (by place) when the shift started. */
+  xp: readonly number[]
   /** Starts a level from the beginning, with its orders and clock, and the garage's fleet (or the suggested one). */
-  startLevel: (levelId: string | null, fleet?: readonly string[]) => void
+  startLevel: (levelId: string | null, fleet?: readonly string[], xp?: readonly number[]) => void
 }
 
 const NORMAL_SPEED = 1
@@ -126,21 +128,22 @@ type ShiftData = Pick<
   | 'callsLeft'
   | 'levelId'
   | 'fleet'
+  | 'xp'
 >
 
 /** A fresh shift of a level: clock at the start, no orders, riders at their starting spots. */
-function newShift(levelId: string | null, fleet: readonly string[] | null = null): ShiftData {
+function newShift(levelId: string | null, fleet: readonly string[] | null = null, xp: readonly number[] = []): ShiftData {
   const balance = balanceFor(levelId)
   levelSettings = shiftSettingsFrom(balance)
-  const fresh = createLevelShift(levelId, fleet ?? undefined)
+  const fresh = createLevelShift(levelId, fleet ?? undefined, xp)
   random = fresh.random
-  return { ...fresh.shift, ...NOTHING_SELECTED, callsLeft: balance.tools.callsPerShift, levelId, fleet }
+  return { ...fresh.shift, ...NOTHING_SELECTED, callsLeft: balance.tools.callsPerShift, levelId, fleet, xp }
 }
 
 export const useShiftStore = create<ShiftState>()((set, get) => ({
   ...newShift(null),
-  restartShift: () => set((state) => newShift(state.levelId, state.fleet)),
-  startLevel: (levelId, fleet) => set(newShift(levelId, fleet ?? null)),
+  restartShift: () => set((state) => newShift(state.levelId, state.fleet, state.xp)),
+  startLevel: (levelId, fleet, xp) => set(newShift(levelId, fleet ?? null, xp ?? [])),
   tick: (dtSec) =>
     set((state) => {
       const next = advanceShift(state, dtSec, random, levelSettings)

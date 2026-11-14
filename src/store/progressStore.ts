@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist, type PersistStorage } from 'zustand/middleware'
-import { economy } from '../game/balance'
+import { economy, experience } from '../game/balance'
+import { addShiftXp, train } from '../game/experience'
+import type { Order } from '../game/orders'
 import { hireRider } from '../game/garage'
 import { recordResult } from '../game/levels'
 import { cleanSave, migrateSave, newGame, SAVE_VERSION, type SavedGame } from '../game/save'
@@ -17,6 +19,10 @@ interface ProgressState extends SavedGame {
   finishGuide: () => void
   /** "Empezar de cero": forgets everything won and starts a new game. */
   restart: () => void
+  /** Adds the experience each rider earned in a finished shift. */
+  gainXp: (riders: readonly { readonly id: string; readonly number: number }[], orders: readonly Order[]) => void
+  /** Pays a course for one rider (by place): up one level, if the money is enough. */
+  train: (place: number) => void
 }
 
 /** A new game, with the money and riders of the Reglas tab. */
@@ -41,6 +47,12 @@ export const useProgressStore = create<ProgressState>()(
       record: (levelId, average) =>
         set((state) => ({ best: recordResult(state.best, levelId, average), played: state.played + 1 })),
       restart: () => set(fresh()),
+      gainXp: (riders, orders) => set((state) => ({ xp: addShiftXp(state.xp, riders, orders, experience) })),
+      train: (place) =>
+        set((state) => {
+          const trained = train(state.xp, place, state.moneyKr, experience)
+          return trained ? { xp: trained.xp, moneyKr: trained.moneyKr } : state
+        }),
     }),
     {
       name: 'despacho-progress',
@@ -53,6 +65,7 @@ export const useProgressStore = create<ProgressState>()(
         moneyKr: state.moneyKr,
         hired: state.hired,
         fleets: state.fleets,
+        xp: state.xp,
       }),
       migrate: (persisted, version) => migrateSave(persisted, version, fresh()),
       // Whatever comes from the browser is checked field by field before the game uses it.

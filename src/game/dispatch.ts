@@ -3,7 +3,7 @@
  * and assigning an order to one of them. Pure: functions return new arrays.
  */
 import { networkFor, type CityMap, type NodeId, type Restaurant } from './cityMap'
-import { speedOf, type Speeds } from './movement'
+import { riderSpeed, type Speeds } from './movement'
 import type { Order } from './orders'
 import type { Rider } from './riders'
 import { vehicles } from './balance'
@@ -25,7 +25,7 @@ export function travelTimeSec(network: StreetNetwork, from: NodeId, to: NodeId, 
 /** Seconds of play a rider needs to ride from where they are to a crossing, on their vehicle. */
 export function riderTimeSec(map: CityMap, rider: Rider, to: NodeId, speeds: Speeds): number {
   // Parking at the restaurant counts: the rider can't pick up the food until parked.
-  return travelTimeSec(networkFor(map, rider.vehicle), rider.node, to, speedOf(speeds, rider.vehicle)) + parkingSecOf(rider.vehicle)
+  return travelTimeSec(networkFor(map, rider.vehicle), rider.node, to, riderSpeed(speeds, rider)) + parkingSecOf(rider.vehicle)
 }
 
 export function restaurantOf(map: CityMap, order: Order): Restaurant {

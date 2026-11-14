@@ -5,7 +5,7 @@
 import type { PrototypeBalance } from './balance'
 import { networkFor } from './cityMap'
 import { capacityOf, rankRiders, restaurantOf, travelTimeSec } from './dispatch'
-import { speedOf } from './movement'
+import { riderSpeed } from './movement'
 import { parkingSecOf } from './parking'
 import { batteryShare, hasBatteryFor, isLowBattery, sendToCharge, tripMeters } from './battery'
 import { createAreaShift } from './levels'
@@ -70,7 +70,7 @@ export const triageBot: Bot = (shift, settings) => {
     if (!closest) continue
     const vehicle = closest.rider.vehicle
     const restaurant = restaurantOf(shift.map, order).node
-    const ride = travelTimeSec(networkFor(shift.map, vehicle), restaurant, order.customer, speedOf(speeds, vehicle))
+    const ride = travelTimeSec(networkFor(shift.map, vehicle), restaurant, order.customer, riderSpeed(speeds, closest.rider))
     const pickUpAtSec = Math.max(now + closest.etaSec, order.readyAtSec)
     const arrivesAtSec = pickUpAtSec + ride + parkingSecOf(vehicle)
     const savable = arrivesAtSec <= order.deadlineAtSec
@@ -109,6 +109,8 @@ export interface AutoplayOptions {
   readonly picksPerLook: number
   /** Size of each simulation step, in seconds of play. */
   readonly stepSec: number
+  /** Experience of each rider (by place), for riders who already learned the job. */
+  readonly xp?: readonly number[]
 }
 
 /** Plays a whole shift at normal speed with the given bot, on a neighborhood's streets, and returns how it ended. */
@@ -120,7 +122,7 @@ export function autoplay(
   options: AutoplayOptions,
   neighborhood: string = DEFAULT_NEIGHBORHOOD,
 ): ShiftSnapshot {
-  const created = createAreaShift(balance, seed, neighborhood)
+  const created = createAreaShift(balance, seed, neighborhood, options.xp)
   let shift = created.shift
   let nextLookSec = 0
 

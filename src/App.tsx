@@ -25,7 +25,7 @@ export default function App() {
     const levelId = new URLSearchParams(window.location.search).get(LEVEL_PARAM)
     if (!levelId || !levelIds.includes(levelId)) return
     if (!isUnlocked(levelIds, useProgressStore.getState().best, levelId, progression.unlockAvgRating)) return
-    useShiftStore.getState().startLevel(levelId)
+    useShiftStore.getState().startLevel(levelId, undefined, useProgressStore.getState().xp)
     useScreenStore.getState().showShift()
   }, [])
 

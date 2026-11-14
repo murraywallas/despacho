@@ -6,7 +6,7 @@
 import type { Progress } from './levels'
 
 /** Version of the save format. Raise it when the shape changes, and add the step to migrateSave. */
-export const SAVE_VERSION = 1
+export const SAVE_VERSION = 2
 
 export interface SavedGame {
   /** Best average stars of each level finished. */
@@ -21,11 +21,13 @@ export interface SavedGame {
   readonly hired: number
   /** Fleet last chosen in the garage for each level. */
   readonly fleets: Readonly<Record<string, readonly string[]>>
+  /** Experience of each rider hired, by place (rider 1 is place 0). */
+  readonly xp: readonly number[]
 }
 
 /** What a new game starts with (money and riders from the Reglas tab). */
 export function newGame(startingKr: number, startingRiders: number): SavedGame {
-  return { best: {}, played: 0, guideDone: false, moneyKr: startingKr, hired: startingRiders, fleets: {} }
+  return { best: {}, played: 0, guideDone: false, moneyKr: startingKr, hired: startingRiders, fleets: {}, xp: [] }
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -60,6 +62,7 @@ export function cleanSave(raw: unknown, fresh: SavedGame): SavedGame {
     moneyKr: isNumber(raw.moneyKr) ? raw.moneyKr : fresh.moneyKr,
     hired: isNumber(raw.hired) && raw.hired >= fresh.hired ? Math.floor(raw.hired) : fresh.hired,
     fleets: cleanFleets(raw.fleets),
+    xp: Array.isArray(raw.xp) ? raw.xp.map((points) => (isNumber(points) && points > 0 ? points : 0)) : [],
   }
 }
 
@@ -67,11 +70,13 @@ export function cleanSave(raw: unknown, fresh: SavedGame): SavedGame {
  * Brings a save of an older version up to SAVE_VERSION.
  * - 0 → 1: saves from before money and the garage (#62, #63) had only stars, shifts played and the guide; they
  *   start with the money and riders of a new game, keeping everything they had won.
+ * - 1 → 2: experience (#64) arrives; riders hired before it start with none.
  */
 export function migrateSave(raw: unknown, version: number, fresh: SavedGame): SavedGame {
   let save: unknown = raw
   if (version < 1 && isRecord(save)) {
     save = { ...save, moneyKr: save.moneyKr ?? fresh.moneyKr, hired: save.hired ?? fresh.hired, fleets: save.fleets ?? {} }
   }
+  if (version < 2 && isRecord(save)) save = { ...save, xp: [] }
   return cleanSave(save, fresh)
 }

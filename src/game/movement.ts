@@ -30,6 +30,11 @@ export function speedOf(speeds: Speeds, vehicle: string): number {
   return speed
 }
 
+/** How fast this rider goes: the vehicle's speed with the rider's experience bonus. */
+export function riderSpeed(speeds: Speeds, rider: Pick<Rider, 'vehicle' | 'speedBonus'>): number {
+  return speedOf(speeds, rider.vehicle) * (1 + (rider.speedBonus ?? 0))
+}
+
 /** Tolerance for floating-point leftovers when a rider arrives exactly at the end of a step. */
 const EPSILON = 1e-9
 
@@ -151,7 +156,7 @@ export function advanceRider(
   let movedM = 0
   const delivered: { orderId: string; atSec: number }[] = []
   const network = networkFor(map, rider.vehicle)
-  const metersPerSec = speedOf(settings.metersPerSec, rider.vehicle)
+  const metersPerSec = riderSpeed(settings.metersPerSec, rider)
   const parkSec = parkingSecOf(rider.vehicle)
   const idle = (at: NodeId): Rider => ({ ...current, node: at, status: 'idle', orderIds: undefined, trip: undefined })
 
@@ -253,7 +258,7 @@ export function advanceFleet(
   const orderUpdates = new Map<string, Partial<Order>>()
   const nextRiders = riders.map((rider) => {
     if (rider.status === 'toBase' || rider.status === 'charging') {
-      const speed = speedOf(settings.metersPerSec, rider.vehicle)
+      const speed = riderSpeed(settings.metersPerSec, rider)
       return advanceCharging(rider, dtSec, speed, settings.rechargeSec ?? 0, settings.batteryM?.[rider.vehicle])
     }
     if (!rider.trip) return rider

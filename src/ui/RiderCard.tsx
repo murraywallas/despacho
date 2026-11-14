@@ -101,6 +101,11 @@ export function RiderCard(props: RiderCardProps) {
           <span className="rider-card__vehicle">
             <VehicleIcon vehicle={rider.vehicle} size={ICON_SIZE} aria-hidden />
             <span className="rider-card__vehicle-name">{vehicleKey ? t(vehicleKey) : rider.vehicle}</span>
+            {rider.level !== undefined && rider.level > 0 && (
+              <span className="rider-card__level" title={t('riders.levelTitle', { level: rider.level })}>
+                {t('riders.level', { level: rider.level })}
+              </span>
+            )}
             <span className="rider-card__load" title={t('riders.capacityTitle', { count: capacity })}>
               {t('riders.load', { count: trip.length, capacity })}
             </span>

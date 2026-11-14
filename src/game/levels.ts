@@ -2,7 +2,8 @@
  * The levels of a neighborhood and the player's progress through them: which ones are open, the best stars of
  * each, and what the briefing tells before a shift. Pure.
  */
-import { fleetOf, levelBalance, levelIds, levels, prototype, type PrototypeBalance } from './balance'
+import { experience, fleetOf, levelBalance, levelIds, levels, prototype, type PrototypeBalance } from './balance'
+import { levelOf, speedBonusOf, type ExperienceRules } from './experience'
 import type { RestaurantCluster } from './cityMap'
 import { bikeNetworkOf, DEFAULT_NEIGHBORHOOD, networkOf, ZONES } from './neighborhoods'
 import { spawnIntervalAt, type OrderSettings } from './orders'
@@ -117,8 +118,21 @@ export function clusterOf(balance: PrototypeBalance): RestaurantCluster | undefi
 }
 
 /** A fresh shift with these rules and seed, on the streets of a neighborhood. */
-export function createAreaShift(balance: PrototypeBalance, seed: number, area: string): ReturnType<typeof createShift> {
-  return createShift(balance, seed, bikeNetworkOf(area), (vehicle) => networkOf(area, vehicle), clusterOf(balance))
+export function createAreaShift(
+  balance: PrototypeBalance,
+  seed: number,
+  area: string,
+  xp: readonly number[] = [],
+): ReturnType<typeof createShift> {
+  return createShift(balance, seed, bikeNetworkOf(area), (vehicle) => networkOf(area, vehicle), clusterOf(balance), skillsFrom(xp))
+}
+
+/** Each rider's level and speed bonus, from the experience of each place (rider 1 is place 0). */
+export function skillsFrom(xp: readonly number[], rules: ExperienceRules = experience) {
+  return (place: number) => {
+    const level = levelOf(xp[place] ?? 0, rules)
+    return { level, speedBonus: speedBonusOf(level, rules) }
+  }
 }
 
 /** The rules of a level with the fleet chosen in the garage instead of the suggested one. */
@@ -127,9 +141,13 @@ export function withFleet(balance: PrototypeBalance, fleet: readonly string[] | 
 }
 
 /** A fresh shift of a level, on its neighborhood's streets, with the garage's fleet or the suggested one. */
-export function createLevelShift(levelId: string | null, fleet?: readonly string[]): ReturnType<typeof createShift> {
+export function createLevelShift(
+  levelId: string | null,
+  fleet?: readonly string[],
+  xp: readonly number[] = [],
+): ReturnType<typeof createShift> {
   const balance = withFleet(balanceFor(levelId), fleet)
-  return createAreaShift(balance, balance.seed, neighborhoodOf(levelId))
+  return createAreaShift(balance, balance.seed, neighborhoodOf(levelId), xp)
 }
 
 /** Neighborhoods with levels, in the order they are played. */
