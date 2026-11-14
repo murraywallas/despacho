@@ -8,15 +8,15 @@ import { urgencyOf, type Order } from '../game/orders'
 import type { Rider } from '../game/riders'
 import { t } from '../i18n'
 import '../map/mapMarkers.css'
-import { areaBounds, areaOutline, buildMarkers, previewGeoJson, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
+import { areaBounds, areaOutline, buildMarkers, closuresGeoJson, previewGeoJson, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
 import { AttributionControl, MapLibreMap, NavigationControl, Popup, type GeoJSONSource, type PositionAnchor } from '../map/maplibre'
 import { fallbackStyle, LIGHTS, loadNightStyle } from '../map/nightStyle'
 import { mapLightOf } from './levelText'
 import { panelInsets } from './panelInsets'
 import { useDeliveryFx } from './useDeliveryFx'
-import { addRouteLayers, AREA_SOURCE, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
+import { addRouteLayers, AREA_SOURCE, CLOSURE_SOURCE, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
 import { usePointerStore } from '../store/pointerStore'
-import { selectedOrderIds, useShiftStore } from '../store/shiftStore'
+import { closedStretchesAt, selectedOrderIds, useShiftStore } from '../store/shiftStore'
 import { MapMarkerContent } from './MapMarkerContent'
 import { RestaurantPopup } from './RestaurantPopup'
 import { restaurantName } from './restaurantName'
@@ -235,6 +235,12 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   useEffect(() => {
     instanceRef.current?.getSource<GeoJSONSource>(AREA_SOURCE)?.setData(areaOutline(streets))
   }, [streets, styleVersion])
+
+  // Streets closed by an event (marathon): the same set object while it lasts, so this only runs when it changes.
+  const closed = closedStretchesAt(nowSec, streets)
+  useEffect(() => {
+    instanceRef.current?.getSource<GeoJSONSource>(CLOSURE_SOURCE)?.setData(closuresGeoJson(streets, closed))
+  }, [streets, closed, styleVersion])
 
   const customers = markers.filter((marker) => marker.kind === 'customer').length
   return (

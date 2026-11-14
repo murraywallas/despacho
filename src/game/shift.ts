@@ -4,7 +4,11 @@
  */
 import { clock as clockBalance, eventKinds, fleetOf, prototype, vehicles, type PrototypeBalance } from './balance'
 import { activeEvents, demandWindows, speedsWith, type ShiftEvent } from './shiftEvents'
-import { mapWithWind, windOf } from './wind'
+import { windOf } from './wind'
+import { calmMapOf, mapWith, type StreetConditions } from './streetConditions'
+import { closedStretches, rerouteAround } from './closures'
+import { CLOSURES } from './neighborhoods'
+import type { StreetGraphFile } from './streetGraph'
 import { cancelExpired, closeShift } from './cancellation'
 import { createCityMap, type CityMap, type RestaurantCluster } from './cityMap'
 import { createClock, tick, type ShiftClock } from './clock'
@@ -100,10 +104,38 @@ export function movementAt(settings: ShiftSettings, nowSec: number): MovementSet
   return metersPerSec === settings.movement.metersPerSec ? settings.movement : { ...settings.movement, metersPerSec }
 }
 
-/** The city map at this second of the shift: with windy streets while a wind event blows. */
+/** How much each vehicle feels the wind (Vehículos tab). */
+const windPctOf = (vehicle: string): number => vehicles[vehicle]?.windSpeedPct ?? 0
+
+const closedByKey = new Map<string, ReadonlySet<string>>()
+
+/**
+ * How the events going on leave the streets at this second: the wind blowing, the routes closed (marathon).
+ * Undefined when nothing changes them.
+ */
+export function streetConditionsAt(settings: ShiftSettings, nowSec: number, streets: StreetGraphFile): StreetConditions | undefined {
+  const active = activeEvents(settings.events, nowSec)
+  const wind = windOf(active, eventKinds)
+  const closureIds = active.flatMap((event) => (eventKinds[event.event]?.effectType === 'roads' && event.closure ? [event.closure] : []))
+  if (!wind && closureIds.length === 0) return undefined
+  const key = `${wind?.directionDeg ?? ''}|${closureIds.join(',')}`
+  let closed = closedByKey.get(key)
+  if (!closed) {
+    const union = new Set<string>()
+    for (const id of closureIds) {
+      const closure = CLOSURES[id]
+      if (!closure) throw new Error(`El corte ${id} no está en data/closures.json.`)
+      for (const stretch of closedStretches(streets, closure)) union.add(stretch)
+    }
+    closed = union
+    closedByKey.set(key, closed)
+  }
+  return { windFromDeg: wind?.directionDeg, closed, key }
+}
+
+/** The city map at this second of the shift: windy streets while the wind blows, closed ones during a marathon. */
 export function mapAt(map: CityMap, settings: ShiftSettings, nowSec: number): CityMap {
-  const wind = windOf(activeEvents(settings.events, nowSec), eventKinds)
-  return mapWithWind(map, wind, (vehicle) => vehicles[vehicle]?.windSpeedPct ?? 0)
+  return mapWith(map, streetConditionsAt(settings, nowSec, calmMapOf(map).network.streets), windPctOf)
 }
 
 /** The shift's rules at this second: the same, with the speeds of the events going on. */
@@ -150,13 +182,17 @@ export function advanceShift(
 ): ShiftSnapshot {
   const clock = tick(shift.clock, dtSec)
   if (clock === shift.clock) return shift
-  // While the wind blows, each vehicle rides its windy streets (legs already started keep their timing).
-  const map = mapAt(shift.map, settings, shift.clock.elapsedSec)
+  // While the wind blows, each vehicle rides its windy streets (legs already started keep their timing). When a
+  // street closes, whoever was going through it finds another way.
+  const conditions = streetConditionsAt(settings, shift.clock.elapsedSec, calmMapOf(shift.map).network.streets)
+  const map = mapWith(shift.map, conditions, windPctOf)
+  const closed = conditions?.closed
+  const riders = map !== shift.map && closed && closed.size > 0 ? shift.riders.map((rider) => rerouteAround(map, rider, closed)) : shift.riders
   // Seconds of play that really passed: 0 in pause, double at 2x, cut at the end of the shift.
   const gameDtSec = clock.elapsedSec - shift.clock.elapsedSec
   const fleet = advanceFleet(
     map,
-    shift.riders,
+    riders,
     shift.orderQueue.orders,
     gameDtSec,
     shift.clock.elapsedSec,

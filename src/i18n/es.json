@@ -278,5 +278,8 @@
   "wind.from.S": "del sur",
   "wind.from.SO": "del suroeste",
   "wind.from.O": "del oeste",
-  "wind.from.NO": "del noroeste"
+  "wind.from.NO": "del noroeste",
+  "events.marathon.name": "Maratón",
+  "events.marathon.effect": "{route} queda cortada: nadie pasa por ahí y las rutas la rodean. Quien vive sobre el recorrido igual recibe su pedido, a pie la última parte.",
+  "closures.norrebrogade": "Nørrebrogade"
 }

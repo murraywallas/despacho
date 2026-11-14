@@ -1,10 +1,10 @@
 /**
  * Wind with a direction: pedal vehicles go slower against it and faster with it, by the angle of each stretch,
- * and routes are worked out with it (a stretch against the wind costs more). While it blows, the city map swaps
- * each vehicle's streets for windy ones. Pure.
+ * and routes are worked out with it (a stretch against the wind costs more). The windy streets themselves are built
+ * in streetConditions.ts. Pure.
  */
-import type { CityMap } from './cityMap'
-import { createNetwork, type RoutingProfile, type StreetNetwork } from './routing'
+import type { RoutingProfile, StreetNetwork } from './routing'
+import { networkWith } from './streetConditions'
 import type { ShiftEvent } from './shiftEvents'
 import type { LonLat } from './streetGraph'
 
@@ -40,56 +40,12 @@ export function windyProfile(profile: RoutingProfile, fromDeg: number, pct: numb
   }
 }
 
-const windyNetworks = new WeakMap<StreetNetwork, Map<string, StreetNetwork>>()
-
 /** The same streets for the same vehicle, with the wind (built once per direction and strength). */
 export function withWind(network: StreetNetwork, fromDeg: number, pct: number): StreetNetwork {
-  if (!pct) return network
-  let byWind = windyNetworks.get(network)
-  if (!byWind) {
-    byWind = new Map()
-    windyNetworks.set(network, byWind)
-  }
-  const key = `${fromDeg}:${pct}`
-  let windy = byWind.get(key)
-  if (!windy) {
-    windy = createNetwork(network.streets, windyProfile(network.profile, fromDeg, pct))
-    byWind.set(key, windy)
-  }
-  return windy
+  return networkWith(network, pct, { windFromDeg: fromDeg, key: `wind:${fromDeg}` })
 }
 
 /** The wind blowing now, if any: the first wind event going on. */
 export function windOf(active: readonly ShiftEvent[], kinds: Readonly<Record<string, { readonly effectType: string }>>): ShiftEvent | undefined {
   return active.find((event) => kinds[event.event]?.effectType === 'wind' && event.directionDeg !== undefined)
-}
-
-// The calm map each windy map came from, to go back when the wind stops.
-const calmOf = new WeakMap<CityMap, CityMap>()
-const windyMaps = new WeakMap<CityMap, Map<string, CityMap>>()
-
-/**
- * The city map for this moment: with each vehicle's streets windy while the wind blows (pctOf gives how much a
- * vehicle feels it), or the calm one. Returns the same map object while nothing changes.
- */
-export function mapWithWind(map: CityMap, wind: ShiftEvent | undefined, pctOf: (vehicle: string) => number): CityMap {
-  const calm = calmOf.get(map) ?? map
-  if (!wind || wind.directionDeg === undefined) return calm
-  const fromDeg = wind.directionDeg
-  let byWind = windyMaps.get(calm)
-  if (!byWind) {
-    byWind = new Map()
-    windyMaps.set(calm, byWind)
-  }
-  const key = String(fromDeg)
-  let windy = byWind.get(key)
-  if (!windy) {
-    const networks = Object.fromEntries(
-      Object.entries(calm.networks).map(([vehicle, network]) => [vehicle, withWind(network, fromDeg, pctOf(vehicle))]),
-    )
-    windy = { ...calm, networks }
-    byWind.set(key, windy)
-    calmOf.set(windy, calm)
-  }
-  return windy
 }

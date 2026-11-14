@@ -19,10 +19,17 @@ export function windFromName(directionDeg: number): string {
   return t(`wind.from.${COMPASS[index]}`)
 }
 
+/** "Nørrebrogade": the name of a closed route; the id itself when es.json has no name for it. */
+export function closureName(closure: string): string {
+  const key = `closures.${closure}`
+  return hasText(key) ? t(key) : closure
+}
+
 /** What the event does, for the player: "Todos van más lentos… y llegan un 30 % más de pedidos." */
-export function eventEffect(event: string, directionDeg?: number): string {
-  const key = `events.${event}.effect`
-  const demand = Math.round((eventKinds[event]?.demandPct ?? 0) * PERCENT)
-  const from = directionDeg === undefined ? '' : windFromName(directionDeg)
-  return hasText(key) ? t(key, { demand, from }) : ''
+export function eventEffect(event: { readonly event: string; readonly directionDeg?: number; readonly closure?: string }): string {
+  const key = `events.${event.event}.effect`
+  const demand = Math.round((eventKinds[event.event]?.demandPct ?? 0) * PERCENT)
+  const from = event.directionDeg === undefined ? '' : windFromName(event.directionDeg)
+  const route = event.closure === undefined ? '' : closureName(event.closure)
+  return hasText(key) ? t(key, { demand, from, route }) : ''
 }

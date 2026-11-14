@@ -5,6 +5,8 @@
 import frederiksberg from '../../data/streets/frederiksberg.json'
 import norrebro from '../../data/streets/norrebro.json'
 import vesterbro from '../../data/streets/vesterbro.json'
+import closures from '../../data/closures.json'
+import type { Closure } from './closures'
 import { routing, vehicles } from './balance'
 import { bikeProfile, createNetwork, vehicleProfile, type StreetNetwork } from './routing'
 import type { LonLat, StreetGraphFile } from './streetGraph'
@@ -24,6 +26,9 @@ export const ZONES: Readonly<Record<string, LonLat>> = {
   // Kødbyen, the old meatpacking district of Vesterbro, full of restaurants.
   kodbyen: [12.5605, 55.6688],
 }
+
+/** Routes that an event can close (marathon…), by id: data/closures.json. */
+export const CLOSURES: Readonly<Record<string, Closure>> = closures as unknown as Record<string, Closure>
 
 /** The first neighborhood: the prototype shift and the levels without one play here. */
 export const DEFAULT_NEIGHBORHOOD = 'norrebro'

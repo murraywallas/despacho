@@ -3,6 +3,7 @@
  * trips in progress as GeoJSON. Pure, so it is tested without a browser.
  */
 import type { Feature, FeatureCollection, LineString } from 'geojson'
+import { closedLines } from '../game/closures'
 import { networkFor, positionOf, type CityMap, type NodeId } from '../game/cityMap'
 import { restaurantOf } from '../game/dispatch'
 import { passedIndex, riderDisplayPosition, upcomingLegs } from '../game/movement'
@@ -215,4 +216,17 @@ export function areaBounds(streets: StreetGraphFile, margin = 0): [[number, numb
     [west - padLon, south - padLat],
     [east + padLon, north + padLat],
   ]
+}
+
+/** Streets closed by an event, as lines to draw (empty when nothing is closed). */
+export function closuresGeoJson(streets: StreetGraphFile, closed: ReadonlySet<string> | undefined): GeoJSON.FeatureCollection {
+  const lines = closed ? closedLines(streets, closed) : []
+  return {
+    type: 'FeatureCollection',
+    features: lines.map((line) => ({
+      type: 'Feature',
+      properties: {},
+      geometry: { type: 'LineString', coordinates: line.map((point) => [...point]) },
+    })),
+  }
 }

@@ -17,6 +17,8 @@ export interface ShiftEvent {
   readonly announced: boolean
   /** Wind: where it blows from, in degrees (0 = north, 90 = east, 270 = west). */
   readonly directionDeg?: number
+  /** Closed streets (marathon): a route of data/closures.json. */
+  readonly closure?: string
 }
 
 /** What a kind of event does (Eventos tab), only what the game uses so far. */

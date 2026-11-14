@@ -94,9 +94,28 @@ export interface StreetNetwork {
   readonly profile: RoutingProfile
   readonly graph: Graph<undefined, Stretch>
   readonly finder: PathFinder<undefined>
+  /**
+   * The same streets without closures: when a crossing can only be reached through a closed street (a customer who
+   * lives on the marathon route), the rider gets there anyway, walking the last bit.
+   */
+  readonly fallback?: StreetNetwork
 }
 
-export function createNetwork(streets: StreetGraphFile, profile: RoutingProfile): StreetNetwork {
+/** Key of a stretch between two crossings, either way. */
+export function stretchKey(a: number, b: number): string {
+  return a < b ? `${a}-${b}` : `${b}-${a}`
+}
+
+/**
+ * The streets as a vehicle sees them. Stretches in closed (by stretchKey) are left out; fallback is the network
+ * used for a route that has no way around them.
+ */
+export function createNetwork(
+  streets: StreetGraphFile,
+  profile: RoutingProfile,
+  closed?: ReadonlySet<string>,
+  fallback?: StreetNetwork,
+): StreetNetwork {
   const graph = createGraph<undefined, Stretch>()
   const add = (from: number, to: number, stretch: Stretch) => {
     const existing = graph.getLink(from, to)
@@ -105,6 +124,7 @@ export function createNetwork(streets: StreetGraphFile, profile: RoutingProfile)
   }
   for (const [a, b, lengthM, kindIndex, flags] of streets.edges) {
     if (!(flags & profile.allowedFlags)) continue
+    if (closed?.has(stretchKey(a, b))) continue
     const kind = streets.kinds[kindIndex]
     const stretchFrom = (from: number, to: number): Stretch => {
       const direction = profile.directionFactor?.(streets.nodes[from], streets.nodes[to]) ?? 1
@@ -120,7 +140,7 @@ export function createNetwork(streets: StreetGraphFile, profile: RoutingProfile)
     heuristic: (from, to) =>
       distanceM(streets.nodes[from.id as number], streets.nodes[to.id as number]) * profile.minFactor,
   })
-  return { streets, profile, graph, finder }
+  return fallback ? { streets, profile, graph, finder, fallback } : { streets, profile, graph, finder }
 }
 
 export interface StreetRoute {
@@ -146,7 +166,7 @@ export function findRoute(network: StreetNetwork, from: number, to: number): Str
   const key = from * network.streets.nodes.length + to
   const cached = cache.get(key)
   if (cached !== undefined) return cached ?? undefined
-  const route = searchRoute(network, from, to)
+  const route = searchRoute(network, from, to) ?? (network.fallback ? findRoute(network.fallback, from, to) : undefined)
   if (cache.size >= ROUTE_CACHE_LIMIT) cache.clear()
   cache.set(key, route ?? null)
   return route
@@ -169,7 +189,8 @@ function searchRoute(network: StreetNetwork, from: number, to: number): StreetRo
 export function stretchesOf(network: StreetNetwork, nodes: readonly number[]): Stretch[] {
   const stretches: Stretch[] = []
   for (let i = 0; i + 1 < nodes.length; i++) {
-    const link = network.graph.getLink(nodes[i], nodes[i + 1])
+    // A route from the fallback may cross a closed stretch: its length comes from there.
+    const link = network.graph.getLink(nodes[i], nodes[i + 1]) ?? network.fallback?.graph.getLink(nodes[i], nodes[i + 1])
     if (!link) throw new Error(`No hay tramo entre ${nodes[i]} y ${nodes[i + 1]}.`)
     stretches.push(link.data)
   }
