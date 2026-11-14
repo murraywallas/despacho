@@ -154,6 +154,7 @@ export function createShift(
   network: StreetNetwork = norrebroBikeNetwork(),
   networkOf: (vehicle: string) => StreetNetwork = norrebroNetworkFor,
   cluster?: RestaurantCluster,
+  skillOf?: (place: number) => { readonly level: number; readonly speedBonus: number } | undefined,
 ): { shift: ShiftSnapshot; random: Random } {
   const random = createRandom(seed)
   const fleet = fleetOf(balance)
@@ -163,7 +164,7 @@ export function createShift(
     random,
     shift: {
       map,
-      riders: createRiders(map, fleet, random, (vehicle) => fullBatteryM(vehicles[vehicle]?.rangeKm)),
+      riders: createRiders(map, fleet, random, (vehicle) => fullBatteryM(vehicles[vehicle]?.rangeKm), skillOf),
       clock: createClock(balance.shift.durationSec),
       orderQueue: createOrderQueue(shiftSettingsFrom(balance).orders),
     },

@@ -45,6 +45,10 @@ export interface Rider {
   readonly batteryM?: number
   /** Seconds of play left to finish recharging (only while "charging"). */
   readonly chargeLeftSec?: number
+  /** Experience level (0 when missing). */
+  readonly level?: number
+  /** Extra speed from the level, as a share (0.1 = 10 % faster). */
+  readonly speedBonus?: number
 }
 
 /**
@@ -56,6 +60,7 @@ export function createRiders(
   fleet: readonly string[],
   random: Random,
   batteryMOf: (vehicle: string) => number | undefined = () => undefined,
+  skillOf: (place: number) => { readonly level: number; readonly speedBonus: number } | undefined = () => undefined,
 ): Rider[] {
   const taken = new Set(map.restaurants.map((restaurant) => restaurant.node))
   if (fleet.length > map.addresses.length - taken.size) {
@@ -69,7 +74,17 @@ export function createRiders(
     const number = riders.length + 1
     const vehicle = fleet[number - 1]
     const batteryM = batteryMOf(vehicle)
-    riders.push({ id: `k${number}`, number, vehicle, node, home: node, status: 'idle', ...(batteryM === undefined ? {} : { batteryM }) })
+    const skill = skillOf(number - 1)
+    riders.push({
+      id: `k${number}`,
+      number,
+      vehicle,
+      node,
+      home: node,
+      status: 'idle',
+      ...(batteryM === undefined ? {} : { batteryM }),
+      ...(skill && skill.level > 0 ? { level: skill.level, speedBonus: skill.speedBonus } : {}),
+    })
   }
   return riders
 }

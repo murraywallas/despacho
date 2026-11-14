@@ -12,6 +12,7 @@ const played: SavedGame = {
   moneyKr: 1234,
   hired: 4,
   fleets: { dinner: ['bike', 'e_scooter'] },
+  xp: [14, 3, 0, 26],
 }
 
 /** A localStorage that lives in memory, for the browser storage tests. */
@@ -46,6 +47,7 @@ describe('guardado de la partida', () => {
       moneyKr: economy.startingKr,
       hired: economy.startingRiders,
       fleets: {},
+      xp: [],
     })
     expect(SAVE_VERSION).toBeGreaterThanOrEqual(1)
   })

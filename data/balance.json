@@ -64,7 +64,11 @@
     "maxWaitMin": 4
   },
   "riders": {
-    "speedBonusPerLevelPct": 0.05
+    "speedBonusPerLevelPct": 0.05,
+    "xpPerDelivery": 1,
+    "xpPerLevel": 12,
+    "maxLevel": 5,
+    "trainingKr": 250
   },
   "progression": {
     "unlockAvgRating": 4

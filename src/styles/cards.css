@@ -428,3 +428,15 @@
   color: var(--late);
   font-weight: 700;
 }
+
+/* Nivel de experiencia del repartidor, al lado del vehículo. */
+.rider-card__level {
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2, var(--line));
+  color: var(--ink-quiet);
+  font-family: var(--font-mono);
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}

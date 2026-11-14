@@ -290,5 +290,12 @@
   "restart.open": "Empezar de cero",
   "restart.question": "¿Borrar toda la partida? Se pierden las estrellas, la plata, los repartidores contratados y las flotas del garage. No se puede deshacer.",
   "restart.cancel": "Cancelar",
-  "restart.confirm": "Sí, borrar todo"
+  "restart.confirm": "Sí, borrar todo",
+  "garage.level": "Nivel {level}",
+  "garage.levelBonus": "+{bonus} %",
+  "garage.levelProgress": "Experiencia de {rider} para el próximo nivel",
+  "garage.course": "Curso · {cost}",
+  "garage.courseLabel": "Pagar un curso a {rider}: sube un nivel por {cost}",
+  "riders.level": "Nv {level}",
+  "riders.levelTitle": "Nivel {level} de experiencia: va más rápido"
 }

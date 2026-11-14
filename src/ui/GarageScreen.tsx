@@ -6,6 +6,7 @@ import { useScreenStore } from '../store/screenStore'
 import { formatKr } from './formatKr'
 import { BackdropMap } from './BackdropMap'
 import { levelName, mapLightOf, PANEL_INSET } from './levelText'
+import { RiderSkill } from './RiderSkill'
 import { useGarage, vehicleCostKr } from './useGarage'
 import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
 import './garage.css'
@@ -105,6 +106,7 @@ function Garage({ levelId }: { levelId: string }) {
                 >
                   <X size={14} aria-hidden />
                 </button>
+                <RiderSkill place={index} label={label} />
               </li>
             )
           })}

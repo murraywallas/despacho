@@ -7,7 +7,7 @@
 import { networkFor, type CityMap, type NodeId } from './cityMap'
 import { rankRiders, restaurantOf, travelTimeSec, type RankedRider } from './dispatch'
 import { hasBatteryFor, tripMeters } from './battery'
-import { ordersOf, speedOf, startTrip, type Speeds } from './movement'
+import { ordersOf, riderSpeed, startTrip, type Speeds } from './movement'
 import type { Order } from './orders'
 import { parkingSecOf } from './parking'
 import type { Rider } from './riders'
@@ -23,7 +23,7 @@ export function stopEtas(map: CityMap, rider: Rider, orders: readonly Order[], s
   const stops = ordersOf(rider, orders)
   if (!trip || stops.length === 0) return []
   const network = networkFor(map, rider.vehicle)
-  const speed = speedOf(speeds, rider.vehicle)
+  const speed = riderSpeed(speeds, rider)
   // The rest of the current leg, including the parking still to do at its end.
   const leftOfLeg = (trip.pathMeters[trip.pathMeters.length - 1] - trip.traveledM) / speed + (trip.parkLeftSec ?? 0)
   const park = parkingSecOf(rider.vehicle)
@@ -64,7 +64,7 @@ export function stopEtas(map: CityMap, rider: Rider, orders: readonly Order[], s
 export function plannedEtas(map: CityMap, rider: Rider, trip: readonly Order[], speeds: Speeds, nowSec: number): StopEta[] {
   if (trip.length === 0) return []
   const restaurant = restaurantOf(map, trip[0]).node
-  if (!Number.isFinite(travelTimeSec(networkFor(map, rider.vehicle), rider.node, restaurant, speedOf(speeds, rider.vehicle)))) return []
+  if (!Number.isFinite(travelTimeSec(networkFor(map, rider.vehicle), rider.node, restaurant, riderSpeed(speeds, rider)))) return []
   const planned = startTrip(map, { ...rider, status: 'toRestaurant', orderIds: trip.map((order) => order.id) }, trip)
   return stopEtas(map, planned, trip, speeds, nowSec)
 }

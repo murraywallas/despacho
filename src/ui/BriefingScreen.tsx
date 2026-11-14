@@ -4,6 +4,7 @@ import { balanceFor, briefingOf, createLevelShift, neighborhoodOf } from '../gam
 import { positionOf } from '../game/cityMap'
 import { shiftSettingsFrom } from '../game/shift'
 import { hasText, t } from '../i18n'
+import { useProgressStore } from '../store/progressStore'
 import { useScreenStore } from '../store/screenStore'
 import { useShiftStore } from '../store/shiftStore'
 import { formatGameTime, gameMinutes } from './formatClock'
@@ -66,7 +67,7 @@ function Briefing({ levelId }: { levelId: string }) {
   const briefing = briefingOf(balance, shiftSettingsFrom(balance).orders)
   const time = gameTimeOf(levelId)
   const start = () => {
-    startLevel(levelId, garage.fleet)
+    startLevel(levelId, garage.fleet, useProgressStore.getState().xp)
     startFromBriefing()
   }
 

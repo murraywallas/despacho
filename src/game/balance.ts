@@ -10,6 +10,7 @@
  * converts one into the other.
  */
 import data from '../../data/balance.json'
+import type { ExperienceRules } from './experience'
 import { struckVehicles, withoutStruck } from './shiftEvents'
 
 export interface PrototypeBalance {
@@ -200,6 +201,9 @@ export interface EconomyBalance {
 }
 
 export const economy: EconomyBalance = data.economy
+
+/** Riders' experience (Reglas tab, group Repartidores). */
+export const experience: ExperienceRules = data.riders
 
 /** A neighborhood of the Barrios tab (only what the game uses). */
 export interface NeighborhoodBalance {
