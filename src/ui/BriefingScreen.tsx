@@ -123,7 +123,7 @@ function Briefing({ levelId }: { levelId: string }) {
                 name: eventName(event.event),
                 from: formatGameTime(event.fromSec, time),
                 to: formatGameTime(event.toSec, time),
-                effect: eventEffect(event.event, event.directionDeg),
+                effect: eventEffect(event),
               })}
             </p>
           ))}

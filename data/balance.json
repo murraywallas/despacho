@@ -359,6 +359,13 @@
       "toSec": 360,
       "announced": true,
       "directionDeg": 270
+    },
+    "dinner_marathon": {
+      "event": "marathon",
+      "fromSec": 120,
+      "toSec": 300,
+      "announced": true,
+      "closure": "norrebrogade"
     }
   },
   "levels": {
@@ -399,7 +406,10 @@
       "peakIntervalSec": 9,
       "deadlineSec": 132,
       "seed": 2026,
-      "light": "dusk"
+      "light": "dusk",
+      "events": [
+        "dinner_marathon"
+      ]
     },
     "friday": {
       "order": 3,

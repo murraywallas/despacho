@@ -6,7 +6,8 @@ import { reorderStops } from '../game/movement'
 import { waitingAt, type Order, type OrderQueue, type OrderSettings } from '../game/orders'
 import type { Random } from '../game/random'
 import type { Rider } from '../game/riders'
-import { advanceShift, capacityOf, dispatchOrders, movementAt, reassignAndStart, shiftSettingsFrom } from '../game/shift'
+import { advanceShift, capacityOf, dispatchOrders, movementAt, reassignAndStart, shiftSettingsFrom, streetConditionsAt } from '../game/shift'
+import type { StreetGraphFile } from '../game/streetGraph'
 import type { Speeds } from '../game/movement'
 import type { ShiftEvent } from '../game/shiftEvents'
 import { balanceFor, createLevelShift } from '../game/levels'
@@ -93,6 +94,11 @@ let levelSettings = settings
 /** Vehicle speeds at this second of the level being played, with its events (rain slows them down). */
 export function speedsAt(nowSec: number): Speeds {
   return movementAt(levelSettings, nowSec).metersPerSec
+}
+
+/** Streets closed right now in the level being played (marathon), if any. */
+export function closedStretchesAt(nowSec: number, streets: StreetGraphFile): ReadonlySet<string> | undefined {
+  return streetConditionsAt(levelSettings, nowSec, streets)?.closed
 }
 
 /** Events of the level being played (rain…), with when each one starts and ends. */

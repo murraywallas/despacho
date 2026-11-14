@@ -1,0 +1,10 @@
+﻿{
+  "norrebrogade": {
+    "neighborhood": "norrebro",
+    "toleranceM": 18,
+    "path": [
+      [12.5496, 55.69382],
+      [12.5392, 55.70045]
+    ]
+  }
+}
