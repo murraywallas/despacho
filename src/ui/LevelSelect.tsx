@@ -6,6 +6,7 @@ import { t } from '../i18n'
 import { useProgressStore } from '../store/progressStore'
 import { useScreenStore } from '../store/screenStore'
 import { CityMap, type CityArea } from './CityMap'
+import { RestartGame } from './RestartGame'
 import { formatRating } from './formatRating'
 import { levelHours, levelName, levelTagline, neighborhoodName, PANEL_INSET } from './levelText'
 import './levels.css'
@@ -94,6 +95,8 @@ export function LevelSelect() {
             )
           })}
         </ol>
+
+        <RestartGame onRestart={() => setNeighborhood(NEIGHBORHOODS[0])} />
       </div>
     </main>
   )

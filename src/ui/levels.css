@@ -364,3 +364,57 @@
 :root[data-motion='reduced'] .city-map__area {
   transition: none;
 }
+
+/* Empezar de cero: discreto al pie del panel; al tocarlo pregunta antes de borrar. */
+.restart-game__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin-top: 12px;
+  padding: 4px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-quiet);
+  font: inherit;
+  font-size: calc(12px * var(--text-scale));
+  cursor: pointer;
+}
+
+.restart-game__open:hover {
+  color: var(--ink);
+}
+
+.restart-game {
+  margin-top: 12px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--late);
+  background: var(--late-bg);
+}
+
+.restart-game__title {
+  margin: 0 0 8px;
+  font-size: calc(13px * var(--text-scale));
+}
+
+.restart-game__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.restart-game__confirm {
+  padding: 10px 18px;
+  border: 1px solid var(--late);
+  border-radius: var(--radius);
+  background: var(--late);
+  color: var(--surface);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.restart-game__open:focus-visible,
+.restart-game__confirm:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}

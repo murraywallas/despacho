@@ -1,58 +1,52 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, type PersistStorage } from 'zustand/middleware'
 import { economy } from '../game/balance'
 import { hireRider } from '../game/garage'
-import { recordResult, type Progress } from '../game/levels'
+import { recordResult } from '../game/levels'
+import { cleanSave, migrateSave, newGame, SAVE_VERSION, type SavedGame } from '../game/save'
 import { browserStorage } from './safeStorage'
 
-interface ProgressState {
-  /** Best average stars of each level finished. */
-  best: Progress
-  /** Shifts finished in this browser, of any level (the first ones show how-to hints). */
-  played: number
-  /** The player finished (or skipped) the guided first shift. */
-  guideDone: boolean
-  /** Money saved between shifts, in kr. Can go below zero after a bad shift. */
-  moneyKr: number
+interface ProgressState extends SavedGame {
   /** Adds a shift's profit (or loss) to the money. */
   earn: (profitKr: number) => void
-  /** Riders hired: the most that can go out in a shift (the level may allow fewer). */
-  hired: number
   /** Hires one more rider for good, if the money is enough. */
   hire: () => void
-  /** Fleet last chosen in the garage for each level, by level id. */
-  fleets: Readonly<Record<string, readonly string[]>>
   chooseFleet: (levelId: string, fleet: readonly string[]) => void
   /** Saves a finished shift; only a better result replaces the old one. */
   record: (levelId: string, average: number) => void
   finishGuide: () => void
+  /** "Empezar de cero": forgets everything won and starts a new game. */
+  restart: () => void
 }
 
-/** The player's progress through the levels, remembered in this browser. */
+/** A new game, with the money and riders of the Reglas tab. */
+const fresh = (): SavedGame => newGame(economy.startingKr, economy.startingRiders)
+
+/**
+ * The player's game, saved by itself in this browser as one versioned save: stars of each level, shifts played,
+ * money, riders hired and the fleet chosen for each level. An old save is migrated; a broken one starts a new game.
+ */
 export const useProgressStore = create<ProgressState>()(
   persist(
     (set) => ({
-      best: {},
-      played: 0,
-      guideDone: false,
-      moneyKr: economy.startingKr,
+      ...fresh(),
       earn: (profitKr) => set((state) => ({ moneyKr: state.moneyKr + profitKr })),
-      hired: economy.startingRiders,
       hire: () =>
         set((state) => {
           const hired = hireRider(state.moneyKr, state.hired, economy.hireRiderKr)
           return hired ? { moneyKr: hired.moneyKr, hired: hired.hired } : state
         }),
-      fleets: {},
       chooseFleet: (levelId, fleet) => set((state) => ({ fleets: { ...state.fleets, [levelId]: [...fleet] } })),
       finishGuide: () => set({ guideDone: true }),
       record: (levelId, average) =>
         set((state) => ({ best: recordResult(state.best, levelId, average), played: state.played + 1 })),
+      restart: () => set(fresh()),
     }),
     {
       name: 'despacho-progress',
-      storage: browserStorage,
-      partialize: (state) => ({
+      version: SAVE_VERSION,
+      storage: browserStorage as PersistStorage<SavedGame>,
+      partialize: (state): SavedGame => ({
         best: state.best,
         played: state.played,
         guideDone: state.guideDone,
@@ -60,6 +54,9 @@ export const useProgressStore = create<ProgressState>()(
         hired: state.hired,
         fleets: state.fleets,
       }),
+      migrate: (persisted, version) => migrateSave(persisted, version, fresh()),
+      // Whatever comes from the browser is checked field by field before the game uses it.
+      merge: (persisted, current) => ({ ...current, ...cleanSave(persisted, fresh()) }),
     },
   ),
 )
