@@ -11,9 +11,17 @@ export interface GarageRules {
   readonly vehicles: readonly string[]
 }
 
-/** What the player can choose in a level, with this many riders hired. */
-export function garageRules(levelFleet: readonly string[], neighborhoodVehicles: readonly string[], hired: number): GarageRules {
-  return { maxRiders: Math.max(1, Math.min(levelFleet.length, hired)), vehicles: neighborhoodVehicles }
+/** What the player can choose in a level, with this many riders hired. Vehicles on strike can't be chosen. */
+export function garageRules(
+  levelFleet: readonly string[],
+  neighborhoodVehicles: readonly string[],
+  hired: number,
+  struck: readonly string[] = [],
+): GarageRules {
+  return {
+    maxRiders: Math.max(1, Math.min(levelFleet.length, hired)),
+    vehicles: neighborhoodVehicles.filter((vehicle) => !struck.includes(vehicle)),
+  }
 }
 
 /** The level's fleet (Niveles tab), cut to the riders the player has. */

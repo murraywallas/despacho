@@ -1,4 +1,4 @@
-import { economy, fleetOf, levels, neighborhoods, vehicles } from '../game/balance'
+import { economy, fleetOf, levels, neighborhoods, struckOf, vehicles } from '../game/balance'
 import { canStart, canUseMoreRiders, chosenFleet, garageRules, suggestedFleet, type GarageRules } from '../game/garage'
 import { balanceFor } from '../game/levels'
 import { fleetCostKr } from '../game/money'
@@ -13,6 +13,8 @@ export interface Garage {
   readonly fleet: readonly string[]
   readonly suggested: readonly string[]
   readonly rules: GarageRules
+  /** Vehicles of the neighborhood on strike in this shift: shown, but can't be chosen. */
+  readonly struck: readonly string[]
   readonly costKr: number
   readonly moneyKr: number
   readonly hired: number
@@ -33,12 +35,14 @@ export function useGarage(levelId: string): Garage {
   const chooseFleet = useProgressStore((state) => state.chooseFleet)
   const hire = useProgressStore((state) => state.hire)
   const levelFleet = fleetOf(balanceFor(levelId))
-  const rules = garageRules(levelFleet, neighborhoods[levels[levelId].neighborhood]?.vehicles ?? levelFleet, hired)
+  const struck = struckOf(levels[levelId])
+  const rules = garageRules(levelFleet, neighborhoods[levels[levelId].neighborhood]?.vehicles ?? levelFleet, hired, struck)
   const fleet = chosenFleet(saved, levelFleet, rules)
   return {
     fleet,
     suggested: suggestedFleet(levelFleet, rules),
     rules,
+    struck,
     costKr: fleetCostKr(fleet, vehicleCostKr),
     moneyKr,
     hired,

@@ -19,6 +19,8 @@ export interface ShiftEvent {
   readonly directionDeg?: number
   /** Closed streets (marathon): a route of data/closures.json. */
   readonly closure?: string
+  /** Strike: the vehicle (Vehículos id) that doesn't go out. */
+  readonly vehicle?: string
 }
 
 /** What a kind of event does (Eventos tab), only what the game uses so far. */
@@ -80,4 +82,23 @@ export function demandAt(windows: readonly DemandWindow[] | undefined, atSec: nu
     (product, window) => (atSec >= window.fromSec && atSec < window.toSec ? product * window.demand : product),
     1,
   )
+}
+
+/** Vehicles on strike in this shift: fleet events (strike) name the vehicle that doesn't go out. */
+export function struckVehicles(
+  events: readonly Pick<ShiftEvent, 'event' | 'vehicle'>[],
+  kinds: Readonly<Record<string, EventKind>>,
+): string[] {
+  return events.flatMap((event) => (kinds[event.event]?.effectType === 'fleet' && event.vehicle ? [event.vehicle] : []))
+}
+
+/**
+ * The fleet rebuilt without the vehicles on strike: each rider on one of them takes the first vehicle of the
+ * neighborhood's list that is not on strike. Unchanged when nothing is on strike.
+ */
+export function withoutStruck(fleet: readonly string[], struck: readonly string[], available: readonly string[]): string[] {
+  if (struck.length === 0) return [...fleet]
+  const replacement = available.find((vehicle) => !struck.includes(vehicle))
+  if (!replacement) throw new Error('No queda ningún vehículo del barrio sin huelga.')
+  return fleet.map((vehicle) => (struck.includes(vehicle) ? replacement : vehicle))
 }

@@ -10,6 +10,7 @@
  * converts one into the other.
  */
 import data from '../../data/balance.json'
+import { struckVehicles, withoutStruck } from './shiftEvents'
 
 export interface PrototypeBalance {
   /** Seed for everything random in the prototype (restaurant spots, orders). Same seed, same game. */
@@ -222,7 +223,8 @@ export function levelBalance(base: PrototypeBalance, level: LevelBalance): Proto
       count: level.restaurants,
       ...(level.zone ? { zone: level.zone, zoneRestaurants: level.zoneRestaurants, zoneRadiusM: level.zoneRadiusM } : {}),
     },
-    riders: { ...base.riders, fleet: level.fleet.join(', ') },
+    // A vehicle on strike doesn't go out: the suggested fleet takes the next vehicle of the neighborhood instead.
+    riders: { ...base.riders, fleet: withoutStruck(level.fleet, struckOf(level), neighborhoods[level.neighborhood]?.vehicles ?? level.fleet).join(', ') },
     orders: {
       ...base.orders,
       spawnIntervalSec: level.spawnIntervalSec,
@@ -250,9 +252,16 @@ export interface ShiftEventBalance {
   readonly directionDeg?: number
   /** Closed streets (marathon): a route of data/closures.json. */
   readonly closure?: string
+  /** Strike: the vehicle (Vehículos id) that doesn't go out. */
+  readonly vehicle?: string
 }
 
 export const shiftEvents: Readonly<Record<string, ShiftEventBalance>> = data.shiftEvents
+
+/** Vehicles on strike in a level's shift. */
+export function struckOf(level: LevelBalance): string[] {
+  return struckVehicles((level.events ?? []).flatMap((id) => shiftEvents[id] ?? []), eventKinds)
+}
 
 /** A kind of event (Eventos tab), only what the game uses so far. */
 export interface EventKindBalance {
