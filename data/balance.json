@@ -40,7 +40,8 @@
     "tools": {
       "reassignPenaltySec": 15,
       "callsPerShift": 1,
-      "callExtendSec": 30
+      "callExtendSec": 30,
+      "freeHighlightSec": 6
     }
   },
   "clock": {

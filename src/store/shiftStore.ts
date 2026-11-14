@@ -10,6 +10,7 @@ import { advanceShift, capacityOf, dispatchOrders, movementAt, reassignAndStart,
 import type { StreetGraphFile } from '../game/streetGraph'
 import type { Speeds } from '../game/movement'
 import type { ShiftEvent } from '../game/shiftEvents'
+import { markSeen, updateFreeSince, type FreeSince } from '../game/attention'
 import { balanceFor, createLevelShift } from '../game/levels'
 import { callCustomer } from '../game/tools'
 
@@ -77,6 +78,8 @@ interface ShiftState {
   fleet: readonly string[] | null
   /** Experience of each rider (by place) when the shift started. */
   xp: readonly number[]
+  /** Riders who just went free, by id, with the second they did: the game points at them until used or seen. */
+  freeSince: FreeSince
   /** Starts a level from the beginning, with its orders and clock, and the garage's fleet (or the suggested one). */
   startLevel: (levelId: string | null, fleet?: readonly string[], xp?: readonly number[]) => void
 }
@@ -84,6 +87,8 @@ interface ShiftState {
 const NORMAL_SPEED = 1
 // One shared empty list: a new [] every frame would make everything that watches the selection redo its work.
 const NO_ORDERS: readonly string[] = []
+const NOBODY_FREED: FreeSince = {}
+
 const NOTHING_SELECTED = { selectedOrderId: null, addedOrderIds: NO_ORDERS, selectedRiderId: null }
 
 /** The prototype's rules. Vehicle speeds are the same in every level, so the interface reads them from here. */
@@ -129,6 +134,7 @@ type ShiftData = Pick<
   | 'levelId'
   | 'fleet'
   | 'xp'
+  | 'freeSince'
 >
 
 /** A fresh shift of a level: clock at the start, no orders, riders at their starting spots. */
@@ -137,7 +143,7 @@ function newShift(levelId: string | null, fleet: readonly string[] | null = null
   levelSettings = shiftSettingsFrom(balance)
   const fresh = createLevelShift(levelId, fleet ?? undefined, xp)
   random = fresh.random
-  return { ...fresh.shift, ...NOTHING_SELECTED, callsLeft: balance.tools.callsPerShift, levelId, fleet, xp }
+  return { ...fresh.shift, ...NOTHING_SELECTED, callsLeft: balance.tools.callsPerShift, levelId, fleet, xp, freeSince: NOBODY_FREED }
 }
 
 export const useShiftStore = create<ShiftState>()((set, get) => ({
@@ -158,6 +164,7 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
       return {
         clock: next.clock,
         riders: next.riders,
+        freeSince: updateFreeSince(state.freeSince, state.riders, next.riders, next.clock.elapsedSec),
         orderQueue: next.orderQueue,
         selectedOrderId: firstOpen ? state.selectedOrderId : null,
         addedOrderIds: keepIfSame(state.addedOrderIds, firstLeft ? state.addedOrderIds.filter(stillPending) : NO_ORDERS),
@@ -217,7 +224,8 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
         return result ? { ...result, ...NOTHING_SELECTED } : state
       }
       if (rider.status !== 'idle') return state
-      return { selectedRiderId: rider.id === state.selectedRiderId ? null : rider.id }
+      // Picking a rider who just went free counts as having seen them.
+      return { selectedRiderId: rider.id === state.selectedRiderId ? null : rider.id, freeSince: markSeen(state.freeSince, rider.id) }
     }),
   sendRiderTo: (restaurantId, fill = false) => {
     const state = get()

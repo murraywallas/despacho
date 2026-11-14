@@ -10,6 +10,7 @@ import { usePointerStore } from '../store/pointerStore'
 import { useProgressStore } from '../store/progressStore'
 import { selectedOrderIds, speedsAt, useShiftStore } from '../store/shiftStore'
 import { RiderCard } from './RiderCard'
+import { useAttention } from './useAttention'
 
 /** The how-to hint under the title shows during the first shifts only; then the player knows. */
 const HINT_SHIFTS = 2
@@ -32,6 +33,7 @@ export function RiderPanel() {
   const dispatchByDrop = useShiftStore((state) => state.dispatchByDrop)
   const draggedOrderId = usePointerStore((state) => state.draggedOrderId)
   const played = useProgressStore((state) => state.played)
+  const attention = useAttention()
   const selectedOrder = orders.find((order) => order.id === selectedOrderId)
   // A picked-up order can't change hands; an assigned one is being reassigned.
   const onTheWay = selectedOrder?.status === 'pickedUp'
@@ -101,6 +103,7 @@ export function RiderPanel() {
             canPick={rider.status === 'idle' && fits(rider) && !onTheWay}
             tooSmallFor={rider.status === 'idle' && !fits(rider) && !onTheWay ? count : undefined}
             noBattery={rider.status === 'idle' && fits(rider) && !onTheWay && lacksBattery(rider)}
+            attention={attention.has(rider.id)}
             selected={rider.id === selectedRiderId}
             dropTarget={draggedOrderId ? canTakeDragged(rider) : undefined}
             onPick={pickRider}

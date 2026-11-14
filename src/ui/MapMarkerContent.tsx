@@ -23,7 +23,10 @@ export function MapMarkerContent({ marker }: { marker: MapMarker }) {
   }
   if (marker.kind === 'rider') {
     return (
-      <span className={`map-pin map-pin--rider map-pin--${marker.rider?.status ?? 'idle'}`} aria-hidden>
+      <span
+        className={`map-pin map-pin--rider map-pin--${marker.rider?.status ?? 'idle'}${marker.rider?.attention ? ' map-pin--attention' : ''}`}
+        aria-hidden
+      >
         <span className="map-pin__badge">{marker.label}</span>
         <VehicleIcon vehicle={marker.rider?.vehicle ?? 'bike'} size={18} strokeWidth={2.25} />
       </span>

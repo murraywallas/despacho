@@ -7,15 +7,16 @@ import type { HeatSettings } from './rating'
 import { heatOf, isCold } from './rating'
 import type { Order } from './orders'
 import type { Rider } from './riders'
+import { ridersFreed } from './attention'
 
-export type RadioKind = 'newOrder' | 'pickedUp' | 'delivered' | 'late' | 'cancelled'
+export type RadioKind = 'newOrder' | 'pickedUp' | 'delivered' | 'riderFree' | 'late' | 'cancelled'
 
 /** How a delivery went: on time and warm, or not (late or cold: nothing to celebrate). */
 export type DeliveryMood = 'good' | 'late' | 'cold'
 
 export interface RadioItem {
   readonly kind: RadioKind
-  /** Order numbers, in the order they happened. More than one when several came together. */
+  /** Order numbers, in the order they happened. More than one when several came together. Empty for a rider going free. */
   readonly orderNumbers: readonly number[]
   /** Restaurant of the orders, when they share one. */
   readonly restaurantId?: string
@@ -34,7 +35,7 @@ export interface RadioMoment {
 }
 
 /** Order in which the kinds are told when several happen in the same step. */
-const KINDS: readonly RadioKind[] = ['newOrder', 'pickedUp', 'delivered', 'late', 'cancelled']
+const KINDS: readonly RadioKind[] = ['newOrder', 'pickedUp', 'delivered', 'riderFree', 'late', 'cancelled']
 const MOOD_RANK: Record<DeliveryMood, number> = { good: 0, cold: 1, late: 2 }
 
 /** How a delivered order went. */
@@ -80,7 +81,13 @@ export function radioBetween(before: RadioMoment, after: RadioMoment, heat: Heat
     }
   }
 
+  // A rider who just went free: one line each (the key fact of triage).
+  const freed = ridersFreed(before.riders, after.riders).map(
+    (rider): RadioItem => ({ kind: 'riderFree', orderNumbers: [], riderNumber: rider.number, atSec: after.nowSec }),
+  )
+
   return KINDS.flatMap((kind) => {
+    if (kind === 'riderFree') return freed
     const same = happened.filter((happening) => happening.kind === kind)
     if (same.length === 0) return []
     // Picked up by different riders: one line per rider, so each line says who.
