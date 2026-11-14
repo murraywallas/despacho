@@ -305,5 +305,8 @@
   "riders.refusedFull": "No le entra otro pedido",
   "map.firstFree": "El primero que se libera: Repartidor {rider}, en ~{minutes} min.",
   "garage.nextLevel": "{count} entregas para el nivel {level}",
-  "garage.nextLevelOne": "1 entrega para el nivel {level}"
+  "garage.nextLevelOne": "1 entrega para el nivel {level}",
+  "list.and": "y",
+  "weather.swapped": "{name}: la flota sugerida sale en {to} en vez de {slow}, que se frenan mucho.",
+  "weather.keep": "{name}: en {slow} se va mucho más lento. Conviene salir en {to}."
 }

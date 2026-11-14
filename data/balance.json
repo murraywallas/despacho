@@ -309,7 +309,9 @@
     "rain": {
       "effectType": "speed",
       "inDemo": true,
-      "demandPct": 0.3
+      "demandPct": 0.3,
+      "swapBelowPct": -0.3,
+      "swapTo": "bike"
     },
     "snow": {
       "effectType": "speed",

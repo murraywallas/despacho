@@ -16,6 +16,7 @@ import { formatKr } from './formatKr'
 import { EventIcon } from './EventNotices'
 import { eventEffect, eventName } from './eventText'
 import { useGarage } from './useGarage'
+import { WeatherAdviceNote } from './WeatherAdviceNote'
 import './garage.css'
 import './levels.css'
 
@@ -130,6 +131,15 @@ function Briefing({ levelId }: { levelId: string }) {
                   })}
             </p>
           ))}
+
+        {garage.advice && (
+          <WeatherAdviceNote
+            advice={garage.advice}
+            fleet={garage.fleet}
+            className="briefing__zone briefing__event"
+            testId="briefing-weather"
+          />
+        )}
 
         {levels[levelId].minCustomerDistanceM !== undefined && (
           <p className="briefing__zone" data-testid="briefing-far">

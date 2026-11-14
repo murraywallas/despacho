@@ -8,6 +8,7 @@ import {
   hireRider,
   isValidFleet,
   suggestedFleet,
+  weatherAdvice,
 } from '../../src/game/garage'
 import { balanceFor } from '../../src/game/levels'
 import { fleetCostKr } from '../../src/game/money'
@@ -82,5 +83,37 @@ describe('garage', () => {
     const fleet = fleetOf(balanceFor(levelIds[0]))
     expect(fleet.length).toBeLessThanOrEqual(economy.startingRiders)
     expect(economy.hireRiderKr).toBeGreaterThan(0)
+  })
+})
+
+describe('flota sugerida con mal tiempo anunciado', () => {
+  // Fixed values, so the tests don't move when the balance sheet changes.
+  const kinds = { rain: { swapBelowPct: -0.3, swapTo: 'bike' }, wind: {} }
+  const rows = {
+    bike: { rainSpeedPct: -0.1 },
+    skateboard: { rainSpeedPct: -0.4 },
+    rollers: { rainSpeedPct: -0.4 },
+    e_scooter: { rainSpeedPct: -0.25 },
+  }
+  const all = ['bike', 'skateboard', 'rollers', 'e_scooter']
+  const rain = [{ event: 'rain', announced: true }]
+
+  test('cambia por bici lo que se frena tanto o más', () => {
+    expect(weatherAdvice(['bike', 'skateboard', 'rollers', 'skateboard', 'e_scooter'], rain, kinds, rows, all)).toEqual({
+      event: 'rain',
+      slow: ['skateboard', 'rollers'],
+      to: 'bike',
+      fleet: ['bike', 'bike', 'bike', 'bike', 'e_scooter'],
+    })
+  })
+
+  test('sin nada que cambiar, sin anuncio o sin regla, no sugiere nada', () => {
+    expect(weatherAdvice(['bike', 'e_scooter'], rain, kinds, rows, all)).toBeUndefined()
+    expect(weatherAdvice(['skateboard'], [{ event: 'rain', announced: false }], kinds, rows, all)).toBeUndefined()
+    expect(weatherAdvice(['skateboard'], [{ event: 'wind', announced: true }], kinds, rows, all)).toBeUndefined()
+  })
+
+  test('si la bici no se puede elegir (otro barrio o huelga), no sugiere cambiarla', () => {
+    expect(weatherAdvice(['skateboard'], rain, kinds, rows, ['skateboard', 'rollers'])).toBeUndefined()
   })
 })
