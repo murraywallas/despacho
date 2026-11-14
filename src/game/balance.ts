@@ -125,6 +125,8 @@ export interface VehicleBalance {
   readonly speedKmh: number
   /** Speed change in the rain, as a share (−0.1 = 10 % slower). */
   readonly rainSpeedPct?: number
+  /** Speed change with the wind right behind (+) or straight into it (−), as a share; pedal vehicles only. */
+  readonly windSpeedPct?: number
   /** What a rider on this vehicle costs per shift, in kr. */
   readonly costPerShiftKr: number
   /** Orders it can carry at once. */
@@ -244,6 +246,8 @@ export interface ShiftEventBalance {
   readonly fromSec: number
   readonly toSec: number
   readonly announced: boolean
+  /** Wind: where it blows from, in degrees (0 = north, 90 = east, 270 = west). */
+  readonly directionDeg?: number
 }
 
 export const shiftEvents: Readonly<Record<string, ShiftEventBalance>> = data.shiftEvents

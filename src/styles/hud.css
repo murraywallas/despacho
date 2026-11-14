@@ -301,3 +301,19 @@
     white-space: nowrap;
   }
 }
+
+/* Viento: una flecha debajo del zoom que apunta hacia donde sopla (el mapa siempre tiene el norte arriba). */
+.wind-control {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.wind-arrow {
+  display: grid;
+  place-items: center;
+}

@@ -15,6 +15,8 @@ export interface ShiftEvent {
   readonly toSec: number
   /** Told in the briefing; otherwise it is a surprise. */
   readonly announced: boolean
+  /** Wind: where it blows from, in degrees (0 = north, 90 = east, 270 = west). */
+  readonly directionDeg?: number
 }
 
 /** What a kind of event does (Eventos tab), only what the game uses so far. */

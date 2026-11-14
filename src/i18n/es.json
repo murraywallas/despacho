@@ -267,5 +267,16 @@
   "garage.done": "Listo, volver al briefing",
   "events.rain.name": "Lluvia",
   "events.rain.effect": "Todos van más lentos (patineta, rollers y monopatín, mucho más) y llegan un {demand} % más de pedidos.",
-  "briefing.event": "{name} de {from} a {to}. {effect}"
+  "briefing.event": "{name} de {from} a {to}. {effect}",
+  "events.wind.name": "Viento",
+  "events.wind.effect": "Sopla {from}: bicis, patinetas y rollers van más rápido a favor y más lento en contra, y eligen otras calles. El monopatín y la moto no lo sienten.",
+  "map.wind": "Viento {from}: la flecha muestra hacia dónde sopla.",
+  "wind.from.N": "del norte",
+  "wind.from.NE": "del noreste",
+  "wind.from.E": "del este",
+  "wind.from.SE": "del sureste",
+  "wind.from.S": "del sur",
+  "wind.from.SO": "del suroeste",
+  "wind.from.O": "del oeste",
+  "wind.from.NO": "del noroeste"
 }
