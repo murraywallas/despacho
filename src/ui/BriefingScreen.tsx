@@ -12,6 +12,8 @@ import { levelHours, levelName, gameTimeOf, mapLightOf, neighborhoodName, PANEL_
 import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
 import { BackdropMap, type BackdropPin } from './BackdropMap'
 import { formatKr } from './formatKr'
+import { EventIcon } from './EventNotices'
+import { eventEffect, eventName } from './eventText'
 import { useGarage } from './useGarage'
 import './garage.css'
 import './levels.css'
@@ -111,6 +113,20 @@ function Briefing({ levelId }: { levelId: string }) {
             })}
           </p>
         )}
+
+        {(balance.events ?? [])
+          .filter((event) => event.announced)
+          .map((event) => (
+            <p key={event.id} className="briefing__zone briefing__event" data-testid="briefing-event">
+              <EventIcon event={event.event} size={14} />
+              {t('briefing.event', {
+                name: eventName(event.event),
+                from: formatGameTime(event.fromSec, time),
+                to: formatGameTime(event.toSec, time),
+                effect: eventEffect(event.event),
+              })}
+            </p>
+          ))}
 
         {levels[levelId].minCustomerDistanceM !== undefined && (
           <p className="briefing__zone" data-testid="briefing-far">

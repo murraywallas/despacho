@@ -264,3 +264,40 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* Eventos en curso (lluvia…), al lado de la luz: un chip que se nota sin gritar. */
+.event-notices {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.event-notices:empty {
+  display: none;
+}
+
+.event-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2, var(--surface));
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* En pantallas angostas la luz queda solo con su ícono (el nombre sigue en el título y para lectores), para que
+   la barra de arriba no se meta debajo del reloj cuando hay un evento. */
+@media (max-width: 1279px) {
+  .conditions__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

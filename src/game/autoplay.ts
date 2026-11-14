@@ -10,7 +10,7 @@ import { parkingSecOf } from './parking'
 import { batteryShare, hasBatteryFor, isLowBattery, sendToCharge, tripMeters } from './battery'
 import { createAreaShift } from './levels'
 import { DEFAULT_NEIGHBORHOOD } from './neighborhoods'
-import { advanceShift, dispatchOrders, type ShiftSettings, type ShiftSnapshot } from './shift'
+import { advanceShift, dispatchOrders, settingsAt, type ShiftSettings, type ShiftSnapshot } from './shift'
 
 export interface BotPick {
   readonly orderId: string
@@ -128,7 +128,7 @@ export function autoplay(
     if (shift.clock.elapsedSec >= nextLookSec) {
       nextLookSec = shift.clock.elapsedSec + options.reactionSec
       for (let picks = 0; picks < options.picksPerLook; picks++) {
-        const pick = bot(shift, settings)
+        const pick = bot(shift, settingsAt(settings, shift.clock.elapsedSec))
         if (!pick) break
         if ('rechargeRiderId' in pick) {
           const rechargeSec = settings.movement.rechargeSec ?? 0

@@ -14,6 +14,8 @@ import data from '../../data/balance.json'
 export interface PrototypeBalance {
   /** Seed for everything random in the prototype (restaurant spots, orders). Same seed, same game. */
   readonly seed: number
+  /** Events of the shift (rain…), from the level's events column; none for the prototype. */
+  readonly events?: readonly (ShiftEventBalance & { readonly id: string })[]
   readonly shift: {
     /** Hour of the game clock when the shift starts (18 = 18:00). */
     readonly startHour: number
@@ -121,6 +123,8 @@ export function clockSpeeds(balance: Pick<ClockBalance, 'speeds'>): number[] {
 /** A row of the Vehículos tab (only what the game uses so far). */
 export interface VehicleBalance {
   readonly speedKmh: number
+  /** Speed change in the rain, as a share (−0.1 = 10 % slower). */
+  readonly rainSpeedPct?: number
   /** What a rider on this vehicle costs per shift, in kr. */
   readonly costPerShiftKr: number
   /** Orders it can carry at once. */
@@ -145,6 +149,8 @@ export interface VehicleBalance {
 export interface LevelBalance {
   /** Position in the neighborhood: 1, 2, 3… */
   readonly order: number
+  /** Events of the shift: ids of the Eventos de turno tab (optional). */
+  readonly events?: readonly string[]
   readonly neighborhood: string
   readonly startHour: number
   readonly durationSec: number
@@ -224,8 +230,34 @@ export function levelBalance(base: PrototypeBalance, level: LevelBalance): Proto
       peakIntervalSec: level.peakIntervalSec,
       minCustomerDistanceM: level.minCustomerDistanceM ?? base.orders.minCustomerDistanceM,
     },
+    events: (level.events ?? []).map((id) => {
+      const row = shiftEvents[id]
+      if (!row) throw new Error(`El evento ${id} del nivel no está en la pestaña Eventos de turno.`)
+      return { id, ...row }
+    }),
   }
 }
+/** A row of the Eventos de turno tab: one event of a level's shift. */
+export interface ShiftEventBalance {
+  /** Kind of event: a row of the Eventos tab. */
+  readonly event: string
+  readonly fromSec: number
+  readonly toSec: number
+  readonly announced: boolean
+}
+
+export const shiftEvents: Readonly<Record<string, ShiftEventBalance>> = data.shiftEvents
+
+/** A kind of event (Eventos tab), only what the game uses so far. */
+export interface EventKindBalance {
+  /** speed, roads, fleet, demand, kitchen. */
+  readonly effectType: string
+  /** Extra orders while it lasts (0.3 = 30 % more). */
+  readonly demandPct?: number
+}
+
+export const eventKinds: Readonly<Record<string, EventKindBalance>> = data.events
+
 export const routing: RoutingBalance = data.routing
 export const shift: ShiftBalance = data.shift
 export const clock: ClockBalance = data.clock

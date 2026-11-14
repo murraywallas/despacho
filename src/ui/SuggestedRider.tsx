@@ -1,7 +1,7 @@
 import type { Order } from '../game/orders'
 import { suggestRider } from '../game/stops'
 import { t } from '../i18n'
-import { settings, useShiftStore } from '../store/shiftStore'
+import { speedsAt, useShiftStore } from '../store/shiftStore'
 import { DeliveryEta } from './DeliveryEta'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
@@ -18,7 +18,7 @@ export function SuggestedRider({ order }: { order: Order }) {
   const riders = useShiftStore((state) => state.riders)
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const dispatchByDrop = useShiftStore((state) => state.dispatchByDrop)
-  const best = suggestRider(map, riders, order, settings.movement.metersPerSec, nowSec)
+  const best = suggestRider(map, riders, order, speedsAt(nowSec), nowSec)
   if (!best) return null
   const { rider, deliverAtSec, late } = best
   const vehicleKey = VEHICLE_TEXT[rider.vehicle]

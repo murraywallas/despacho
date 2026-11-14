@@ -339,6 +339,14 @@
       "kitchenMultiplier": 2
     }
   },
+  "shiftEvents": {
+    "vesterbro_dinner_rain": {
+      "event": "rain",
+      "fromSec": 180,
+      "toSec": 300,
+      "announced": true
+    }
+  },
   "levels": {
     "lunch": {
       "order": 1,
@@ -445,7 +453,10 @@
       "light": "dusk",
       "zone": "kodbyen",
       "zoneRestaurants": 4,
-      "zoneRadiusM": 300
+      "zoneRadiusM": 300,
+      "events": [
+        "vesterbro_dinner_rain"
+      ]
     },
     "vesterbro_friday": {
       "order": 6,

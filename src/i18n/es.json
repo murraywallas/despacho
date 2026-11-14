@@ -264,5 +264,8 @@
   "garage.hire": "Contratar un repartidor · {cost}",
   "garage.tooExpensive": "La flota cuesta más de lo que hay en caja. Elegí vehículos más baratos o sacá repartidores: con uno solo siempre se puede salir.",
   "garage.onCredit": "Sale un solo repartidor sin plata para pagarlo: la caja va a quedar en negativo.",
-  "garage.done": "Listo, volver al briefing"
+  "garage.done": "Listo, volver al briefing",
+  "events.rain.name": "Lluvia",
+  "events.rain.effect": "Todos van más lentos (patineta, rollers y monopatín, mucho más) y llegan un {demand} % más de pedidos.",
+  "briefing.event": "{name} de {from} a {to}. {effect}"
 }

@@ -2,7 +2,8 @@
  * One step of a shift: the clock, the riders, the cancellations and the new orders, in that order.
  * The store and the balance bots (autoplay.ts) both play through these functions, so they follow the same rules. Pure.
  */
-import { clock as clockBalance, fleetOf, prototype, vehicles, type PrototypeBalance } from './balance'
+import { clock as clockBalance, eventKinds, fleetOf, prototype, vehicles, type PrototypeBalance } from './balance'
+import { activeEvents, demandWindows, speedsWith, type ShiftEvent } from './shiftEvents'
 import { cancelExpired, closeShift } from './cancellation'
 import { createCityMap, type CityMap, type RestaurantCluster } from './cityMap'
 import { createClock, tick, type ShiftClock } from './clock'
@@ -21,6 +22,8 @@ import { reassignOrder } from './tools'
 export interface ShiftSettings {
   readonly orders: OrderSettings
   readonly movement: MovementSettings
+  /** Events of the shift (rain…), with the second each one starts and ends. */
+  readonly events: readonly ShiftEvent[]
   /** Below this share of its charge a battery counts as low (0.2 = 20 %). */
   readonly lowBatteryShare?: number
   /** How long after its deadline an undelivered order is cancelled. */
@@ -76,7 +79,9 @@ export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
       // The kitchen closes before the shift ends, so the last orders can still be delivered.
       lastSpawnBeforeSec: balance.shift.durationSec - balance.orders.lastOrderBeforeEndSec,
       minCustomerDistanceM: balance.orders.minCustomerDistanceM,
+      demand: demandWindows(balance.events ?? [], eventKinds),
     },
+    events: balance.events ?? [],
     // Every vehicle of the Vehículos tab, so the speeds don't depend on the level's fleet.
     movement: {
       metersPerSec: Object.fromEntries(Object.keys(vehicles).map((vehicle) => [vehicle, metersPerSecOf(vehicle)])),
@@ -86,6 +91,18 @@ export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
     cancelAfterSec: balance.orders.cancelAfterSec,
     lowBatteryShare: balance.riders.lowBatteryPct ?? 0,
   }
+}
+
+/** How riders move at this second of the shift: their speeds with the events going on (rain slows them down). */
+export function movementAt(settings: ShiftSettings, nowSec: number): MovementSettings {
+  const metersPerSec = speedsWith(settings.movement.metersPerSec, activeEvents(settings.events, nowSec), eventKinds, vehicles)
+  return metersPerSec === settings.movement.metersPerSec ? settings.movement : { ...settings.movement, metersPerSec }
+}
+
+/** The shift's rules at this second: the same, with the speeds of the events going on. */
+export function settingsAt(settings: ShiftSettings, nowSec: number): ShiftSettings {
+  const movement = movementAt(settings, nowSec)
+  return movement === settings.movement ? settings : { ...settings, movement }
 }
 
 /**
@@ -134,7 +151,7 @@ export function advanceShift(
     shift.orderQueue.orders,
     gameDtSec,
     shift.clock.elapsedSec,
-    settings.movement,
+    movementAt(settings, shift.clock.elapsedSec),
   )
   // Deliveries in this step happen before cancellations, so a rider arriving just in time still counts.
   const expired = cancelExpired(fleet.orders, fleet.riders, clock.elapsedSec, settings.cancelAfterSec)
