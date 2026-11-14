@@ -1,6 +1,17 @@
 import { describe, expect, test } from 'vitest'
 import { autoplay, batchingBot, firstComeBot, triageBot, type AutoplayOptions, type Bot } from '../../src/game/autoplay'
-import { fleetOf, levelIds, levels, progression, prototype, shift as shiftBalance, vehicles } from '../../src/game/balance'
+import {
+  eventKinds,
+  fleetOf,
+  levelIds,
+  levels,
+  neighborhoods,
+  progression,
+  prototype,
+  shift as shiftBalance,
+  vehicles,
+} from '../../src/game/balance'
+import { weatherAdvice } from '../../src/game/garage'
 import {
   balanceFor,
   briefingOf,
@@ -162,18 +173,15 @@ describe('progreso', () => {
 describe('pilar 1 en cada nivel', () => {
   const options: AutoplayOptions = { reactionSec: 3, picksPerLook: 1, stepSec: 0.25 }
   const seeds = [11, 23, 37, 41, 59, 67, 73, 89]
-  // Un jugador cuidadoso usa el garage: con lluvia anunciada, cambia por bicis lo que más se frena con el agua.
-  const SLOW_IN_RAIN = -0.3
-  const rainyFleet = (levelId: string): string[] | undefined => {
-    const announced = (balanceFor(levelId).events ?? []).some((event) => event.announced && event.event === 'rain')
-    if (!announced) return undefined
-    return fleetOf(balanceFor(levelId)).map((vehicle) =>
-      (vehicles[vehicle].rainSpeedPct ?? 0) <= SLOW_IN_RAIN ? 'bike' : vehicle,
-    )
+  // Un jugador cuidadoso sale con la flota que sugiere el garage: con lluvia anunciada, bicis en vez de lo que se frena.
+  const suggestedFleetOf = (levelId: string): string[] | undefined => {
+    const balance = balanceFor(levelId)
+    const allowed = neighborhoods[levels[levelId].neighborhood]?.vehicles ?? fleetOf(balance)
+    return weatherAdvice(fleetOf(balance), balance.events ?? [], eventKinds, vehicles, allowed)?.fleet.slice()
   }
   const play = (levelId: string, bot: Bot, seed?: number) => {
     const careless = bot === firstComeBot
-    const balance = withFleet(balanceFor(levelId), careless ? undefined : rainyFleet(levelId))
+    const balance = withFleet(balanceFor(levelId), careless ? undefined : suggestedFleetOf(levelId))
     const end = autoplay(balance, shiftSettingsFrom(balance), seed ?? balance.seed, bot, options, neighborhoodOf(levelId))
     return summarizeShift(end.orderQueue.orders, balance.heat, balance.rating, shiftBalance)
   }
@@ -200,6 +208,16 @@ describe('pilar 1 en cada nivel', () => {
       expect(averages[0]).toBeGreaterThanOrEqual(shiftBalance.winAtLeast)
     },
   )
+
+  test('vesterbro_dinner: con la flota sugerida para la lluvia, juntar pedidos gana en la mayoría de los turnos', { timeout: 120_000 }, () => {
+    expect(suggestedFleetOf('vesterbro_dinner')).not.toEqual(fleetOf(balanceFor('vesterbro_dinner')))
+    const wins = seeds.filter((seed) => play('vesterbro_dinner', batchingBot, seed).outcome === 'win').length
+    expect(wins).toBeGreaterThanOrEqual(seeds.length / 2)
+    // Despachar sin pensar sigue sin ganar, ni siquiera con esa flota.
+    const careless = withFleet(balanceFor('vesterbro_dinner'), suggestedFleetOf('vesterbro_dinner'))
+    const end = autoplay(careless, shiftSettingsFrom(careless), careless.seed, firstComeBot, options, 'vesterbro')
+    expect(summarizeShift(end.orderQueue.orders, careless.heat, careless.rating, shiftBalance).outcome).not.toBe('win')
+  })
 
   test.each(levelsOf('vesterbro'))('%s: juntar dos pedidos del mismo restaurante saca más estrellas que llevarlos de a uno', { timeout: 120_000 }, (levelId) => {
     expect(averageOf(levelId, batchingBot)).toBeGreaterThan(averageOf(levelId, triageBot))

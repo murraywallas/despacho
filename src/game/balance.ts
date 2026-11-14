@@ -275,6 +275,10 @@ export interface EventKindBalance {
   readonly effectType: string
   /** Extra orders while it lasts (0.3 = 30 % more). */
   readonly demandPct?: number
+  /** Announced: the suggested fleet swaps vehicles that slow down to this or worse (−0.3 = 30 % slower)… */
+  readonly swapBelowPct?: number
+  /** …for this vehicle. */
+  readonly swapTo?: string
 }
 
 export const eventKinds: Readonly<Record<string, EventKindBalance>> = data.events

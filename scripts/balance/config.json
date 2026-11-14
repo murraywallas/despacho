@@ -25,7 +25,10 @@
     {
       "key": "events",
       "name": "Eventos",
-      "gid": 4
+      "gid": 4,
+      "references": {
+        "swapTo": "vehicles"
+      }
     },
     {
       "key": "shiftEvents",

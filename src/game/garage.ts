@@ -3,6 +3,7 @@
  * Pure.
  */
 import { fleetCostKr } from './money'
+import { speedChangeOf, type VehicleSpeedChanges } from './shiftEvents'
 
 export interface GarageRules {
   /** Riders that can go out: the level's suggested fleet, but never more than the player has hired. */
@@ -63,4 +64,44 @@ export function hireRider(
 /** Whether hiring would let more riders go out in this level. */
 export function canUseMoreRiders(levelFleet: readonly string[], hired: number): boolean {
   return hired < levelFleet.length
+}
+
+/** How a kind of event changes the suggested fleet (Eventos tab): vehicles that slow down this much or more go out on swapTo. */
+export interface WeatherSwapRule {
+  /** Speed change at or below which a vehicle is swapped (−0.3 = loses 30 % or more). */
+  readonly swapBelowPct?: number
+  /** Vehicle (Vehículos id) that takes their place. */
+  readonly swapTo?: string
+}
+
+/** Announced bad weather: the vehicles of the fleet it slows down too much, what replaces them and the fleet then. */
+export interface WeatherAdvice {
+  readonly event: string
+  /** The fleet's vehicles that slow down too much, each once, in fleet order. */
+  readonly slow: readonly string[]
+  readonly to: string
+  readonly fleet: readonly string[]
+}
+
+/**
+ * The fleet suggested for the first announced event that has a swap rule: every vehicle that slows down to
+ * swapBelowPct or worse goes out on swapTo instead. Undefined when nothing changes, or when swapTo can't be chosen
+ * (not in the neighborhood, or on strike).
+ */
+export function weatherAdvice(
+  fleet: readonly string[],
+  events: readonly { readonly event: string; readonly announced: boolean }[],
+  kinds: Readonly<Record<string, WeatherSwapRule>>,
+  vehicleRows: Readonly<Record<string, VehicleSpeedChanges>>,
+  allowed: readonly string[],
+): WeatherAdvice | undefined {
+  for (const { event, announced } of events) {
+    const { swapBelowPct, swapTo } = kinds[event] ?? {}
+    if (!announced || swapBelowPct === undefined || swapTo === undefined || !allowed.includes(swapTo)) continue
+    const isSlow = (vehicle: string) => vehicle !== swapTo && speedChangeOf(vehicleRows[vehicle], event) <= swapBelowPct
+    const slow = [...new Set(fleet.filter(isSlow))]
+    if (slow.length === 0) continue
+    return { event, slow, to: swapTo, fleet: fleet.map((vehicle) => (isSlow(vehicle) ? swapTo : vehicle)) }
+  }
+  return undefined
 }

@@ -9,6 +9,7 @@ import { levelName, mapLightOf, PANEL_INSET } from './levelText'
 import { RiderSkill } from './RiderSkill'
 import { useGarage, vehicleCostKr } from './useGarage'
 import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
+import { WeatherAdviceNote } from './WeatherAdviceNote'
 import './garage.css'
 import './levels.css'
 
@@ -63,6 +64,10 @@ function Garage({ levelId }: { levelId: string }) {
             {t('garage.strike', { vehicle: vehicleName(vehicle).toLocaleLowerCase('es') })}
           </p>
         ))}
+
+        {garage.advice && (
+          <WeatherAdviceNote advice={garage.advice} fleet={fleet} className="garage__warning" testId="garage-weather" />
+        )}
 
         <ol className="garage__fleet" data-testid="garage-fleet">
           {fleet.map((vehicle, index) => {

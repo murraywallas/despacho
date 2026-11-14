@@ -1,5 +1,14 @@
-import { economy, fleetOf, levels, neighborhoods, struckOf, vehicles } from '../game/balance'
-import { canStart, canUseMoreRiders, chosenFleet, garageRules, suggestedFleet, type GarageRules } from '../game/garage'
+import { economy, eventKinds, fleetOf, levels, neighborhoods, struckOf, vehicles } from '../game/balance'
+import {
+  canStart,
+  canUseMoreRiders,
+  chosenFleet,
+  garageRules,
+  suggestedFleet,
+  weatherAdvice,
+  type GarageRules,
+  type WeatherAdvice,
+} from '../game/garage'
 import { balanceFor } from '../game/levels'
 import { fleetCostKr } from '../game/money'
 import { useProgressStore } from '../store/progressStore'
@@ -12,6 +21,8 @@ export function vehicleCostKr(vehicle: string): number {
 export interface Garage {
   readonly fleet: readonly string[]
   readonly suggested: readonly string[]
+  /** Bad weather announced: the suggested fleet already swaps the vehicles it slows down too much. */
+  readonly advice?: WeatherAdvice
   readonly rules: GarageRules
   /** Vehicles of the neighborhood on strike in this shift: shown, but can't be chosen. */
   readonly struck: readonly string[]
@@ -34,13 +45,17 @@ export function useGarage(levelId: string): Garage {
   const hired = useProgressStore((state) => state.hired)
   const chooseFleet = useProgressStore((state) => state.chooseFleet)
   const hire = useProgressStore((state) => state.hire)
-  const levelFleet = fleetOf(balanceFor(levelId))
+  const balance = balanceFor(levelId)
+  const levelFleet = fleetOf(balance)
   const struck = struckOf(levels[levelId])
   const rules = garageRules(levelFleet, neighborhoods[levels[levelId].neighborhood]?.vehicles ?? levelFleet, hired, struck)
-  const fleet = chosenFleet(saved, levelFleet, rules)
+  const advice = weatherAdvice(suggestedFleet(levelFleet, rules), balance.events ?? [], eventKinds, vehicles, rules.vehicles)
+  const suggested = advice?.fleet ?? suggestedFleet(levelFleet, rules)
+  const fleet = chosenFleet(saved, suggested, rules)
   return {
     fleet,
-    suggested: suggestedFleet(levelFleet, rules),
+    suggested,
+    advice,
     rules,
     struck,
     costKr: fleetCostKr(fleet, vehicleCostKr),
