@@ -4,6 +4,7 @@
  */
 import { clock as clockBalance, eventKinds, fleetOf, prototype, vehicles, type PrototypeBalance } from './balance'
 import { activeEvents, demandWindows, speedsWith, type ShiftEvent } from './shiftEvents'
+import { mapWithWind, windOf } from './wind'
 import { cancelExpired, closeShift } from './cancellation'
 import { createCityMap, type CityMap, type RestaurantCluster } from './cityMap'
 import { createClock, tick, type ShiftClock } from './clock'
@@ -99,6 +100,12 @@ export function movementAt(settings: ShiftSettings, nowSec: number): MovementSet
   return metersPerSec === settings.movement.metersPerSec ? settings.movement : { ...settings.movement, metersPerSec }
 }
 
+/** The city map at this second of the shift: with windy streets while a wind event blows. */
+export function mapAt(map: CityMap, settings: ShiftSettings, nowSec: number): CityMap {
+  const wind = windOf(activeEvents(settings.events, nowSec), eventKinds)
+  return mapWithWind(map, wind, (vehicle) => vehicles[vehicle]?.windSpeedPct ?? 0)
+}
+
 /** The shift's rules at this second: the same, with the speeds of the events going on. */
 export function settingsAt(settings: ShiftSettings, nowSec: number): ShiftSettings {
   const movement = movementAt(settings, nowSec)
@@ -143,10 +150,12 @@ export function advanceShift(
 ): ShiftSnapshot {
   const clock = tick(shift.clock, dtSec)
   if (clock === shift.clock) return shift
+  // While the wind blows, each vehicle rides its windy streets (legs already started keep their timing).
+  const map = mapAt(shift.map, settings, shift.clock.elapsedSec)
   // Seconds of play that really passed: 0 in pause, double at 2x, cut at the end of the shift.
   const gameDtSec = clock.elapsedSec - shift.clock.elapsedSec
   const fleet = advanceFleet(
-    shift.map,
+    map,
     shift.riders,
     shift.orderQueue.orders,
     gameDtSec,
@@ -159,8 +168,8 @@ export function advanceShift(
   const after = clock.finished ? closeShift(expired.orders, expired.riders, clock.elapsedSec) : expired
   const kept =
     after.orders === shift.orderQueue.orders ? shift.orderQueue : { ...shift.orderQueue, orders: [...after.orders] }
-  const orderQueue = spawnOrders(kept, clock.elapsedSec, shift.map, random, settings.orders)
-  return { ...shift, clock, riders: after.riders, orderQueue }
+  const orderQueue = spawnOrders(kept, clock.elapsedSec, map, random, settings.orders)
+  return { ...shift, map, clock, riders: after.riders, orderQueue }
 }
 
 /**

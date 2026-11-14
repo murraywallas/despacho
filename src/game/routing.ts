@@ -22,6 +22,11 @@ export interface RoutingProfile {
   readonly speedFactor: (flags: number) => number
   /** The lowest cost per meter at full speed, so the A* estimate never overshoots. */
   readonly minFactor: number
+  /**
+   * Speed on a stretch by the way it goes, as a share of the vehicle's speed (wind: slower against it, faster
+   * with it). Missing: the same both ways.
+   */
+  readonly directionFactor?: (from: LonLat, to: LonLat) => number
 }
 
 /** Slowest share of its speed a vehicle keeps, so a bad surface never stops it outright. */
@@ -101,10 +106,13 @@ export function createNetwork(streets: StreetGraphFile, profile: RoutingProfile)
   for (const [a, b, lengthM, kindIndex, flags] of streets.edges) {
     if (!(flags & profile.allowedFlags)) continue
     const kind = streets.kinds[kindIndex]
-    const effectiveM = lengthM / profile.speedFactor(flags)
-    const stretch = { lengthM, effectiveM, cost: effectiveM * profile.factor(kind, flags), kind, flags }
-    add(a, b, stretch)
-    if (!(flags & profile.onewayFlag)) add(b, a, stretch)
+    const stretchFrom = (from: number, to: number): Stretch => {
+      const direction = profile.directionFactor?.(streets.nodes[from], streets.nodes[to]) ?? 1
+      const effectiveM = lengthM / (profile.speedFactor(flags) * direction)
+      return { lengthM, effectiveM, cost: effectiveM * profile.factor(kind, flags), kind, flags }
+    }
+    add(a, b, stretchFrom(a, b))
+    if (!(flags & profile.onewayFlag)) add(b, a, stretchFrom(b, a))
   }
   const finder = aStar(graph, {
     oriented: true,

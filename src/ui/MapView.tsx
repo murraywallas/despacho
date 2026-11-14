@@ -22,6 +22,7 @@ import { RestaurantPopup } from './RestaurantPopup'
 import { restaurantName } from './restaurantName'
 import { useNeighborhood } from './useNeighborhood'
 import { VEHICLE_TEXT } from './VehicleIcon'
+import { useWindArrow } from './WindArrow'
 import { neighborhoodName } from './levelText'
 import { useMapMarkers, type MarkerAction } from './useMapMarkers'
 
@@ -174,6 +175,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     },
     [pickRider, selectOrder, sendRiderTo],
   )
+  const windArrow = useWindArrow(instanceRef, ready)
   const elements = useMapMarkers(instanceRef, ready, markers, describe, onAction)
   useDeliveryFx(instanceRef, ready, map)
 
@@ -247,6 +249,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
         const element = elements.get(marker.key)
         return element ? createPortal(<MapMarkerContent marker={marker} />, element, marker.key) : null
       })}
+      {windArrow}
       {shownRestaurant &&
         createPortal(
           <RestaurantPopup restaurant={shownRestaurant} onClose={closePopup} onDispatched={() => setOpenRestaurantId(null)} />,
