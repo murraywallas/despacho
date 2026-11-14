@@ -1,0 +1,89 @@
+# Una ronda de corrección: el agente desarrollador lee el último reporte del tester,
+# corrige en la misma rama y el workflow hace push. Lo llama desarrollo.yml entre rondas de tests.
+name: Arreglo
+
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        type: string
+        required: true
+      branch:
+        type: string
+        required: true
+      round:
+        type: string
+        required: true
+
+jobs:
+  fix:
+    name: Corregir lo que encontró el tester
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      PR_NUMBER: ${{ inputs.pr_number }}
+      BRANCH: ${{ inputs.branch }}
+      ROUND: ${{ inputs.round }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Juntar la tarea y el reporte
+        run: |
+          echo "OUT=$RUNNER_TEMP/desarrollador" >> "$GITHUB_ENV"
+          out="$RUNNER_TEMP/desarrollador"
+          mkdir -p "$out"
+          git config user.name "despacho-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          gh pr view "$PR_NUMBER" --json body --jq .body > "$out/pr.md"
+          gh pr view "$PR_NUMBER" --comments > "$out/conversacion.md"
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
+            --jq '[.[] | select(.body | startswith("## Reporte del tester"))] | last | .body' > "$out/reporte.md"
+          issue=$(grep -oiE '(closes|fixes|resolves) #[0-9]+' "$out/pr.md" | head -1 | grep -oE '[0-9]+' || true)
+          if [ -n "$issue" ]; then gh issue view "$issue" --comments > "$out/tarea.md"; fi
+
+      - name: Corregir con el agente desarrollador
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Corrección, ronda ${{ env.ROUND }}, del Pull Request #${{ env.PR_NUMBER }}.
+            - Último reporte del tester: ${{ env.OUT }}/reporte.md
+            - La tarea: ${{ env.OUT }}/tarea.md
+            - La conversación del Pull Request: ${{ env.OUT }}/conversacion.md
+            Estás en la rama ${{ env.BRANCH }}. Corregí y hacé commit; el workflow hace push.
+            Si una falla te parece un error del tester, explicalo en ${{ env.OUT }}/respuesta.md.
+          claude_args: |
+            --agent desarrollador
+            --max-turns 60
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git add:*),Bash(git commit:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(ls:*)"
+
+      - name: Subir la corrección
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "Ronda $ROUND: cambios que el agente dejó sin commit"
+          fi
+          ahead=$(git rev-list --count "origin/$BRANCH..HEAD")
+          {
+            echo "**Ronda $ROUND del desarrollador:** $ahead commit(s) nuevos."
+            if [ -s "$OUT/respuesta.md" ]; then echo; cat "$OUT/respuesta.md"; fi
+          } > "$OUT/comentario.md"
+          if [ "$ahead" != "0" ]; then git push origin "HEAD:$BRANCH"; fi
+          gh pr comment "$PR_NUMBER" --body-file "$OUT/comentario.md"

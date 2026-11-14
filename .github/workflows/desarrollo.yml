@@ -1,0 +1,220 @@
+# Despierta al agente desarrollador cuando una tarea recibe la etiqueta listo-para-dev.
+# Circuito: implementar → abrir PR → tester → (corregir → tester) hasta 3 rondas → Germán.
+name: Desarrollo
+
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: desarrollo-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  develop:
+    name: Implementar la tarea
+    if: github.event.label.name == 'listo-para-dev' && !github.event.issue.pull_request
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      pr: ${{ steps.pr.outputs.pr }}
+      branch: ${{ steps.prep.outputs.branch }}
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number }}
+      ISSUE_TITLE: ${{ github.event.issue.title }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Revisar dependencias y preparar la rama
+        id: prep
+        run: |
+          echo "OUT=$RUNNER_TEMP/desarrollador" >> "$GITHUB_ENV"
+          out="$RUNNER_TEMP/desarrollador"
+          mkdir -p "$out"
+
+          # Tareas de "Depende de" que siguen abiertas
+          deps=$(gh issue view "$ISSUE_NUMBER" --json body --jq .body \
+            | awk '/^## Depende de/{f=1; next} /^## /{f=0} f' | grep -oE '#[0-9]+' | tr -d '#' || true)
+          open=""
+          for d in $deps; do
+            if [ "$(gh issue view "$d" --json state --jq .state)" = "OPEN" ]; then open="$open #$d"; fi
+          done
+          if [ -n "$open" ]; then
+            gh issue comment "$ISSUE_NUMBER" --body "Esta tarea depende de$open, que sigue abierta. Saqué la etiqueta \`listo-para-dev\`: volvé a ponerla cuando se cierre."
+            gh issue edit "$ISSUE_NUMBER" --remove-label listo-para-dev
+            echo "blocked=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          slug=$(printf '%s' "$ISSUE_TITLE" | sed 'y/áéíóúüñÁÉÍÓÚÜÑ/aeiouunAEIOUUN/' | iconv -f utf-8 -t ascii//TRANSLIT | tr '[:upper:]' '[:lower:]' \
+            | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' | cut -c1-40 | sed -E 's/-+$//')
+          branch="tarea/${ISSUE_NUMBER}-${slug}"
+          git config user.name "despacho-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin "$branch" > /dev/null; then
+            git checkout -b "$branch" "origin/$branch"
+          else
+            git checkout -b "$branch"
+          fi
+          echo "BRANCH=$branch" >> "$GITHUB_ENV"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          gh issue view "$ISSUE_NUMBER" --comments > "$out/tarea.md"
+
+      - uses: actions/setup-node@v6
+        if: steps.prep.outputs.blocked != 'true'
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias
+        if: steps.prep.outputs.blocked != 'true'
+        run: npm ci
+
+      - name: Implementar con el agente desarrollador
+        if: steps.prep.outputs.blocked != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          prompt: |
+            Implementá la tarea #${{ env.ISSUE_NUMBER }}.
+            - La tarea completa, con sus comentarios: ${{ env.OUT }}/tarea.md
+            - Estás en la rama ${{ env.BRANCH }}. Hacé commit ahí; el workflow hace push y abre el Pull Request.
+            - Escribí la descripción del Pull Request en ${{ env.OUT }}/pr.md.
+            - Si una duda te impide seguir, escribila en ${{ env.OUT }}/duda.md y terminá sin commits.
+          claude_args: |
+            --agent desarrollador
+            --max-turns 80
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git add:*),Bash(git commit:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(ls:*)"
+
+      - name: Abrir el Pull Request
+        id: pr
+        if: steps.prep.outputs.blocked != 'true'
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -s "$OUT/duda.md" ]; then
+            {
+              echo "**El desarrollador tiene una duda antes de seguir:**"
+              echo
+              cat "$OUT/duda.md"
+              echo
+              echo "Respondé en un comentario y volvé a poner la etiqueta \`listo-para-dev\` para que retome."
+            } > "$OUT/comentario.md"
+            gh issue comment "$ISSUE_NUMBER" --body-file "$OUT/comentario.md"
+            gh issue edit "$ISSUE_NUMBER" --remove-label listo-para-dev
+            exit 0
+          fi
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "Tarea #$ISSUE_NUMBER: cambios que el agente dejó sin commit"
+          fi
+          if [ "$(git rev-list --count origin/main..HEAD)" = "0" ]; then
+            gh issue comment "$ISSUE_NUMBER" --body "El desarrollador terminó sin cambios ni dudas. Revisá el [log del workflow]($RUN_URL)."
+            exit 0
+          fi
+          git push -u origin "$BRANCH"
+          [ -s "$OUT/pr.md" ] || echo "(El desarrollador no escribió la descripción.)" > "$OUT/pr.md"
+          grep -qiE "(closes|fixes|resolves) #$ISSUE_NUMBER\b" "$OUT/pr.md" || printf '\n\nCloses #%s\n' "$ISSUE_NUMBER" >> "$OUT/pr.md"
+          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --body-file "$OUT/pr.md"
+          else
+            url=$(gh pr create --base main --head "$BRANCH" --title "$ISSUE_TITLE" --body-file "$OUT/pr.md")
+            pr="${url##*/}"
+          fi
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+
+  test-1:
+    name: Tests, ronda 1
+    needs: develop
+    if: needs.develop.outputs.pr != ''
+    uses: ./.github/workflows/tests.yml
+    with:
+      pr_number: ${{ needs.develop.outputs.pr }}
+      branch: ${{ needs.develop.outputs.branch }}
+      round: "1"
+    secrets: inherit
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+  fix-1:
+    name: Corrección, ronda 1
+    needs: [develop, test-1]
+    if: needs.test-1.outputs.verdict == 'rechazado'
+    uses: ./.github/workflows/arreglo.yml
+    with:
+      pr_number: ${{ needs.develop.outputs.pr }}
+      branch: ${{ needs.develop.outputs.branch }}
+      round: "1"
+    secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+  test-2:
+    name: Tests, ronda 2
+    needs: [develop, fix-1]
+    uses: ./.github/workflows/tests.yml
+    with:
+      pr_number: ${{ needs.develop.outputs.pr }}
+      branch: ${{ needs.develop.outputs.branch }}
+      round: "2"
+    secrets: inherit
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+  fix-2:
+    name: Corrección, ronda 2
+    needs: [develop, test-2]
+    if: needs.test-2.outputs.verdict == 'rechazado'
+    uses: ./.github/workflows/arreglo.yml
+    with:
+      pr_number: ${{ needs.develop.outputs.pr }}
+      branch: ${{ needs.develop.outputs.branch }}
+      round: "2"
+    secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+  test-3:
+    name: Tests, ronda 3
+    needs: [develop, fix-2]
+    uses: ./.github/workflows/tests.yml
+    with:
+      pr_number: ${{ needs.develop.outputs.pr }}
+      branch: ${{ needs.develop.outputs.branch }}
+      round: "3"
+    secrets: inherit
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+  give-up:
+    name: Pedir revisión de Germán
+    needs: [develop, test-3]
+    if: needs.test-3.outputs.verdict == 'rechazado'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: |
+          gh pr comment "${{ needs.develop.outputs.pr }}" --repo "$GITHUB_REPOSITORY" \
+            --body "Después de 3 rondas el tester sigue rechazando este Pull Request. Necesita que lo mire Germán: comentá \`@claude\` con lo que hay que cambiar."

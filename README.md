@@ -67,6 +67,17 @@ El comando pide las calles del área a la API pública de Overpass (sin registro
 cruces, tramos con su largo en metros, tipo de calle, manos únicas y ciclovías. Si el servidor está
 ocupado, probá de nuevo en unos minutos.
 
+## Cómo se le pasa una tarea al agente
+
+1. Escribí la tarea como Issue con la plantilla "Tarea" (Qué · Por qué · Listo cuando · Fuera de alcance · Depende de).
+2. Ponele la etiqueta `listo-para-dev`. El agente desarrollador la implementa, abre un Pull Request y
+   el agente tester lo revisa. Si el tester encuentra fallas, el desarrollador corrige (hasta 3 rondas).
+3. Probá el preview de Vercel que aparece en el Pull Request. Si querés cambios, comentá `@claude` con
+   lo que hay que cambiar. Si está bien, hacé el merge.
+
+Si el desarrollador tiene una duda, la deja como comentario en la tarea y saca la etiqueta: respondé y
+volvé a ponerla. Los agentes están en `.claude/agents/` y los workflows en `.github/workflows/`.
+
 ## Carpetas
 
 | Carpeta | Contenido |
