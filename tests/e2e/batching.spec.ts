@@ -44,9 +44,9 @@ test('la bici arma un viaje de 2 pedidos con Shift, se cambia el orden y entrega
   // Seguir hasta que entregue los dos.
   await page.keyboard.press('Space')
   for (let waited = 0; waited < longestRideMs * 3 + 30_000; waited += 2000) {
-    if ((await card.textContent())?.includes('Libre')) break
+    if ((await card.locator('.rider-card__status').textContent())?.startsWith('Libre')) break
     await page.clock.runFor(2000)
   }
-  await expect(card).toContainText('Libre')
+  await expect(card.locator('.rider-card__status')).toHaveText(/^Libre/)
   await expect(page.getByTestId('delivered-count')).toContainText(/Entregados: [2-9]/)
 })

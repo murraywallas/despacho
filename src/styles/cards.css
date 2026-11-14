@@ -457,3 +457,34 @@
 :root[data-motion='reduced'] .rider-card--attention {
   animation: none;
 }
+
+/* Asignar a un repartidor ocupado o lleno: un sacudón corto y el motivo debajo (dos clases que se alternan, para
+   que el sacudón se repita en cada intento). */
+.rider-card--shake-0 {
+  animation: rider-refused-0 280ms ease-in-out;
+}
+
+.rider-card--shake-1 {
+  animation: rider-refused-1 280ms ease-in-out;
+}
+
+@keyframes rider-refused-0 {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+@keyframes rider-refused-1 {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.rider-card__refusal {
+  color: var(--late);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+:root[data-motion='reduced'] .rider-card--shake-0,
+:root[data-motion='reduced'] .rider-card--shake-1 {
+  animation: none;
+}

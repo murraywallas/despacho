@@ -56,7 +56,8 @@ test('el repartidor va al restaurante por las calles, retira la comida, entrega 
   await expect(heat).toHaveAttribute('aria-label', `Temperatura de la comida: ${value} de 100`)
   await page.keyboard.press('Space')
 
-  await runUntil(page, rider, 'Libre', longestRideMs + 2000)
+  // El estado, no la tarjeta entera: mientras viaja, la tarjeta ya dice "Libre en ~X min".
+  await runUntil(page, rider.locator('.rider-card__status'), 'Libre', longestRideMs + 2000)
   await expect(rider.getByTestId('food-heat')).toHaveCount(0)
 
   await expect(orderPanel.getByTestId('delivered-count')).toHaveText('Entregados: 1')

@@ -44,6 +44,12 @@ export interface RiderCardProps {
   noBattery?: boolean
   /** Just went free: the card stands out until the rider gets an order or is picked. */
   attention?: boolean
+  /** Busy: seconds of play until the rider is free again (estimated). */
+  freeInSec?: number
+  /** Busy or full, but an order is picked: clicking says why it can't go (the card doesn't stay dead). */
+  canTry?: boolean
+  /** The last pick of this rider didn't go through, and why. */
+  refusal?: { readonly reason: 'busy' | 'full'; readonly seq: number }
   selected: boolean
   /** While an order is dragged: true if dropping it here dispatches it, false if this rider can't take it. */
   dropTarget?: boolean
@@ -59,7 +65,7 @@ export interface RiderCardProps {
  * would reach its customer with them. A free rider can be dragged onto an order, and an order dropped on them.
  */
 export function RiderCard(props: RiderCardProps) {
-  const { rider, delivery, trip, orders, nowSec, canPick, tooSmallFor, noBattery, attention, selected, dropTarget, onPick } = props
+  const { rider, delivery, trip, orders, nowSec, canPick, tooSmallFor, noBattery, attention, freeInSec, canTry, refusal, selected, dropTarget, onPick } = props
   const dragRider = usePointerStore((state) => state.dragRider)
   const draggedOrderId = usePointerStore((state) => state.draggedOrderId)
   const reassignable = trip.filter((stop) => stop.status === 'assigned')
@@ -73,12 +79,12 @@ export function RiderCard(props: RiderCardProps) {
     <li data-testid="rider-card" data-rider-number={rider.number}>
       <button
         type="button"
-        className={`rider-card rider-card--${rider.status}${selected ? ' rider-card--selected' : ''}${attention ? ' rider-card--attention' : ''}${dropClass}`}
+        className={`rider-card rider-card--${rider.status}${selected ? ' rider-card--selected' : ''}${attention ? ' rider-card--attention' : ''}${refusal ? ` rider-card--shake-${refusal.seq % 2}` : ''}${dropClass}`}
         data-attention={attention ? 'true' : undefined}
-        disabled={!canPick && !draggedOrderId}
-        aria-disabled={!canPick}
+        disabled={!canPick && !canTry && !draggedOrderId}
+        aria-disabled={!canPick && !canTry}
         aria-pressed={selected}
-        onClick={() => canPick && onPick(rider.number)}
+        onClick={() => (canPick || canTry) && onPick(rider.number)}
         aria-keyshortcuts={String(rider.number)}
         draggable={free}
         onDragStart={(event) => {
@@ -132,6 +138,21 @@ export function RiderCard(props: RiderCardProps) {
           {order && isReady(order, nowSec) && <FoodHeat order={order} nowSec={nowSec} />}
           {tooSmallFor !== undefined && <span className="rider-card__note">{t('riders.tooSmall', { count: tooSmallFor })}</span>}
           {noBattery && <span className="rider-card__note">{t('riders.noBattery')}</span>}
+          {freeInSec !== undefined && (
+            <span className="rider-card__note" data-testid="rider-free-in">
+              {t('riders.freeIn', { minutes: Math.max(1, gameMinutes(freeInSec, gameTime)) })}
+            </span>
+          )}
+          {refusal && (
+            <span key={refusal.seq} className="rider-card__refusal" role="status" data-testid="rider-refusal">
+              {refusal.reason === 'full'
+                ? t('riders.refusedFull')
+                : t('riders.refusedBusy', {
+                    rider: rider.number,
+                    minutes: Math.max(1, gameMinutes(freeInSec ?? 0, gameTime)),
+                  })}
+            </span>
+          )}
           {attention && <span className="visually-hidden">{t('riders.attention')}</span>}
         </span>
         {delivery && <DeliveryEta className="rider-card__eta" inSec={delivery.inSec} late={delivery.late} />}
