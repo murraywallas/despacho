@@ -80,6 +80,11 @@ interface ShiftState {
   xp: readonly number[]
   /** Riders who just went free, by id, with the second they did: the game points at them until used or seen. */
   freeSince: FreeSince
+  /**
+   * The last pick that couldn't go through: the rider is busy, or their vehicle can't carry the trip. The card says
+   * so (nothing else changes). seq tells two refusals in a row apart.
+   */
+  refusal: Refusal | null
   /** Starts a level from the beginning, with its orders and clock, and the garage's fleet (or the suggested one). */
   startLevel: (levelId: string | null, fleet?: readonly string[], xp?: readonly number[]) => void
 }
@@ -89,7 +94,20 @@ const NORMAL_SPEED = 1
 const NO_ORDERS: readonly string[] = []
 const NOBODY_FREED: FreeSince = {}
 
-const NOTHING_SELECTED = { selectedOrderId: null, addedOrderIds: NO_ORDERS, selectedRiderId: null }
+/** Why a rider couldn't take the orders picked. */
+export interface Refusal {
+  readonly riderId: string
+  readonly reason: 'busy' | 'full'
+  readonly seq: number
+}
+
+/** Why picking this rider for these orders did nothing, if it's one the player should hear about. */
+function refusalFor(state: Pick<ShiftState, 'refusal'>, rider: Rider, count: number): { refusal: Refusal } | undefined {
+  const reason = rider.status !== 'idle' ? 'busy' : count > capacityOf(rider.vehicle) ? 'full' : undefined
+  return reason ? { refusal: { riderId: rider.id, reason, seq: (state.refusal?.seq ?? 0) + 1 } } : undefined
+}
+
+const NOTHING_SELECTED = { selectedOrderId: null, addedOrderIds: NO_ORDERS, selectedRiderId: null, refusal: null }
 
 /** The prototype's rules. Vehicle speeds are the same in every level, so the interface reads them from here. */
 export const settings = shiftSettingsFrom(prototype)
@@ -135,6 +153,7 @@ type ShiftData = Pick<
   | 'fleet'
   | 'xp'
   | 'freeSince'
+  | 'refusal'
 >
 
 /** A fresh shift of a level: clock at the start, no orders, riders at their starting spots. */
@@ -192,7 +211,7 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
         if (order?.status !== 'pending' || order.restaurantId !== first?.restaurantId) return state
         return { addedOrderIds: [...state.addedOrderIds, orderId] }
       }
-      if (orderId === state.selectedOrderId) return { selectedOrderId: null, addedOrderIds: NO_ORDERS }
+      if (orderId === state.selectedOrderId) return { selectedOrderId: null, addedOrderIds: NO_ORDERS, refusal: null }
       if (!order || state.clock.finished) return state
       if (order.status === 'assigned' && state.selectedRiderId) {
         // Rider first, then an order already going with someone else: it is reassigned to the rider.
@@ -205,7 +224,7 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
         const result = dispatchOrders(state.map, state.orderQueue, state.riders, [orderId], state.selectedRiderId)
         return result ? { ...result, ...NOTHING_SELECTED } : state
       }
-      return { selectedOrderId: orderId, addedOrderIds: NO_ORDERS }
+      return { selectedOrderId: orderId, addedOrderIds: NO_ORDERS, refusal: null }
     }),
   pickRider: (riderNumber) =>
     set((state) => {
@@ -215,13 +234,13 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
       const first = state.orderQueue.orders.find((order) => order.id === picked[0])
       if (first?.status === 'assigned') {
         const result = reassignAndStart(state.map, state.orderQueue, state.riders, first.id, rider.id, prototype.tools.reassignPenaltySec, state.clock.elapsedSec)
-        return result ? { ...result, ...NOTHING_SELECTED } : state
+        return result ? { ...result, ...NOTHING_SELECTED } : (refusalFor(state, rider, 1) ?? state)
       }
       // The food is already on its way: that order can only get a call to its customer.
       if (first?.status === 'pickedUp') return state
       if (picked.length > 0) {
         const result = dispatchOrders(state.map, state.orderQueue, state.riders, picked, rider.id)
-        return result ? { ...result, ...NOTHING_SELECTED } : state
+        return result ? { ...result, ...NOTHING_SELECTED } : (refusalFor(state, rider, picked.length) ?? state)
       }
       if (rider.status !== 'idle') return state
       // Picking a rider who just went free counts as having seen them.

@@ -299,5 +299,8 @@
   "riders.level": "Nv {level}",
   "riders.levelTitle": "Nivel {level} de experiencia: va más rápido",
   "radio.riderFree": "Repartidor {rider} quedó libre",
-  "riders.attention": "Acaba de quedar libre"
+  "riders.attention": "Acaba de quedar libre",
+  "riders.freeIn": "Libre en ~{minutes} min",
+  "riders.refusedBusy": "Repartidor {rider} ocupado · libre en ~{minutes} min",
+  "riders.refusedFull": "No le entra otro pedido"
 }

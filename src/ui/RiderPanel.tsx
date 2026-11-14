@@ -4,7 +4,7 @@ import { hasBatteryFor, tripMeters } from '../game/battery'
 import { capacityOf } from '../game/dispatch'
 import { ordersOf } from '../game/movement'
 import type { Rider } from '../game/riders'
-import { rankByDelivery } from '../game/stops'
+import { freeAtSec, rankByDelivery } from '../game/stops'
 import { t } from '../i18n'
 import { usePointerStore } from '../store/pointerStore'
 import { useProgressStore } from '../store/progressStore'
@@ -34,6 +34,12 @@ export function RiderPanel() {
   const draggedOrderId = usePointerStore((state) => state.draggedOrderId)
   const played = useProgressStore((state) => state.played)
   const attention = useAttention()
+  const refusal = useShiftStore((state) => state.refusal)
+  // When each busy rider is free again: the data for "wait for the bike, or send the skateboard now?".
+  const freeInSecOf = (rider: Rider) => {
+    const at = freeAtSec(map, rider, orders, speedsAt(nowSec), nowSec, prototype.riders.rechargeSec ?? 0)
+    return at === undefined ? undefined : Math.max(0, at - nowSec)
+  }
   const selectedOrder = orders.find((order) => order.id === selectedOrderId)
   // A picked-up order can't change hands; an assigned one is being reassigned.
   const onTheWay = selectedOrder?.status === 'pickedUp'
@@ -104,6 +110,9 @@ export function RiderPanel() {
             tooSmallFor={rider.status === 'idle' && !fits(rider) && !onTheWay ? count : undefined}
             noBattery={rider.status === 'idle' && fits(rider) && !onTheWay && lacksBattery(rider)}
             attention={attention.has(rider.id)}
+            freeInSec={rider.status === 'idle' ? undefined : freeInSecOf(rider)}
+            canTry={count > 0 && !onTheWay}
+            refusal={refusal?.riderId === rider.id ? refusal : undefined}
             selected={rider.id === selectedRiderId}
             dropTarget={draggedOrderId ? canTakeDragged(rider) : undefined}
             onPick={pickRider}

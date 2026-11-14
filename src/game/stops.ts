@@ -103,3 +103,25 @@ export function rankByDelivery(
 export function suggestRider(map: CityMap, riders: readonly Rider[], order: Order, speeds: Speeds, nowSec: number): DeliveryOption | undefined {
   return rankByDelivery(map, riders, [order], speeds, nowSec)[0]
 }
+
+/**
+ * Second of the shift when a rider will be free again: now if free; after the last stop of the trip (kitchen
+ * included) if working; after riding back and recharging if going to recharge. Undefined when it can't be worked out.
+ */
+export function freeAtSec(
+  map: CityMap,
+  rider: Rider,
+  orders: readonly Order[],
+  speeds: Speeds,
+  nowSec: number,
+  rechargeSec = 0,
+): number | undefined {
+  if (rider.status === 'idle') return nowSec
+  if (rider.status === 'charging') return nowSec + (rider.chargeLeftSec ?? 0)
+  if (rider.status === 'toBase') {
+    const trip = rider.trip
+    if (!trip) return nowSec + rechargeSec
+    return nowSec + (trip.pathMeters[trip.pathMeters.length - 1] - trip.traveledM) / riderSpeed(speeds, rider) + rechargeSec
+  }
+  return stopEtas(map, rider, orders, speeds, nowSec).at(-1)?.atSec
+}

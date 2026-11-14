@@ -41,7 +41,7 @@ test('elegir un pedido muestra la ETA de los repartidores y la tecla del primero
   await expect(riderPanel.getByLabel('2 de 3 repartidores libres')).toBeVisible()
 })
 
-test('un repartidor ocupado se ve deshabilitado y el clic en otro asigna el pedido', async ({ page }) => {
+test('un repartidor ocupado avisa que está ocupado y el clic en otro asigna el pedido', async ({ page }) => {
   const orders = await waitForOrders(page, 2)
   const riderPanel = page.getByRole('complementary', { name: /Repartidores/ })
 
@@ -50,7 +50,9 @@ test('un repartidor ocupado se ve deshabilitado y el clic en otro asigna el pedi
 
   await orders.first().getByRole('button').first().click()
   const riderOne = riderPanel.getByRole('button', { name: /^Repartidor 1 / })
-  await expect(riderOne).toBeDisabled()
+  await riderOne.click()
+  await expect(riderPanel.locator('[data-rider-number="1"]').getByTestId('rider-refusal')).toContainText('Repartidor 1 ocupado')
+  await expect(orders).toHaveCount(1)
 
   await riderPanel.locator('[data-rider-number="2"]').getByRole('button').first().click()
   await expect(orders).toHaveCount(0)
