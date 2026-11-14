@@ -286,5 +286,9 @@
   "events.strike.effect": "Nadie sale en {vehicle} en este turno: la flota se rearma con los demás vehículos (miralo en el garage).",
   "briefing.eventAllShift": "{name} todo el turno. {effect}",
   "garage.strike": "Hay huelga: nadie sale en {vehicle} en este turno.",
-  "garage.optionStruck": "{vehicle} · en huelga"
+  "garage.optionStruck": "{vehicle} · en huelga",
+  "restart.open": "Empezar de cero",
+  "restart.question": "¿Borrar toda la partida? Se pierden las estrellas, la plata, los repartidores contratados y las flotas del garage. No se puede deshacer.",
+  "restart.cancel": "Cancelar",
+  "restart.confirm": "Sí, borrar todo"
 }
