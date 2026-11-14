@@ -6,7 +6,7 @@ import { isReady } from '../game/rating'
 import { rankByDelivery } from '../game/stops'
 import { t } from '../i18n'
 
-import { settings, useShiftStore } from '../store/shiftStore'
+import { speedsAt, useShiftStore } from '../store/shiftStore'
 import { DeliveryEta } from './DeliveryEta'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
@@ -45,7 +45,7 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
   // The trip in delivery order: the picked order, then the ones added with Shift.
   const trip = selectedOrder ? [selectedOrder, ...addedOrderIds.flatMap((id) => waiting.find((order) => order.id === id) ?? [])] : []
   const picked = trip.length
-  const ranked = rankByDelivery(map, riders, trip, settings.movement.metersPerSec, nowSec)
+  const ranked = rankByDelivery(map, riders, trip, speedsAt(nowSec), nowSec)
   const isPicked = (id: string) => id === selectedOrderId || addedOrderIds.includes(id)
 
   return (

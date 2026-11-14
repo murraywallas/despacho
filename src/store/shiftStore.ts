@@ -6,7 +6,9 @@ import { reorderStops } from '../game/movement'
 import { waitingAt, type Order, type OrderQueue, type OrderSettings } from '../game/orders'
 import type { Random } from '../game/random'
 import type { Rider } from '../game/riders'
-import { advanceShift, capacityOf, dispatchOrders, reassignAndStart, shiftSettingsFrom } from '../game/shift'
+import { advanceShift, capacityOf, dispatchOrders, movementAt, reassignAndStart, shiftSettingsFrom } from '../game/shift'
+import type { Speeds } from '../game/movement'
+import type { ShiftEvent } from '../game/shiftEvents'
 import { balanceFor, createLevelShift } from '../game/levels'
 import { callCustomer } from '../game/tools'
 
@@ -87,6 +89,16 @@ export const orderSettings: OrderSettings = settings.orders
 
 // The rules of the level being played (orders, deadlines): they change with startLevel.
 let levelSettings = settings
+
+/** Vehicle speeds at this second of the level being played, with its events (rain slows them down). */
+export function speedsAt(nowSec: number): Speeds {
+  return movementAt(levelSettings, nowSec).metersPerSec
+}
+
+/** Events of the level being played (rain…), with when each one starts and ends. */
+export function levelEvents(): readonly ShiftEvent[] {
+  return levelSettings.events
+}
 
 /** Every order picked for the next trip: the first one and the ones added with Shift. */
 export function selectedOrderIds(state: Pick<ShiftState, 'selectedOrderId' | 'addedOrderIds'>): string[] {

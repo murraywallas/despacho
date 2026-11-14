@@ -3,6 +3,7 @@
  * with a deadline. Pure: functions return new values.
  */
 import { randomAddress, type CityMap, type NodeId } from './cityMap'
+import { demandAt, type DemandWindow } from './shiftEvents'
 import { randomInt, type Random } from './random'
 
 /**
@@ -63,12 +64,16 @@ export interface OrderSettings {
   readonly minCustomerDistanceM: number
   /** No orders appear at or after this second of the shift (the end of the shift). */
   readonly lastSpawnBeforeSec: number
+  /** Stretches with more orders because of an event (rain…). */
+  readonly demand?: readonly DemandWindow[]
 }
 
 /** Seconds until the next order, for an order that appeared at second atSec. */
 export function spawnIntervalAt(settings: OrderSettings, atSec: number): number {
   const peak = settings.peak
-  return peak && atSec >= peak.fromSec && atSec < peak.toSec ? peak.intervalSec : settings.spawnIntervalSec
+  const interval = peak && atSec >= peak.fromSec && atSec < peak.toSec ? peak.intervalSec : settings.spawnIntervalSec
+  // More demand, orders closer together: 30 % more orders is the interval divided by 1.3.
+  return interval / demandAt(settings.demand, atSec)
 }
 
 export function createOrderQueue(settings: OrderSettings): OrderQueue {

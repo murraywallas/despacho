@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { autoplay, batchingBot, firstComeBot, triageBot, type AutoplayOptions, type Bot } from '../../src/game/autoplay'
-import { fleetOf, levelIds, levels, progression, prototype, shift as shiftBalance } from '../../src/game/balance'
+import { fleetOf, levelIds, levels, progression, prototype, shift as shiftBalance, vehicles } from '../../src/game/balance'
 import {
   balanceFor,
   briefingOf,
@@ -13,6 +13,7 @@ import {
   neighborhoodAverage,
   nextLevel,
   recordResult,
+  withFleet,
 } from '../../src/game/levels'
 import { spawnIntervalAt, type OrderSettings } from '../../src/game/orders'
 import { summarizeShift } from '../../src/game/results'
@@ -161,8 +162,18 @@ describe('progreso', () => {
 describe('pilar 1 en cada nivel', () => {
   const options: AutoplayOptions = { reactionSec: 3, picksPerLook: 1, stepSec: 0.25 }
   const seeds = [11, 23, 37, 41, 59, 67, 73, 89]
+  // Un jugador cuidadoso usa el garage: con lluvia anunciada, cambia por bicis lo que más se frena con el agua.
+  const SLOW_IN_RAIN = -0.3
+  const rainyFleet = (levelId: string): string[] | undefined => {
+    const announced = (balanceFor(levelId).events ?? []).some((event) => event.announced && event.event === 'rain')
+    if (!announced) return undefined
+    return fleetOf(balanceFor(levelId)).map((vehicle) =>
+      (vehicles[vehicle].rainSpeedPct ?? 0) <= SLOW_IN_RAIN ? 'bike' : vehicle,
+    )
+  }
   const play = (levelId: string, bot: Bot, seed?: number) => {
-    const balance = balanceFor(levelId)
+    const careless = bot === firstComeBot
+    const balance = withFleet(balanceFor(levelId), careless ? undefined : rainyFleet(levelId))
     const end = autoplay(balance, shiftSettingsFrom(balance), seed ?? balance.seed, bot, options, neighborhoodOf(levelId))
     return summarizeShift(end.orderQueue.orders, balance.heat, balance.rating, shiftBalance)
   }

@@ -8,7 +8,7 @@ import { rankByDelivery } from '../game/stops'
 import { t } from '../i18n'
 import { usePointerStore } from '../store/pointerStore'
 import { useProgressStore } from '../store/progressStore'
-import { selectedOrderIds, settings, useShiftStore } from '../store/shiftStore'
+import { selectedOrderIds, speedsAt, useShiftStore } from '../store/shiftStore'
 import { RiderCard } from './RiderCard'
 
 /** The how-to hint under the title shows during the first shifts only; then the player knows. */
@@ -46,7 +46,7 @@ export function RiderPanel() {
         ? { ...selectedOrder, deadlineAtSec: selectedOrder.deadlineAtSec - prototype.tools.reassignPenaltySec }
         : selectedOrder
     const added = addedOrderIds.flatMap((id) => orders.find((order) => order.id === id) ?? [])
-    return rankByDelivery(map, riders, [first, ...added], settings.movement.metersPerSec, nowSec)
+    return rankByDelivery(map, riders, [first, ...added], speedsAt(nowSec), nowSec)
   }, [map, riders, orders, selectedOrder, addedOrderIds, onTheWay, nowSec])
   const deliveryOf = new Map(ranked.map((entry) => [entry.rider.id, { inSec: entry.deliverAtSec - nowSec, late: entry.late }]))
   const fits = (rider: Rider) => capacityOf(rider.vehicle) >= Math.max(1, count)

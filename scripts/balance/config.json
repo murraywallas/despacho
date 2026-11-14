@@ -28,15 +28,25 @@
       "gid": 4
     },
     {
+      "key": "shiftEvents",
+      "name": "Eventos de turno",
+      "gid": 6,
+      "references": {
+        "event": "events"
+      }
+    },
+    {
       "key": "levels",
       "name": "Niveles",
       "gid": 5,
       "listColumns": [
-        "fleet"
+        "fleet",
+        "events"
       ],
       "references": {
         "fleet": "vehicles",
-        "neighborhood": "neighborhoods"
+        "neighborhood": "neighborhoods",
+        "events": "shiftEvents"
       }
     }
   ]

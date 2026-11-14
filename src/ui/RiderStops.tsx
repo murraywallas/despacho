@@ -4,7 +4,7 @@ import type { Order } from '../game/orders'
 import type { Rider } from '../game/riders'
 import { stopEtas } from '../game/stops'
 import { t } from '../i18n'
-import { settings, useShiftStore } from '../store/shiftStore'
+import { speedsAt, useShiftStore } from '../store/shiftStore'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
 
@@ -28,7 +28,7 @@ export function RiderStops({ rider, orders, nowSec }: { rider: Rider; orders: re
   const ids = rider.orderIds ?? []
   if (ids.length < 2) return null
 
-  const etas = new Map(stopEtas(map, rider, orders, settings.movement.metersPerSec, nowSec).map((eta) => [eta.orderId, eta.atSec]))
+  const etas = new Map(stopEtas(map, rider, orders, speedsAt(nowSec), nowSec).map((eta) => [eta.orderId, eta.atSec]))
   const numberOf = (id: string) => orders.find((order) => order.id === id)?.number ?? '?'
   const move = (from: number, to: number) => {
     if (to < 0 || to >= ids.length || from === to) return
