@@ -297,5 +297,7 @@
   "garage.course": "Curso · {cost}",
   "garage.courseLabel": "Pagar un curso a {rider}: sube un nivel por {cost}",
   "riders.level": "Nv {level}",
-  "riders.levelTitle": "Nivel {level} de experiencia: va más rápido"
+  "riders.levelTitle": "Nivel {level} de experiencia: va más rápido",
+  "radio.riderFree": "Repartidor {rider} quedó libre",
+  "riders.attention": "Acaba de quedar libre"
 }

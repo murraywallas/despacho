@@ -440,3 +440,20 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* Repartidor que acaba de quedar libre: un borde que late hasta que se lo usa o se lo elige. */
+.rider-card--attention {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent);
+  animation: rider-attention 1.2s ease-in-out infinite;
+}
+
+@keyframes rider-attention {
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+}
+
+:root[data-motion='reduced'] .rider-card--attention {
+  animation: none;
+}

@@ -75,6 +75,8 @@ export interface PrototypeBalance {
     readonly callsPerShift: number
     /** Extra time a call to the customer adds to the deadline. */
     readonly callExtendSec: number
+    /** A rider who goes free stands out this long when no orders are waiting (with orders waiting, until used). */
+    readonly freeHighlightSec?: number
   }
   readonly rating: {
     readonly max: number

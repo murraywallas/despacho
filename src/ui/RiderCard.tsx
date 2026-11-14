@@ -42,6 +42,8 @@ export interface RiderCardProps {
   tooSmallFor?: number
   /** Free, but the battery doesn't last the trip: picking the rider sends them back to recharge. */
   noBattery?: boolean
+  /** Just went free: the card stands out until the rider gets an order or is picked. */
+  attention?: boolean
   selected: boolean
   /** While an order is dragged: true if dropping it here dispatches it, false if this rider can't take it. */
   dropTarget?: boolean
@@ -57,7 +59,7 @@ export interface RiderCardProps {
  * would reach its customer with them. A free rider can be dragged onto an order, and an order dropped on them.
  */
 export function RiderCard(props: RiderCardProps) {
-  const { rider, delivery, trip, orders, nowSec, canPick, tooSmallFor, noBattery, selected, dropTarget, onPick } = props
+  const { rider, delivery, trip, orders, nowSec, canPick, tooSmallFor, noBattery, attention, selected, dropTarget, onPick } = props
   const dragRider = usePointerStore((state) => state.dragRider)
   const draggedOrderId = usePointerStore((state) => state.draggedOrderId)
   const reassignable = trip.filter((stop) => stop.status === 'assigned')
@@ -71,7 +73,8 @@ export function RiderCard(props: RiderCardProps) {
     <li data-testid="rider-card" data-rider-number={rider.number}>
       <button
         type="button"
-        className={`rider-card rider-card--${rider.status}${selected ? ' rider-card--selected' : ''}${dropClass}`}
+        className={`rider-card rider-card--${rider.status}${selected ? ' rider-card--selected' : ''}${attention ? ' rider-card--attention' : ''}${dropClass}`}
+        data-attention={attention ? 'true' : undefined}
         disabled={!canPick && !draggedOrderId}
         aria-disabled={!canPick}
         aria-pressed={selected}
@@ -129,6 +132,7 @@ export function RiderCard(props: RiderCardProps) {
           {order && isReady(order, nowSec) && <FoodHeat order={order} nowSec={nowSec} />}
           {tooSmallFor !== undefined && <span className="rider-card__note">{t('riders.tooSmall', { count: tooSmallFor })}</span>}
           {noBattery && <span className="rider-card__note">{t('riders.noBattery')}</span>}
+          {attention && <span className="visually-hidden">{t('riders.attention')}</span>}
         </span>
         {delivery && <DeliveryEta className="rider-card__eta" inSec={delivery.inSec} late={delivery.late} />}
       </button>

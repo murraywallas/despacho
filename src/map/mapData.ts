@@ -32,7 +32,7 @@ export interface MapMarker {
   /** Restaurants only: orders waiting for a rider there, and how urgent the most urgent one is. */
   readonly waiting?: { readonly count: number; readonly urgency: Urgency }
   /** Riders only: what they are doing and what they ride. */
-  readonly rider?: { readonly status: RiderStatus; readonly vehicle: string }
+  readonly rider?: { readonly status: RiderStatus; readonly vehicle: string; readonly attention?: boolean }
 }
 
 const URGENCY_RANK: Record<Urgency, number> = { normal: 0, urgent: 1, late: 2 }

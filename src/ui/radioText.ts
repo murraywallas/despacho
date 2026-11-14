@@ -22,6 +22,8 @@ export function radioText(item: RadioItem, restaurants: readonly Restaurant[], n
       if (item.mood === 'late') return t('radio.deliveredLate', { orders: numbers(item) })
       if (item.mood === 'cold') return t('radio.deliveredCold', { orders: numbers(item) })
       return t('radio.delivered', { orders: numbers(item) })
+    case 'riderFree':
+      return t('radio.riderFree', { rider: item.riderNumber ?? '?' })
     case 'late':
       return t('radio.late', { orders: numbers(item) })
     case 'cancelled':

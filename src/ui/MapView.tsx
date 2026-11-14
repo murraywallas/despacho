@@ -23,6 +23,7 @@ import { restaurantName } from './restaurantName'
 import { useNeighborhood } from './useNeighborhood'
 import { VEHICLE_TEXT } from './VehicleIcon'
 import { useWindArrow } from './WindArrow'
+import { useAttention } from './useAttention'
 import { neighborhoodName } from './levelText'
 import { useMapMarkers, type MarkerAction } from './useMapMarkers'
 
@@ -136,9 +137,15 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     [pickedIds, selectedRiderId, hoveredOrderId],
   )
   const urgentBelowSec = prototype.orders.urgentBelowSec
+  const attention = useAttention()
   const markers = useMemo(
-    () => buildMarkers(map, orders, riders, selection, (order) => urgencyOf(order, nowSec, urgentBelowSec)),
-    [map, orders, riders, selection, nowSec, urgentBelowSec],
+    () =>
+      buildMarkers(map, orders, riders, selection, (order) => urgencyOf(order, nowSec, urgentBelowSec)).map((marker) =>
+        marker.kind === 'rider' && marker.rider && attention.has(marker.id)
+          ? { ...marker, rider: { ...marker.rider, attention: true } }
+          : marker,
+      ),
+    [map, orders, riders, selection, nowSec, urgentBelowSec, attention],
   )
 
   const describe = useCallback(

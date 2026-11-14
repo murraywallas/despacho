@@ -1,4 +1,4 @@
-import { Ban, Bike, CircleAlert, PackageCheck, Radio, ReceiptText } from 'lucide-react'
+import { Ban, Bike, CircleAlert, PackageCheck, Radio, ReceiptText, UserCheck } from 'lucide-react'
 import { neighborhoodOf } from '../game/levels'
 import type { RadioKind } from '../game/radio'
 import { t } from '../i18n'
@@ -16,6 +16,7 @@ const ICONS: Record<RadioKind, typeof Radio> = {
   newOrder: ReceiptText,
   pickedUp: Bike,
   delivered: PackageCheck,
+  riderFree: UserCheck,
   late: CircleAlert,
   cancelled: Ban,
 }
