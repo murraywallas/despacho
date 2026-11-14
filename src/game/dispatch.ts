@@ -8,6 +8,7 @@ import type { Order } from './orders'
 import type { Rider } from './riders'
 import { vehicles } from './balance'
 import { parkingSecOf } from './parking'
+import { hasBatteryFor, tripMeters } from './battery'
 import { findRoute, type StreetNetwork } from './routing'
 
 /** How many orders a vehicle carries at once (1 for a vehicle not in the Vehículos tab). */
@@ -40,8 +41,8 @@ export interface RankedRider {
 }
 
 /**
- * Free riders whose vehicle carries at least count orders, closest to the order's restaurant first (ties: lower
- * number first).
+ * Free riders whose vehicle carries at least count orders and whose battery (if any) lasts the trip to the order's
+ * customer, closest to the order's restaurant first (ties: lower number first).
  */
 export function rankRiders(
   map: CityMap,
@@ -53,6 +54,7 @@ export function rankRiders(
   const restaurant = restaurantOf(map, order)
   return riders
     .filter((rider) => rider.status === 'idle' && capacityOf(rider.vehicle) >= count)
+    .filter((rider) => hasBatteryFor(rider, rider.batteryM === undefined ? 0 : tripMeters(map, rider, [order])))
     .map((rider) => ({ rider, etaSec: riderTimeSec(map, rider, restaurant.node, speeds) }))
     .sort((a, b) => a.etaSec - b.etaSec || a.rider.number - b.rider.number)
 }

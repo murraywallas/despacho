@@ -2,7 +2,7 @@
  * One step of a shift: the clock, the riders, the cancellations and the new orders, in that order.
  * The store and the balance bots (autoplay.ts) both play through these functions, so they follow the same rules. Pure.
  */
-import { clock as clockBalance, fleetOf, vehicles, type PrototypeBalance } from './balance'
+import { clock as clockBalance, fleetOf, prototype, vehicles, type PrototypeBalance } from './balance'
 import { cancelExpired, closeShift } from './cancellation'
 import { createCityMap, type CityMap, type RestaurantCluster } from './cityMap'
 import { createClock, tick, type ShiftClock } from './clock'
@@ -14,12 +14,15 @@ import { createOrderQueue, spawnOrders, type OrderPeak, type OrderQueue, type Or
 import { createRandom, type Random } from './random'
 import { norrebroBikeNetwork, norrebroNetworkFor } from './norrebro'
 import { createRiders, type Rider } from './riders'
+import { fullBatteryM, hasBatteryFor, sendToCharge, tripMeters } from './battery'
 import type { StreetNetwork } from './routing'
 import { reassignOrder } from './tools'
 
 export interface ShiftSettings {
   readonly orders: OrderSettings
   readonly movement: MovementSettings
+  /** Below this share of its charge a battery counts as low (0.2 = 20 %). */
+  readonly lowBatteryShare?: number
   /** How long after its deadline an undelivered order is cancelled. */
   readonly cancelAfterSec: number
 }
@@ -48,6 +51,19 @@ function peakOf(orders: PrototypeBalance['orders']): OrderPeak | undefined {
   return { fromSec: peakFromSec, toSec: peakToSec, intervalSec: peakIntervalSec }
 }
 
+/** Recharge time of the Reglas tab (the same in every level). */
+const RECHARGE_SEC = prototype.riders.rechargeSec ?? 0
+
+/** Full battery in meters of each vehicle of the Vehículos tab that has one (rangeKm). */
+function batteriesM(): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(vehicles).flatMap(([vehicle, row]) => {
+      const full = fullBatteryM(row.rangeKm)
+      return full === undefined ? [] : [[vehicle, full]]
+    }),
+  )
+}
+
 /** The rules of a shift, from balance.json (the prototype, or a level through levelBalance). */
 export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
   const peak = peakOf(balance.orders)
@@ -64,8 +80,11 @@ export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
     // Every vehicle of the Vehículos tab, so the speeds don't depend on the level's fleet.
     movement: {
       metersPerSec: Object.fromEntries(Object.keys(vehicles).map((vehicle) => [vehicle, metersPerSecOf(vehicle)])),
+      batteryM: batteriesM(),
+      rechargeSec: balance.riders.rechargeSec ?? 0,
     },
     cancelAfterSec: balance.orders.cancelAfterSec,
+    lowBatteryShare: balance.riders.lowBatteryPct ?? 0,
   }
 }
 
@@ -88,7 +107,7 @@ export function createShift(
     random,
     shift: {
       map,
-      riders: createRiders(map, fleet, random),
+      riders: createRiders(map, fleet, random, (vehicle) => fullBatteryM(vehicles[vehicle]?.rangeKm)),
       clock: createClock(balance.shift.durationSec),
       orderQueue: createOrderQueue(shiftSettingsFrom(balance).orders),
     },
@@ -137,13 +156,38 @@ export function dispatchOrders(
   riders: readonly Rider[],
   orderIds: readonly string[],
   riderId: string,
+  rechargeSec = RECHARGE_SEC,
 ): { orderQueue: OrderQueue; riders: readonly Rider[] } | undefined {
   const rider = riders.find((candidate) => candidate.id === riderId)
+  const refused = refuseForBattery(map, orderQueue, riders, orderIds, riderId, rechargeSec)
+  if (refused) return refused
   const result = assignOrders(orderQueue.orders, riders, orderIds, riderId, rider ? capacityOf(rider.vehicle) : 1)
   if (!result.ok) return undefined
   return {
     orderQueue: { ...orderQueue, orders: result.orders },
     riders: result.riders.map((candidate) => (candidate.id === riderId ? startTrip(map, candidate, result.orders) : candidate)),
+  }
+}
+
+/**
+ * A free rider without battery enough for the whole trip can't take it: the orders stay where they were and the
+ * rider goes back to base to recharge. Undefined when the battery is enough (or the rider has none).
+ */
+function refuseForBattery(
+  map: CityMap,
+  orderQueue: OrderQueue,
+  riders: readonly Rider[],
+  orderIds: readonly string[],
+  riderId: string,
+  rechargeSec: number,
+): { orderQueue: OrderQueue; riders: readonly Rider[] } | undefined {
+  const rider = riders.find((candidate) => candidate.id === riderId)
+  if (!rider || rider.status !== 'idle' || rider.batteryM === undefined) return undefined
+  const trip = orderIds.flatMap((id) => orderQueue.orders.find((order) => order.id === id) ?? [])
+  if (trip.length !== orderIds.length || hasBatteryFor(rider, tripMeters(map, rider, trip))) return undefined
+  return {
+    orderQueue,
+    riders: riders.map((candidate) => (candidate.id === riderId ? sendToCharge(map, candidate, rechargeSec) : candidate)),
   }
 }
 
@@ -170,8 +214,11 @@ export function reassignAndStart(
   toRiderId: string,
   penaltySec: number,
   nowSec: number,
+  rechargeSec = RECHARGE_SEC,
 ): { orderQueue: OrderQueue; riders: readonly Rider[] } | undefined {
   const to = riders.find((candidate) => candidate.id === toRiderId)
+  const refused = refuseForBattery(map, orderQueue, riders, [orderId], toRiderId, rechargeSec)
+  if (refused) return refused
   const result = reassignOrder(orderQueue.orders, riders, orderId, toRiderId, penaltySec, nowSec, to ? capacityOf(to.vehicle) : 1)
   if (!result.ok) return undefined
   return {

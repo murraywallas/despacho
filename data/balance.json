@@ -20,7 +20,9 @@
       "cookSec": 15
     },
     "riders": {
-      "fleet": "bike, skateboard, e_scooter"
+      "fleet": "bike, skateboard, e_scooter",
+      "rechargeSec": 60,
+      "lowBatteryPct": 0.2
     },
     "heat": {
       "start": 100,
@@ -125,7 +127,7 @@
       "cobblestoneSpeedPct": 0,
       "parkingMin": 0,
       "usesBikeLanes": true,
-      "rangeKm": 25,
+      "rangeKm": 18,
       "unlockable": false,
       "roads": "bike"
     },

@@ -9,6 +9,7 @@ import type { Order } from './orders'
 import type { Rider, Trip } from './riders'
 import { cumulativeMeters, findRoute, type StreetNetwork } from './routing'
 import { parkingSecOf } from './parking'
+import { advanceCharging, drain } from './battery'
 import type { LonLat } from './streetGraph'
 
 /** Meters per second of play of each vehicle, by vehicle id (its speed × game time per real second). */
@@ -16,6 +17,10 @@ export type Speeds = Readonly<Record<string, number>>
 
 export interface MovementSettings {
   readonly metersPerSec: Speeds
+  /** Full battery in meters, by vehicle id, for vehicles that have one. */
+  readonly batteryM?: Readonly<Record<string, number>>
+  /** Seconds of play a battery takes to recharge at the base. */
+  readonly rechargeSec?: number
 }
 
 /** How fast a vehicle goes, in meters per second of play. */
@@ -142,6 +147,8 @@ export function advanceRider(
   let left = dtSec
   let now = startSec
   let pickedUpAtSec: number | undefined
+  // Meters ridden in this step: they come off the battery.
+  let movedM = 0
   const delivered: { orderId: string; atSec: number }[] = []
   const network = networkFor(map, rider.vehicle)
   const metersPerSec = speedOf(settings.metersPerSec, rider.vehicle)
@@ -178,6 +185,7 @@ export function advanceRider(
     const remainingM = trip.pathMeters[trip.pathMeters.length - 1] - trip.traveledM
     const timeToEnd = remainingM / metersPerSec
     if (left < timeToEnd - EPSILON) {
+      movedM += left * metersPerSec
       const moved = { ...trip, traveledM: trip.traveledM + left * metersPerSec }
       current = { ...current, node: moved.path[passedIndex(moved)], trip: moved }
       left = 0
@@ -185,6 +193,8 @@ export function advanceRider(
     }
 
     // At the end of the leg: park first (motorbike, car), then the stop happens.
+    movedM += remainingM
+    trip = { ...trip, traveledM: trip.pathMeters[trip.pathMeters.length - 1] }
     const park = trip.parkLeftSec ?? 0
     const end = trip.path[trip.path.length - 1]
     if (left < timeToEnd + park - EPSILON) {
@@ -223,7 +233,7 @@ export function advanceRider(
     }
   }
 
-  return { rider: current, pickedUpAtSec, delivered }
+  return { rider: drain(current, movedM), pickedUpAtSec, delivered }
 }
 
 /**
@@ -238,10 +248,14 @@ export function advanceFleet(
   startSec: number,
   settings: MovementSettings,
 ): { riders: readonly Rider[]; orders: readonly Order[] } {
-  if (dtSec <= 0 || riders.every((rider) => !rider.trip)) return { riders, orders }
+  if (dtSec <= 0 || riders.every((rider) => !rider.trip && rider.status !== 'charging')) return { riders, orders }
 
   const orderUpdates = new Map<string, Partial<Order>>()
   const nextRiders = riders.map((rider) => {
+    if (rider.status === 'toBase' || rider.status === 'charging') {
+      const speed = speedOf(settings.metersPerSec, rider.vehicle)
+      return advanceCharging(rider, dtSec, speed, settings.rechargeSec ?? 0, settings.batteryM?.[rider.vehicle])
+    }
     if (!rider.trip) return rider
     const tripOrders = ordersOf(rider, orders)
     const step = advanceRider(map, rider, tripOrders, dtSec, startSec, settings)

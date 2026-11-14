@@ -5,8 +5,8 @@
 import type { CityMap, NodeId } from './cityMap'
 import { randomInt, type Random } from './random'
 
-/** What a rider is doing. */
-export type RiderStatus = 'idle' | 'toRestaurant' | 'atKitchen' | 'toCustomer'
+/** What a rider is doing. toBase and charging: an electric vehicle going back to recharge its battery. */
+export type RiderStatus = 'idle' | 'toRestaurant' | 'atKitchen' | 'toCustomer' | 'toBase' | 'charging'
 
 /** The leg of the trip the rider is on: to the restaurant, or to the next customer. */
 export interface Trip {
@@ -37,12 +37,26 @@ export interface Rider {
    * stop. Delivered orders leave the list. Empty or missing when idle.
    */
   readonly orderIds?: readonly string[]
-  /** Current leg, while working on an order. */
+  /** Current leg, while working on an order (or going back to the base). */
   readonly trip?: Trip
+  /** Where the rider started the shift: their base, where an electric vehicle recharges (missing: where they are). */
+  readonly home?: NodeId
+  /** Meters of battery left, for vehicles with a battery (rangeKm in the Vehículos tab). */
+  readonly batteryM?: number
+  /** Seconds of play left to finish recharging (only while "charging"). */
+  readonly chargeLeftSec?: number
 }
 
-/** One rider per vehicle of the fleet, in order, on different addresses, none of them on a restaurant. */
-export function createRiders(map: CityMap, fleet: readonly string[], random: Random): Rider[] {
+/**
+ * One rider per vehicle of the fleet, in order, on different addresses, none of them on a restaurant. Each one's
+ * address is their base; batteryMOf gives the full battery of a vehicle that has one.
+ */
+export function createRiders(
+  map: CityMap,
+  fleet: readonly string[],
+  random: Random,
+  batteryMOf: (vehicle: string) => number | undefined = () => undefined,
+): Rider[] {
   const taken = new Set(map.restaurants.map((restaurant) => restaurant.node))
   if (fleet.length > map.addresses.length - taken.size) {
     throw new Error(`No entran ${fleet.length} repartidores en el barrio.`)
@@ -53,7 +67,9 @@ export function createRiders(map: CityMap, fleet: readonly string[], random: Ran
     if (taken.has(node)) continue
     taken.add(node)
     const number = riders.length + 1
-    riders.push({ id: `k${number}`, number, vehicle: fleet[number - 1], node, status: 'idle' })
+    const vehicle = fleet[number - 1]
+    const batteryM = batteryMOf(vehicle)
+    riders.push({ id: `k${number}`, number, vehicle, node, home: node, status: 'idle', ...(batteryM === undefined ? {} : { batteryM }) })
   }
   return riders
 }

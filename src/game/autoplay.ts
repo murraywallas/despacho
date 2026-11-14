@@ -7,6 +7,7 @@ import { networkFor } from './cityMap'
 import { capacityOf, rankRiders, restaurantOf, travelTimeSec } from './dispatch'
 import { speedOf } from './movement'
 import { parkingSecOf } from './parking'
+import { batteryShare, hasBatteryFor, isLowBattery, sendToCharge, tripMeters } from './battery'
 import { createAreaShift } from './levels'
 import { DEFAULT_NEIGHBORHOOD } from './neighborhoods'
 import { advanceShift, dispatchOrders, type ShiftSettings, type ShiftSnapshot } from './shift'
@@ -19,7 +20,27 @@ export interface BotPick {
 }
 
 /** Picks the next order and rider, or undefined to wait. */
-export type Bot = (shift: ShiftSnapshot, settings: ShiftSettings) => BotPick | undefined
+/** Sending a free rider back to base to recharge the battery. */
+export interface BotRecharge {
+  readonly rechargeRiderId: string
+}
+
+export type Bot = (shift: ShiftSnapshot, settings: ShiftSettings) => BotPick | BotRecharge | undefined
+
+/**
+ * A free rider who should recharge: the battery ran low, or it doesn't last any of the orders waiting. A careful
+ * player sends them to recharge instead of leaving them idle.
+ */
+function lowBatteryRider(shift: ShiftSnapshot, settings: ShiftSettings): BotRecharge | undefined {
+  const lowShare = settings.lowBatteryShare ?? 0
+  const waiting = pendingOrders(shift)
+  const rider = shift.riders.find((candidate) => {
+    if (candidate.status !== 'idle' || candidate.batteryM === undefined) return false
+    if (isLowBattery(candidate, batteryShare(candidate, settings.movement.batteryM?.[candidate.vehicle]), lowShare)) return true
+    return waiting.length > 0 && waiting.every((order) => !hasBatteryFor(candidate, tripMeters(shift.map, candidate, [order])))
+  })
+  return rider ? { rechargeRiderId: rider.id } : undefined
+}
 
 function pendingOrders(shift: ShiftSnapshot) {
   return shift.orderQueue.orders.filter((order) => order.status === 'pending')
@@ -37,13 +58,16 @@ export const firstComeBot: Bot = (shift) => {
  * arrive on time.
  */
 export const triageBot: Bot = (shift, settings) => {
+  const recharge = lowBatteryRider(shift, settings)
+  if (recharge) return recharge
   const now = shift.clock.elapsedSec
   const speeds = settings.movement.metersPerSec
   let best: { pick: BotPick; savable: boolean; etaSec: number } | undefined
 
   for (const order of pendingOrders(shift)) {
     const closest = rankRiders(shift.map, shift.riders, order, speeds)[0]
-    if (!closest) return undefined
+    // Nobody free can take this one (busy, or no battery for it): look at the next order.
+    if (!closest) continue
     const vehicle = closest.rider.vehicle
     const restaurant = restaurantOf(shift.map, order).node
     const ride = travelTimeSec(networkFor(shift.map, vehicle), restaurant, order.customer, speedOf(speeds, vehicle))
@@ -63,7 +87,7 @@ export const triageBot: Bot = (shift, settings) => {
  */
 export const batchingBot: Bot = (shift, settings) => {
   const pick = triageBot(shift, settings)
-  if (!pick) return undefined
+  if (!pick || 'rechargeRiderId' in pick) return pick
   const rider = shift.riders.find((candidate) => candidate.id === pick.riderId)
   const order = shift.orderQueue.orders.find((candidate) => candidate.id === pick.orderId)
   if (!rider || !order) return pick
@@ -73,6 +97,8 @@ export const batchingBot: Bot = (shift, settings) => {
     .filter((candidate) => candidate.id !== order.id && candidate.restaurantId === order.restaurantId)
     .sort((x, y) => x.deadlineAtSec - y.deadlineAtSec)
     .slice(0, room)
+    // Only what the battery lasts, if the vehicle has one.
+    .filter((_, index, list) => hasBatteryFor(rider, tripMeters(shift.map, rider, [order, ...list.slice(0, index + 1)])))
   return others.length > 0 ? { ...pick, withOrderIds: others.map((other) => other.id) } : pick
 }
 
@@ -104,6 +130,14 @@ export function autoplay(
       for (let picks = 0; picks < options.picksPerLook; picks++) {
         const pick = bot(shift, settings)
         if (!pick) break
+        if ('rechargeRiderId' in pick) {
+          const rechargeSec = settings.movement.rechargeSec ?? 0
+          shift = {
+            ...shift,
+            riders: shift.riders.map((rider) => (rider.id === pick.rechargeRiderId ? sendToCharge(shift.map, rider, rechargeSec) : rider)),
+          }
+          continue
+        }
         const orderIds = [pick.orderId, ...(pick.withOrderIds ?? [])]
         const result = dispatchOrders(shift.map, shift.orderQueue, shift.riders, orderIds, pick.riderId)
         if (!result) break
