@@ -302,5 +302,8 @@
   "riders.attention": "Acaba de quedar libre",
   "riders.freeIn": "Libre en ~{minutes} min",
   "riders.refusedBusy": "Repartidor {rider} ocupado · libre en ~{minutes} min",
-  "riders.refusedFull": "No le entra otro pedido"
+  "riders.refusedFull": "No le entra otro pedido",
+  "map.firstFree": "El primero que se libera: Repartidor {rider}, en ~{minutes} min.",
+  "garage.nextLevel": "{count} entregas para el nivel {level}",
+  "garage.nextLevelOne": "1 entrega para el nivel {level}"
 }

@@ -4,7 +4,7 @@ import { advanceFleet, startTrip } from '../../src/game/movement'
 import type { Order } from '../../src/game/orders'
 import type { Rider } from '../../src/game/riders'
 import { shiftSettingsFrom } from '../../src/game/shift'
-import { freeAtSec, stopEtas } from '../../src/game/stops'
+import { firstFree, freeAtSec, stopEtas } from '../../src/game/stops'
 import { useShiftStore } from '../../src/store/shiftStore'
 
 const settings = shiftSettingsFrom(balanceFor('lunch'))
@@ -64,6 +64,29 @@ describe('cuándo queda libre un repartidor ocupado', () => {
     expect(freeAtSec(shift.map, { ...rider, status: 'charging', chargeLeftSec: 20 }, [], speeds, 100)).toBe(120)
     const back: Rider = { ...rider, status: 'toBase', trip: { path: [0, 1], pathMeters: [0, 300], traveledM: 100, kitchenLeftSec: 0 } }
     expect(freeAtSec(shift.map, back, [], speeds, 100, 60)).toBeCloseTo(100 + 200 / speeds[rider.vehicle] + 60)
+  })
+})
+
+describe('quién se libera primero', () => {
+  test('el ocupado que termina antes; los libres no cuentan', () => {
+    const { shift, order, going } = lunchTrip()
+    const [, second, third] = shift.riders
+    const charging: Rider = { ...second, status: 'charging', chargeLeftSec: 5 }
+    expect(firstFree(shift.map, [going, charging, third], [order], speeds, 0)).toEqual({ rider: charging, atSec: 5 })
+    // Sin la recarga corta, el que viaja.
+    expect(firstFree(shift.map, [going, third], [order], speeds, 0)).toEqual({
+      rider: going,
+      atSec: freeAtSec(shift.map, going, [order], speeds, 0),
+    })
+    expect(firstFree(shift.map, [third], [order], speeds, 0)).toBeUndefined()
+  })
+
+  test('solo los que pueden llevar todos los pedidos elegidos', () => {
+    const { shift } = lunchTrip()
+    const small = shift.riders.find((rider) => rider.vehicle === 'skateboard')!
+    const charging: Rider = { ...small, status: 'charging', chargeLeftSec: 5 }
+    expect(firstFree(shift.map, [charging], [], speeds, 0, 1)).toBeDefined()
+    expect(firstFree(shift.map, [charging], [], speeds, 0, 2)).toBeUndefined()
   })
 })
 

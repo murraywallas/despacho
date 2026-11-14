@@ -72,3 +72,10 @@ export function levelProgress(xp: number, rules: ExperienceRules): number {
   if (levelOf(xp, rules) >= rules.maxLevel) return 1
   return (Math.max(0, xp) % rules.xpPerLevel) / rules.xpPerLevel
 }
+
+/** Deliveries a rider still needs for the next level; undefined at the top level. */
+export function deliveriesToNextLevel(xp: number, rules: ExperienceRules): number | undefined {
+  const level = levelOf(xp, rules)
+  if (level >= rules.maxLevel) return undefined
+  return Math.ceil(((level + 1) * rules.xpPerLevel - Math.max(0, xp)) / rules.xpPerDelivery)
+}

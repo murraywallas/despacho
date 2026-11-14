@@ -4,8 +4,8 @@ import { prototype, SHIFT_URL, shiftEndsAt, shiftStartsAt } from './balance.ts'
 // El turno de 5 minutos se acorta con el reloj falso de Playwright: corre en 2x y se adelanta de golpe.
 test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
 
-test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia todo', async ({ page }) => {
-  // Plata de sobra: "Jugar otra vez" repite el turno con la misma flota (sin plata, vuelve al briefing).
+test('al terminar el turno aparecen los resultados y "Jugar otra vez" vuelve al briefing para reiniciar todo', async ({ page }) => {
+  // Plata de sobra: la misma flota se puede pagar.
   await page.addInitScript(() => {
     if (!localStorage.getItem('despacho-progress')) {
       localStorage.setItem('despacho-progress', JSON.stringify({ state: { moneyKr: 100_000 }, version: 0 }))
@@ -37,6 +37,11 @@ test('al terminar el turno aparecen los resultados y "Jugar otra vez" reinicia t
   // El botón tiene el foco: Enter alcanza para volver a jugar.
   await expect(results.getByRole('button', { name: 'Jugar otra vez' })).toBeFocused()
   await page.keyboard.press('Enter')
+
+  // Pasa por el briefing, con el garage a mano para cambiar la flota.
+  const briefing = page.getByTestId('briefing')
+  await expect(briefing.getByRole('button', { name: 'Garage' })).toBeVisible()
+  await briefing.getByRole('button', { name: 'Empezar turno' }).click()
 
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(page.getByTestId('shift-time')).toHaveText(shiftStartsAt)

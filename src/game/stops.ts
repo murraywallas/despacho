@@ -5,7 +5,7 @@
  * reaches the customer (not by who gets to the restaurant first). Pure.
  */
 import { networkFor, type CityMap, type NodeId } from './cityMap'
-import { rankRiders, restaurantOf, travelTimeSec, type RankedRider } from './dispatch'
+import { capacityOf, rankRiders, restaurantOf, travelTimeSec, type RankedRider } from './dispatch'
 import { hasBatteryFor, tripMeters } from './battery'
 import { ordersOf, riderSpeed, startTrip, type Speeds } from './movement'
 import type { Order } from './orders'
@@ -124,4 +124,27 @@ export function freeAtSec(
     return nowSec + (trip.pathMeters[trip.pathMeters.length - 1] - trip.traveledM) / riderSpeed(speeds, rider) + rechargeSec
   }
   return stopEtas(map, rider, orders, speeds, nowSec).at(-1)?.atSec
+}
+
+/**
+ * The busy rider who will be free first and whose vehicle carries count orders, with the second they will be: what
+ * to wait for when nobody is free. Undefined when no busy rider fits.
+ */
+export function firstFree(
+  map: CityMap,
+  riders: readonly Rider[],
+  orders: readonly Order[],
+  speeds: Speeds,
+  nowSec: number,
+  count = 1,
+  rechargeSec = 0,
+): { rider: Rider; atSec: number } | undefined {
+  let best: { rider: Rider; atSec: number } | undefined
+  for (const rider of riders) {
+    if (rider.status === 'idle' || capacityOf(rider.vehicle) < count) continue
+    const atSec = freeAtSec(map, rider, orders, speeds, nowSec, rechargeSec)
+    if (atSec === undefined) continue
+    if (!best || atSec < best.atSec || (atSec === best.atSec && rider.number < best.rider.number)) best = { rider, atSec }
+  }
+  return best
 }
