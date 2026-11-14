@@ -51,6 +51,10 @@ export interface PrototypeBalance {
   readonly riders: {
     /** One rider per vehicle, in order: ids from the Vehículos tab separated by commas ("bike, skateboard"). */
     readonly fleet: string
+    /** Seconds of play a battery takes to recharge at the rider's base (optional). */
+    readonly rechargeSec?: number
+    /** Below this share of its charge, a battery is shown as low (0.2 = 20 %). */
+    readonly lowBatteryPct?: number
   }
   readonly heat: {
     /** Heat of the food when the kitchen has it ready. */
@@ -210,7 +214,7 @@ export function levelBalance(base: PrototypeBalance, level: LevelBalance): Proto
       count: level.restaurants,
       ...(level.zone ? { zone: level.zone, zoneRestaurants: level.zoneRestaurants, zoneRadiusM: level.zoneRadiusM } : {}),
     },
-    riders: { fleet: level.fleet.join(', ') },
+    riders: { ...base.riders, fleet: level.fleet.join(', ') },
     orders: {
       ...base.orders,
       spawnIntervalSec: level.spawnIntervalSec,

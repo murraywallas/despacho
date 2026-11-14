@@ -6,6 +6,7 @@
  */
 import { networkFor, type CityMap, type NodeId } from './cityMap'
 import { rankRiders, restaurantOf, travelTimeSec, type RankedRider } from './dispatch'
+import { hasBatteryFor, tripMeters } from './battery'
 import { ordersOf, speedOf, startTrip, type Speeds } from './movement'
 import type { Order } from './orders'
 import { parkingSecOf } from './parking'
@@ -76,7 +77,7 @@ export interface DeliveryOption extends RankedRider {
 }
 
 /**
- * Free riders whose vehicle carries the whole trip, by when the first order would reach its customer (ties: lower
+ * Free riders whose vehicle carries the whole trip and whose battery (if any) lasts it, by when the first order would reach its customer (ties: lower
  * number first). Riders who can't get there at all are left out.
  */
 export function rankByDelivery(
@@ -89,6 +90,7 @@ export function rankByDelivery(
   const [first] = trip
   if (!first) return []
   return rankRiders(map, riders, first, speeds, trip.length)
+    .filter((ranked) => ranked.rider.batteryM === undefined || hasBatteryFor(ranked.rider, tripMeters(map, ranked.rider, trip)))
     .flatMap((ranked) => {
       const eta = plannedEtas(map, ranked.rider, trip, speeds, nowSec)[0]
       if (!eta || !Number.isFinite(eta.atSec)) return []

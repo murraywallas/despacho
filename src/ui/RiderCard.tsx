@@ -8,6 +8,7 @@ import { DeliveryEta } from './DeliveryEta'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
+import { RiderBattery } from './RiderBattery'
 import { RiderStops } from './RiderStops'
 import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
 
@@ -20,6 +21,8 @@ const STATUS_TEXT: Record<RiderStatus, TextKey> = {
   toRestaurant: 'riders.status.toRestaurant',
   atKitchen: 'riders.status.atKitchen',
   toCustomer: 'riders.status.toCustomer',
+  toBase: 'riders.status.toBase',
+  charging: 'riders.status.charging',
 }
 
 export interface RiderCardProps {
@@ -37,6 +40,8 @@ export interface RiderCardProps {
   canPick: boolean
   /** Free, but the vehicle doesn't carry that many orders. */
   tooSmallFor?: number
+  /** Free, but the battery doesn't last the trip: picking the rider sends them back to recharge. */
+  noBattery?: boolean
   selected: boolean
   /** While an order is dragged: true if dropping it here dispatches it, false if this rider can't take it. */
   dropTarget?: boolean
@@ -52,7 +57,7 @@ export interface RiderCardProps {
  * would reach its customer with them. A free rider can be dragged onto an order, and an order dropped on them.
  */
 export function RiderCard(props: RiderCardProps) {
-  const { rider, delivery, trip, orders, nowSec, canPick, tooSmallFor, selected, dropTarget, onPick } = props
+  const { rider, delivery, trip, orders, nowSec, canPick, tooSmallFor, noBattery, selected, dropTarget, onPick } = props
   const dragRider = usePointerStore((state) => state.dragRider)
   const draggedOrderId = usePointerStore((state) => state.draggedOrderId)
   const reassignable = trip.filter((stop) => stop.status === 'assigned')
@@ -101,9 +106,15 @@ export function RiderCard(props: RiderCardProps) {
             </span>
           </span>
           <span className="rider-card__status">
+            <RiderBattery rider={rider} />
             {t(STATUS_TEXT[rider.status])}
             {trip.length === 1 && ` · ${t('riders.carrying', { number: order.number })}`}
             {trip.length > 1 && ` · ${t('riders.carryingMany', { count: trip.length })}`}
+            {rider.status === 'charging' && rider.chargeLeftSec !== undefined && (
+              <span className="rider-card__kitchen">
+                {t('riders.kitchenLeft', { minutes: gameMinutes(rider.chargeLeftSec, gameTime) })}
+              </span>
+            )}
             {rider.status === 'atKitchen' && rider.trip && (
               <span className="rider-card__kitchen">
                 {t('riders.kitchenLeft', { minutes: gameMinutes(rider.trip.kitchenLeftSec, gameTime) })}
@@ -112,6 +123,7 @@ export function RiderCard(props: RiderCardProps) {
           </span>
           {order && isReady(order, nowSec) && <FoodHeat order={order} nowSec={nowSec} />}
           {tooSmallFor !== undefined && <span className="rider-card__note">{t('riders.tooSmall', { count: tooSmallFor })}</span>}
+          {noBattery && <span className="rider-card__note">{t('riders.noBattery')}</span>}
         </span>
         {delivery && <DeliveryEta className="rider-card__eta" inSec={delivery.inSec} late={delivery.late} />}
       </button>

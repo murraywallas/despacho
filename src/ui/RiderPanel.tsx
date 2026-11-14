@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { prototype } from '../game/balance'
+import { hasBatteryFor, tripMeters } from '../game/battery'
 import { capacityOf } from '../game/dispatch'
 import { ordersOf } from '../game/movement'
 import type { Rider } from '../game/riders'
@@ -49,6 +50,10 @@ export function RiderPanel() {
   }, [map, riders, orders, selectedOrder, addedOrderIds, onTheWay, nowSec])
   const deliveryOf = new Map(ranked.map((entry) => [entry.rider.id, { inSec: entry.deliverAtSec - nowSec, late: entry.late }]))
   const fits = (rider: Rider) => capacityOf(rider.vehicle) >= Math.max(1, count)
+  // Free and big enough, but the battery won't last the trip (rider, restaurant and every customer).
+  const pickedTrip = selectedOrder ? [selectedOrder, ...addedOrderIds.flatMap((id) => orders.find((order) => order.id === id) ?? [])] : []
+  const lacksBattery = (rider: Rider) =>
+    rider.batteryM !== undefined && pickedTrip.length > 0 && !hasBatteryFor(rider, tripMeters(map, rider, pickedTrip))
   // Dragging an order: free riders whose vehicle carries the trip (the whole batch, if the order is in it).
   const draggedCount =
     draggedOrderId && selectedOrderIds({ selectedOrderId, addedOrderIds }).includes(draggedOrderId) ? count : 1
@@ -95,6 +100,7 @@ export function RiderPanel() {
             nowSec={nowSec}
             canPick={rider.status === 'idle' && fits(rider) && !onTheWay}
             tooSmallFor={rider.status === 'idle' && !fits(rider) && !onTheWay ? count : undefined}
+            noBattery={rider.status === 'idle' && fits(rider) && !onTheWay && lacksBattery(rider)}
             selected={rider.id === selectedRiderId}
             dropTarget={draggedOrderId ? canTakeDragged(rider) : undefined}
             onPick={pickRider}

@@ -406,3 +406,25 @@
 .order-suggestion:active {
   transform: scale(0.98);
 }
+
+/* Batería del monopatín: ícono y porcentaje; en rojo y con texto cuando queda poca. */
+.rider-battery {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 6px;
+  white-space: nowrap;
+  vertical-align: middle;
+  color: var(--ink-quiet);
+  font-family: var(--font-mono);
+  font-size: calc(12px * var(--text-scale));
+  font-variant-numeric: tabular-nums;
+}
+
+.rider-battery--low {
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+  background: var(--late-bg);
+  color: var(--late);
+  font-weight: 700;
+}
