@@ -1,6 +1,7 @@
 import { UtensilsCrossed } from 'lucide-react'
 import type { MapMarker } from '../map/mapData'
 import { VehicleIcon } from './VehicleIcon'
+import './tripStops.css'
 
 /**
  * What a marker looks like. Restaurants and riders are small cards with a point at the bottom that marks the
@@ -35,6 +36,7 @@ export function MapMarkerContent({ marker }: { marker: MapMarker }) {
   return (
     <span className={`map-dot map-dot--${marker.urgency ?? 'normal'}`} aria-hidden>
       {marker.label}
+      {marker.stop !== undefined && <span className="map-dot__stop">{marker.stop}</span>}
     </span>
   )
 }

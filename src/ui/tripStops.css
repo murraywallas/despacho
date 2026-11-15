@@ -1,0 +1,37 @@
+/* Paradas de un viaje con varios pedidos: el número de parada sobre el punto de cada cliente. */
+
+.map-dot:has(.map-dot__stop) {
+  position: relative;
+}
+
+.map-dot__stop {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border: 1.5px solid var(--surface);
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.map-popup__trip-stops {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.map-popup__trip-stop {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+}

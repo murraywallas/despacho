@@ -156,7 +156,10 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
         return marker.waiting ? t('map.waiting', { name, count: marker.waiting.count }) : name
       }
       if (marker.kind === 'customer') {
-        const name = t('map.customer', { number: marker.label })
+        const name =
+          marker.stop === undefined
+            ? t('map.customer', { number: marker.label })
+            : t('map.customerStop', { number: marker.label, stop: marker.stop })
         // The dot's color and shape say how urgent it is; the name says it too.
         if (marker.urgency === 'late') return `${name} · ${t('orders.lateTag')}`
         if (marker.urgency === 'urgent') return `${name} · ${t('orders.urgentTag')}`

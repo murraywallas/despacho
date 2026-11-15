@@ -23,6 +23,16 @@ test('la bici arma un viaje de 2 pedidos con Shift, se cambia el orden y entrega
   await expect(popup).toContainText('2 pedidos elegidos')
   await expect(popupOrders.nth(1)).toHaveAttribute('aria-pressed', 'true')
 
+  // Antes de confirmar: cuándo llegaría cada uno, parada por parada, y los clientes numerados en el mapa.
+  const tripStops = popup.getByTestId('popup-trip-stop')
+  await expect(tripStops).toHaveCount(2)
+  await expect(tripStops.nth(0)).toContainText(/^1\. Pedido #\d+/)
+  await expect(tripStops.nth(1)).toContainText(/^2\. Pedido #\d+/)
+  await expect(map.getByRole('button', { name: /parada 1 del viaje/ })).toHaveCount(1)
+  await expect(map.getByRole('button', { name: /parada 2 del viaje/ })).toHaveCount(1)
+  // La barra nombra los dos pedidos.
+  await expect(page.getByTestId('selection-bar')).toContainText(/Pedidos #\d+ y #\d+/)
+
   // Solo la bici lleva 2: es la única que aparece para elegir.
   const riders = popup.getByTestId('popup-rider')
   await expect(riders).toHaveCount(1)

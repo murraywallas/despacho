@@ -148,3 +148,22 @@ export function firstFree(
   }
   return best
 }
+
+/** One order of a planned trip: when it would reach its customer, and whether that is past its deadline. */
+export interface TripArrival {
+  readonly order: Order
+  readonly atSec: number
+  readonly late: boolean
+}
+
+/**
+ * When each order of a trip not yet given would reach its customer with this rider, in delivery order. Empty when
+ * the rider can't get there.
+ */
+export function tripArrivals(map: CityMap, rider: Rider, trip: readonly Order[], speeds: Speeds, nowSec: number): TripArrival[] {
+  const etas = plannedEtas(map, rider, trip, speeds, nowSec)
+  return etas.flatMap(({ orderId, atSec }) => {
+    const order = trip.find((candidate) => candidate.id === orderId)
+    return order ? [{ order, atSec, late: atSec > order.deadlineAtSec }] : []
+  })
+}
