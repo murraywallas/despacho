@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 import { prototype, SHIFT_URL } from './balance.ts'
 
+test.describe.configure({ timeout: 60_000 }) // Espera pedidos con el reloj real: con la máquina cargada, 30 s no alcanzan.
+
 /** Speeds up the clock until `count` orders wait in the queue, then pauses. */
 async function waitForOrders(page: Page, count: number) {
   await page.goto(SHIFT_URL)

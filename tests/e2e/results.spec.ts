@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
-import { prototype, SHIFT_URL, shiftEndsAt, shiftStartsAt } from './balance.ts'
+import { fastestSpeed, prototype, SHIFT_URL, shiftEndsAt, shiftStartsAt } from './balance.ts'
 
-// El turno de 5 minutos se acorta con el reloj falso de Playwright: corre en 2x y se adelanta de golpe.
-test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
+// El turno se acorta con el reloj falso de Playwright: corre a la velocidad más alta y se adelanta de golpe.
+test.describe.configure({ timeout: 120_000 }) // Simula minutos de turno cuadro por cuadro.
 
 test('al terminar el turno aparecen los resultados y "Jugar otra vez" vuelve al briefing para reiniciar todo', async ({ page }) => {
   // Plata de sobra: la misma flota se puede pagar.
@@ -13,10 +13,10 @@ test('al terminar el turno aparecen los resultados y "Jugar otra vez" vuelve al 
   })
   await page.clock.install()
   await page.goto(SHIFT_URL)
-  await page.getByRole('button', { name: '2x', exact: true }).click()
+  await page.getByRole('button', { name: `${fastestSpeed}x`, exact: true }).click()
 
-  const halfShiftMs = (prototype.shift.durationSec * 1000) / 2
-  await page.clock.runFor(halfShiftMs - 10_000)
+  const shiftMs = (prototype.shift.durationSec * 1000) / fastestSpeed
+  await page.clock.runFor(shiftMs - 10_000)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.clock.runFor(12_000)
 

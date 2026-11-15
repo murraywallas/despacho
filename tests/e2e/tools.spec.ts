@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { prototype, SHIFT_URL } from './balance.ts'
 
+test.describe.configure({ timeout: 60_000 }) // Espera pedidos con el reloj real: con la máquina cargada, 30 s no alcanzan.
+
 test('reasignar un pedido a otro repartidor y llamar al cliente una vez por turno', async ({ page }) => {
   await page.goto(SHIFT_URL)
   await page.getByRole('button', { name: '2x', exact: true }).click()

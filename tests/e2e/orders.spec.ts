@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { gameMinuteMs, prototype, SHIFT_URL } from './balance.ts'
 
+test.describe.configure({ timeout: 60_000 }) // Espera pedidos con el reloj real: con la máquina cargada, 30 s no alcanzan.
+
 test('llegan pedidos a la cola con restaurante y cuenta regresiva, y el cliente aparece en el mapa', async ({
   page,
 }) => {

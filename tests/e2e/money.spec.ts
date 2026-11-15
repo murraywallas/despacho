@@ -1,5 +1,5 @@
 ﻿import { expect, test } from '@playwright/test'
-import { fleetCostKr, prototype, startingKr } from './balance.ts'
+import { fastestSpeed, fleetCostKr, prototype, startingKr } from './balance.ts'
 
 test.describe.configure({ timeout: 90_000 }) // Juega un turno entero con el reloj falso.
 
@@ -11,8 +11,8 @@ test('los resultados muestran el dinero del turno y el total queda guardado al r
   await page.goto('/')
   await page.getByTestId('level-card').first().click()
   await page.getByRole('button', { name: 'Empezar turno' }).click()
-  await page.getByRole('button', { name: '2x', exact: true }).click()
-  await page.clock.runFor((prototype.shift.durationSec * 1000) / 2 + 2000)
+  await page.getByRole('button', { name: `${fastestSpeed}x`, exact: true }).click()
+  await page.clock.runFor((prototype.shift.durationSec * 1000) / fastestSpeed + 2000)
   await expect(page.getByTestId('results')).toBeVisible()
 
   // Sin despachar nada no entra plata, pero la flota se paga igual.

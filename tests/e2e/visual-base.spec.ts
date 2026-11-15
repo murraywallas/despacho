@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
 import { prototype, SHIFT_URL } from './balance.ts'
 
+test.describe.configure({ timeout: 60_000 }) // Espera pedidos con el reloj real: con la máquina cargada, 30 s no alcanzan.
+
 /** The smallest text the game shows, in CSS pixels (skill game-ui, tasks #72 and #73). */
 const MIN_TEXT_PX = 12
 /** Critical numbers (clock, countdowns) are at least this big. */

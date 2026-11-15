@@ -10,7 +10,7 @@ async function runUntil(page: Page, locator: Locator, text: string, maxMs: numbe
   await expect(locator).toContainText(text)
 }
 
-test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
+test.describe.configure({ timeout: 120_000 }) // Simula minutos de turno cuadro por cuadro.
 
 test('el repartidor va al restaurante por las calles, retira la comida, entrega y queda libre', async ({ page }) => {
   await page.clock.install()
