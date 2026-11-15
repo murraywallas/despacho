@@ -1,4 +1,5 @@
 import { Menu, Phone } from 'lucide-react'
+import { shownSec } from '../game/clock'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
 import { ConditionsSlot } from './ConditionsSlot'
@@ -27,8 +28,14 @@ export function TopBar({ onShowShortcuts, onOpenMenu }: TopBarProps) {
   const levelId = useShiftStore((state) => state.levelId)
   const gameTime = gameTimeOf(levelId)
 
-  const status = clock.finished ? t('topbar.finished') : clock.paused ? t('topbar.paused') : null
-  const now = formatGameTime(clock.elapsedSec, gameTime)
+  const status = clock.finished
+    ? t('topbar.finished')
+    : clock.closing
+      ? t('topbar.closing')
+      : clock.paused
+        ? t('topbar.paused')
+        : null
+  const now = formatGameTime(shownSec(clock), gameTime)
   const end = formatGameTime(clock.durationSec, gameTime)
 
   return (

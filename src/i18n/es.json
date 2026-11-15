@@ -310,5 +310,6 @@
   "weather.swapped": "{name}: la flota sugerida sale en {to} en vez de {slow}, que se frenan mucho.",
   "weather.keep": "{name}: en {slow} se va mucho más lento. Conviene salir en {to}.",
   "results.money.salaries": "Sueldos",
-  "garage.salary": "sueldo {cost}"
+  "garage.salary": "sueldo {cost}",
+  "topbar.closing": "Cerrando el turno…"
 }

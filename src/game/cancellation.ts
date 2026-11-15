@@ -39,7 +39,8 @@ function cancelOrders(
 }
 
 /**
- * Cancels every open order whose cancel time has come by second of the shift nowSec, and frees its rider.
+ * Cancels every open order whose cancel time has come by second of the shift nowSec, and frees its rider. Food
+ * already picked up is never cancelled: it arrives late (and maybe cold), and counts as that.
  * Returns the same arrays when nothing was cancelled.
  */
 export function cancelExpired(
@@ -48,18 +49,27 @@ export function cancelExpired(
   nowSec: number,
   cancelAfterSec: number,
 ): { orders: readonly Order[]; riders: readonly Rider[] } {
-  const expired = orders.filter((order) => isOpen(order) && nowSec >= cancelAtSec(order, cancelAfterSec))
+  const expired = orders.filter(
+    (order) => isOpen(order) && order.status !== 'pickedUp' && nowSec >= cancelAtSec(order, cancelAfterSec),
+  )
   return cancelOrders(orders, riders, new Map(expired.map((order) => [order.id, cancelAtSec(order, cancelAfterSec)])))
 }
 
 /**
- * The shift closes: every order still open (waiting, on its way) counts as cancelled, at the closing second.
- * Returns the same arrays when everything was already delivered or cancelled.
+ * The shift closes: every order still open and not picked up (waiting, or a rider on the way to the restaurant)
+ * counts as cancelled, at the closing second. Food already picked up is still delivered.
+ * Returns the same arrays when nothing had to be cancelled.
  */
 export function closeShift(
   orders: readonly Order[],
   riders: readonly Rider[],
   closingSec: number,
 ): { orders: readonly Order[]; riders: readonly Rider[] } {
-  return cancelOrders(orders, riders, new Map(orders.filter(isOpen).map((order) => [order.id, closingSec])))
+  const notPickedUp = orders.filter((order) => isOpen(order) && order.status !== 'pickedUp')
+  return cancelOrders(orders, riders, new Map(notPickedUp.map((order) => [order.id, closingSec])))
+}
+
+/** Some rider still carries food to a customer. */
+export function hasFoodOnTheWay(orders: readonly Order[]): boolean {
+  return orders.some((order) => order.status === 'pickedUp')
 }
