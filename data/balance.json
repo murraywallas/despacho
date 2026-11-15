@@ -91,8 +91,8 @@
     "pedestrianFactor": 1.5
   },
   "economy": {
-    "deliveryPayKr": 40,
-    "tipPerStarKr": 5,
+    "deliveryPayKr": 30,
+    "tipPerStarKr": 4,
     "startingKr": 600,
     "startingRiders": 3,
     "hireRiderKr": 200
