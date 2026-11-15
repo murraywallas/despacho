@@ -1,0 +1,59 @@
+/* Barra del promedio del turno, con las marcas de "se pierde" y "se gana". */
+
+.rating-bar {
+  position: relative;
+  margin: 4px 0 18px;
+}
+
+.rating-bar__track {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: visible;
+}
+
+.rating-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--ink-quiet);
+}
+
+.results--win .rating-bar__fill {
+  background: var(--win);
+}
+
+.results--close .rating-bar__fill {
+  background: var(--urgent);
+}
+
+.results--lose .rating-bar__fill {
+  background: var(--late);
+}
+
+.rating-bar__mark {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+  background: var(--ink);
+}
+
+.rating-bar__labels {
+  position: relative;
+  display: block;
+  height: calc(16px * var(--text-scale));
+  margin-top: 4px;
+}
+
+.rating-bar__label {
+  position: absolute;
+  transform: translateX(-50%);
+  color: var(--ink-quiet);
+  font-family: var(--font-mono);
+  font-size: calc(12px * var(--text-scale));
+  font-variant-numeric: tabular-nums;
+}

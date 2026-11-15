@@ -66,6 +66,29 @@ export function isUnlocked(
   return index === 0 || (progress[own[index - 1]] ?? 0) >= unlockAvgRating
 }
 
+/** What winning a level would open next: a level, or a neighborhood. */
+export type NextToOpen = { readonly kind: 'level' | 'neighborhood'; readonly id: string }
+
+/**
+ * What is still closed right after this level: the next level of its neighborhood or, after the last one, the next
+ * neighborhood. Undefined when that is already open, or there is nothing after it.
+ */
+export function nextToOpen(
+  ids: readonly string[],
+  progress: Progress,
+  levelId: string,
+  unlockAvgRating: number,
+): NextToOpen | undefined {
+  const neighborhood = neighborhoodOf(levelId)
+  const own = levelsOf(neighborhood, ids)
+  const following = own[own.indexOf(levelId) + 1]
+  if (following) return isUnlocked(ids, progress, following, unlockAvgRating) ? undefined : { kind: 'level', id: following }
+  const order = levelNeighborhoods(ids)
+  const nextArea = order[order.indexOf(neighborhood) + 1]
+  if (!nextArea || isNeighborhoodOpen(ids, progress, nextArea, unlockAvgRating)) return undefined
+  return { kind: 'neighborhood', id: nextArea }
+}
+
 /** Keeps the best result of each level. Returns the same progress when the new result is not better. */
 export function recordResult(progress: Progress, levelId: string, average: number): Progress {
   const best = progress[levelId]

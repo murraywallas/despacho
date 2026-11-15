@@ -1,6 +1,6 @@
 import { ArrowRight, List, RotateCcw, Star } from 'lucide-react'
 import { levelIds, progression, prototype, shift } from '../game/balance'
-import { isUnlocked, nextLevel } from '../game/levels'
+import { isUnlocked, nextLevel, nextToOpen } from '../game/levels'
 import { averageLost, biggestLoss, starsLost, summarizeShift, type ShiftOutcome, type StarsLost } from '../game/results'
 import { t, type TextKey } from '../i18n'
 import { useProgressStore } from '../store/progressStore'
@@ -9,6 +9,8 @@ import { useShiftStore } from '../store/shiftStore'
 import { formatRating } from './formatRating'
 import { moneyOfShift } from './moneyOfShift'
 import { ShiftMoneySummary } from './ShiftMoneySummary'
+import { RatingBar } from './RatingBar'
+import { levelName, neighborhoodName } from './levelText'
 import './ResultsScreen.css'
 
 const STAR_SIZE = 28
@@ -51,6 +53,17 @@ export function ResultsScreen() {
   const next =
     following && isUnlocked(levelIds, best, following, progression.unlockAvgRating) ? following : undefined
   const rating = formatRating(results.average)
+  // Almost there: the title says what the goal would have opened, so "close" never reads like a pass.
+  const goal = formatRating(progression.unlockAvgRating)
+  const toOpen = levelId === null ? undefined : nextToOpen(levelIds, best, levelId, progression.unlockAvgRating)
+  const title =
+    results.outcome !== 'close'
+      ? t(OUTCOME_TEXT[results.outcome])
+      : toOpen?.kind === 'level'
+        ? t('results.outcome.closeLevel', { goal, level: levelName(toOpen.id) })
+        : toOpen?.kind === 'neighborhood'
+          ? t('results.outcome.closeNeighborhood', { goal, neighborhood: neighborhoodName(toOpen.id) })
+          : t('results.outcome.close', { goal: formatRating(shift.winAtLeast) })
   // In a level, the same level again through its briefing: the garage is one click away, to change what didn't work.
   const playAgain = levelId === null ? restartShift : () => showBriefing(levelId)
 
@@ -72,7 +85,7 @@ export function ResultsScreen() {
       >
         <p className="results__eyebrow">{t('topbar.finished')}</p>
         <h2 className="results__title" id="results-title">
-          {t(OUTCOME_TEXT[results.outcome])}
+          {title}
         </h2>
 
         <p className="results__rating" role="img" aria-label={t('results.ratingLabel', { rating, max: prototype.rating.max })}>
@@ -84,6 +97,8 @@ export function ResultsScreen() {
             {t('results.ratingMax', { max: prototype.rating.max })}
           </span>
         </p>
+
+        <RatingBar average={results.average} />
 
         <p className="results__outcome" id="results-outcome">
           {t('results.thresholds', {
