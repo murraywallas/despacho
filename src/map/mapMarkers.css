@@ -26,6 +26,11 @@
   cursor: default;
 }
 
+/* Restaurantes muy juntos: el mapa corre sus tarjetas hacia los costados para que no se pisen. */
+.map-marker--restaurant > .map-pin {
+  translate: var(--spread-x, 0) 0;
+}
+
 /* Tarjeta con punta: restaurantes y repartidores. La punta marca el lugar exacto. */
 .map-pin {
   --edge: #ffffff;
