@@ -8,6 +8,8 @@ import { t } from '../i18n'
 
 import { speedsAt, useShiftStore } from '../store/shiftStore'
 import { DeliveryEta } from './DeliveryEta'
+import { TripArrivals } from './TripArrivals'
+import './tripStops.css'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
@@ -112,6 +114,9 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
         <>
           {(picked > 1 || waiting.length > 1) && (
             <p className="map-popup__note">{picked > 1 ? t('map.pickedCount', { count: picked }) : t('orders.addHint')}</p>
+          )}
+          {picked > 1 && ranked[0] && (
+            <TripArrivals map={map} rider={ranked[0].rider} trip={trip} speeds={speedsAt(nowSec)} nowSec={nowSec} />
           )}
           <p className="map-popup__note">{ranked.length > 0 ? t('map.closestRiders') : t('map.noFreeRiders')}</p>
           {waitFor && (

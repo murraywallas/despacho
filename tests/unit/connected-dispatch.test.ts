@@ -29,6 +29,17 @@ describe('el mapa sigue a la cola', () => {
     ])
   })
 
+  test('con varios pedidos para un viaje, cada cliente lleva su número de parada', () => {
+    const one = buildMarkers(map, orders, [], { orderIds: ['o2'], riderId: null }, urgency)
+    expect(one.filter((marker) => marker.stop !== undefined)).toEqual([])
+    const trip = buildMarkers(map, orders, [], { orderIds: ['o3', 'o1'], riderId: null }, urgency)
+    expect(trip.filter((marker) => marker.kind === 'customer').map((marker) => [marker.id, marker.stop])).toEqual([
+      ['o1', 2],
+      ['o2', undefined],
+      ['o3', 1],
+    ])
+  })
+
   test('el pedido bajo el mouse ilumina su restaurante y su cliente', () => {
     const markers = buildMarkers(map, orders, [], { orderIds: [], riderId: null, hoveredOrderId: 'o2' }, urgency)
     const lit = markers.filter((marker) => marker.highlighted).map((marker) => marker.key)

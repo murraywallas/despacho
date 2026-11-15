@@ -314,5 +314,9 @@
   "topbar.closing": "Cerrando el turno…",
   "results.outcome.closeLevel": "Casi: necesitás {goal} para abrir {level}",
   "results.outcome.closeNeighborhood": "Casi: necesitás {goal} de promedio en el barrio para abrir {neighborhood}",
-  "results.barLabel": "Promedio {rating} de {max}. Con menos de {lose} se pierde; con {win} o más se gana."
+  "results.barLabel": "Promedio {rating} de {max}. Con menos de {lose} se pierde; con {win} o más se gana.",
+  "map.tripWith": "Con el repartidor {rider}, en este orden (minutos hasta cada cliente):",
+  "map.tripStop": "{stop}. Pedido #{number}",
+  "map.customerStop": "Cliente del pedido #{number} · parada {stop} del viaje",
+  "selection.orders": "Pedidos {numbers}"
 }

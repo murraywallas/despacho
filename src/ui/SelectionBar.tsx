@@ -10,6 +10,12 @@ import { Keycap } from './Keycap'
 import { restaurantName } from './restaurantName'
 import { useNeighborhood } from './useNeighborhood'
 
+/** "#3 y #4", "#3, #4 y #5": the orders of a trip, the Spanish way. */
+function listNumbers(picked: readonly { readonly number: number }[]): string {
+  const names = picked.map((order) => `#${order.number}`)
+  return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} ${t('list.and')} ${names.at(-1)}`
+}
+
 /**
  * A strip over the map while an order is picked: what it is, what can be done with it now, and the call to the
  * customer (once per shift, key L) to buy more time.
@@ -21,6 +27,7 @@ export function SelectionBar() {
   const neighborhood = useNeighborhood()
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
+  const addedOrderIds = useShiftStore((state) => state.addedOrderIds)
   const callsLeft = useShiftStore((state) => state.callsLeft)
   const callCustomer = useShiftStore((state) => state.callCustomer)
   const clearSelection = useShiftStore((state) => state.clearSelection)
@@ -45,7 +52,11 @@ export function SelectionBar() {
     <div className="selection-bar" role="status" aria-live="polite" data-testid="selection-bar">
       <div className="selection-bar__text">
         <span className="selection-bar__title">
-          {t('orders.number', { number: order.number })}
+          {addedOrderIds.length === 0
+            ? t('orders.number', { number: order.number })
+            : t('selection.orders', {
+                numbers: listNumbers([order, ...addedOrderIds.flatMap((id) => orders.filter((candidate) => candidate.id === id))]),
+              })}
           {restaurant && ` · ${restaurantName(restaurant, neighborhood)}`}
           {' · '}
           {left > 0 ? t('orders.minutesLeft', { minutes: gameMinutes(left, gameTime) }) : t('orders.late')}
