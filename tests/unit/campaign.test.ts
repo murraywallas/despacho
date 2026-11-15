@@ -21,6 +21,8 @@ import { shiftSettingsFrom } from '../../src/game/shift'
 
 const costOf = (vehicle: string) => vehicles[vehicle]?.costPerShiftKr ?? 0
 const MAX_TRIES = 8
+/** Money saved, at most, in shifts of the level's fleet: past this the money stops mattering (#110). */
+const MOST_SHIFTS_SAVED = 4
 
 /** The fleet the garage suggests for a level (with the weather swap). */
 function suggestedFleetOf(levelId: string): string[] {
@@ -38,6 +40,10 @@ function playCampaign(botOf: (levelId: string) => Bot, rules: ExperienceRules = 
   let hired = economy.startingRiders
   let xp: number[] = []
   let lowestKr = moneyKr
+  // The most money saved, counted in shifts of the level's whole fleet (vehicles only).
+  let mostShiftsSaved = 0
+  // Shifts that went out with fewer riders than the level suggests, for lack of money.
+  let shortShifts = 0
   const tries: Record<string, number> = {}
   for (const levelId of levelIds) {
     const levelFleet = suggestedFleetOf(levelId)
@@ -51,6 +57,7 @@ function playCampaign(botOf: (levelId: string) => Bot, rules: ExperienceRules = 
       }
       let fleet = levelFleet.slice(0, hired)
       while (fleet.length > 1 && costOfFleet(fleet) > moneyKr) fleet = fleet.slice(0, -1)
+      if (fleet.length < levelFleet.length) shortShifts++
       const salaries = salariesKr(xp, fleet.length, rules)
       const balance = withFleet(balanceFor(levelId), fleet)
       const options = { reactionSec: 3, picksPerLook: 1, stepSec: 0.25, xp: xpOfRiders(xp, fleet.length) }
@@ -58,13 +65,14 @@ function playCampaign(botOf: (levelId: string) => Bot, rules: ExperienceRules = 
       const orders = end.orderQueue.orders
       moneyKr += shiftMoney(orders, fleet, costOf, balance.heat, balance.rating, economy, salaries).profitKr
       lowestKr = Math.min(lowestKr, moneyKr)
+      mostShiftsSaved = Math.max(mostShiftsSaved, moneyKr / fleetCostKr(levelFleet, costOf))
       xp = addShiftXp(xpOfRiders(xp, hired), end.riders, orders, rules)
       tries[levelId]++
       best = Math.max(best, summarizeShift(orders, balance.heat, balance.rating, shiftBalance).average ?? 0)
     }
-    if (best < progression.unlockAvgRating) return { finished: false, moneyKr, lowestKr, tries }
+    if (best < progression.unlockAvgRating) return { finished: false, moneyKr, lowestKr, tries, mostShiftsSaved, shortShifts }
   }
-  return { finished: true, moneyKr, lowestKr, tries }
+  return { finished: true, moneyKr, lowestKr, tries, mostShiftsSaved, shortShifts }
 }
 
 const careful = (levelId: string): Bot => (neighborhoodOf(levelId) === 'norrebro' ? triageBot : batchingBot)
@@ -74,13 +82,17 @@ describe('la campaña entera con la plata', { timeout: 300_000 }, () => {
   test('jugando con cuidado se termina, y los sueldos se llevan parte de lo ganado', () => {
     const paid = playCampaign(careful)
     expect(paid.finished).toBe(true)
+    // La plata sigue importando (#110): nunca sobran más de ~4 turnos de la flota del nivel, pero alcanza para sacarla entera.
+    expect(paid.mostShiftsSaved).toBeLessThanOrEqual(MOST_SHIFTS_SAVED)
+    expect(paid.shortShifts).toBe(0)
     const unpaid = playCampaign(careful, { ...experience, salaryPerLevelKr: 0 })
     expect(paid.moneyKr).toBeLessThan(unpaid.moneyKr)
   })
 
-  test('el que se traba repitiendo el primer nivel no se queda en negativo por los sueldos', () => {
+  test('el que se traba repitiendo el primer nivel nunca debe más que un turno de su flota', () => {
     const stuck = playCampaign(() => firstComeBot)
     expect(stuck.tries[levelIds[0]]).toBeGreaterThan(1)
-    expect(stuck.lowestKr).toBeGreaterThanOrEqual(0)
+    // Con un solo repartidor siempre se puede salir; la caja puede quedar en negativo, pero no se hunde.
+    expect(stuck.lowestKr).toBeGreaterThanOrEqual(-fleetCostKr(suggestedFleetOf(levelIds[0]), costOf))
   })
 })
