@@ -44,6 +44,8 @@ function playCampaign(botOf: (levelId: string) => Bot, rules: ExperienceRules = 
   let mostShiftsSaved = 0
   // Shifts that went out with fewer riders than the level suggests, for lack of money.
   let shortShifts = 0
+  // The most a level's whole fleet cost for one shift (vehicles and salaries).
+  let fleetKr = 0
   const tries: Record<string, number> = {}
   for (const levelId of levelIds) {
     const levelFleet = suggestedFleetOf(levelId)
@@ -58,6 +60,7 @@ function playCampaign(botOf: (levelId: string) => Bot, rules: ExperienceRules = 
       let fleet = levelFleet.slice(0, hired)
       while (fleet.length > 1 && costOfFleet(fleet) > moneyKr) fleet = fleet.slice(0, -1)
       if (fleet.length < levelFleet.length) shortShifts++
+      fleetKr = Math.max(fleetKr, costOfFleet(levelFleet))
       const salaries = salariesKr(xp, fleet.length, rules)
       const balance = withFleet(balanceFor(levelId), fleet)
       const options = { reactionSec: 3, picksPerLook: 1, stepSec: 0.25, xp: xpOfRiders(xp, fleet.length) }
@@ -70,9 +73,9 @@ function playCampaign(botOf: (levelId: string) => Bot, rules: ExperienceRules = 
       tries[levelId]++
       best = Math.max(best, summarizeShift(orders, balance.heat, balance.rating, shiftBalance).average ?? 0)
     }
-    if (best < progression.unlockAvgRating) return { finished: false, moneyKr, lowestKr, tries, mostShiftsSaved, shortShifts }
+    if (best < progression.unlockAvgRating) return { finished: false, moneyKr, lowestKr, tries, mostShiftsSaved, shortShifts, fleetKr }
   }
-  return { finished: true, moneyKr, lowestKr, tries, mostShiftsSaved, shortShifts }
+  return { finished: true, moneyKr, lowestKr, tries, mostShiftsSaved, shortShifts, fleetKr }
 }
 
 const careful = (levelId: string): Bot => (neighborhoodOf(levelId) === 'norrebro' ? triageBot : batchingBot)
@@ -89,10 +92,12 @@ describe('la campaña entera con la plata', { timeout: 300_000 }, () => {
     expect(paid.moneyKr).toBeLessThan(unpaid.moneyKr)
   })
 
-  test('el que se traba repitiendo el primer nivel nunca debe más que un turno de su flota', () => {
+  test('el que despacha sin pensar pasa el tutorial, y donde se traba nunca debe más que un turno de su flota', () => {
     const stuck = playCampaign(() => firstComeBot)
-    expect(stuck.tries[levelIds[0]]).toBeGreaterThan(1)
+    expect(stuck.tries[levelIds[0]]).toBe(1)
+    expect(stuck.finished).toBe(false)
+    expect(levelIds.some((levelId) => stuck.tries[levelId] === MAX_TRIES)).toBe(true)
     // Con un solo repartidor siempre se puede salir; la caja puede quedar en negativo, pero no se hunde.
-    expect(stuck.lowestKr).toBeGreaterThanOrEqual(-fleetCostKr(suggestedFleetOf(levelIds[0]), costOf))
+    expect(stuck.lowestKr).toBeGreaterThanOrEqual(-stuck.fleetKr)
   })
 })
