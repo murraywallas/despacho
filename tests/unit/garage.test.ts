@@ -28,6 +28,9 @@ describe('garage', () => {
   test('no se puede empezar con una flota que cuesta más de lo que hay en caja', () => {
     expect(canStart(dinner, 560, costOf)).toBe(true)
     expect(canStart(dinner, 559, costOf)).toBe(false)
+    // Los sueldos también se pagan.
+    expect(canStart(dinner, 600, costOf, 40)).toBe(true)
+    expect(canStart(dinner, 599, costOf, 40)).toBe(false)
     expect(canStart([], 1000, costOf)).toBe(false)
   })
 

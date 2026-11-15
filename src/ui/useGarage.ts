@@ -1,4 +1,5 @@
-import { economy, eventKinds, fleetOf, levels, neighborhoods, struckOf, vehicles } from '../game/balance'
+import { economy, eventKinds, experience, fleetOf, levels, neighborhoods, struckOf, vehicles } from '../game/balance'
+import { salariesKr } from '../game/experience'
 import {
   canStart,
   canUseMoreRiders,
@@ -26,6 +27,7 @@ export interface Garage {
   readonly rules: GarageRules
   /** Vehicles of the neighborhood on strike in this shift: shown, but can't be chosen. */
   readonly struck: readonly string[]
+  /** Vehicles and salaries of the fleet chosen, for one shift. */
   readonly costKr: number
   readonly moneyKr: number
   readonly hired: number
@@ -45,6 +47,7 @@ export function useGarage(levelId: string): Garage {
   const hired = useProgressStore((state) => state.hired)
   const chooseFleet = useProgressStore((state) => state.chooseFleet)
   const hire = useProgressStore((state) => state.hire)
+  const xp = useProgressStore((state) => state.xp)
   const balance = balanceFor(levelId)
   const levelFleet = fleetOf(balance)
   const struck = struckOf(levels[levelId])
@@ -52,16 +55,18 @@ export function useGarage(levelId: string): Garage {
   const advice = weatherAdvice(suggestedFleet(levelFleet, rules), balance.events ?? [], eventKinds, vehicles, rules.vehicles)
   const suggested = advice?.fleet ?? suggestedFleet(levelFleet, rules)
   const fleet = chosenFleet(saved, suggested, rules)
+  // Riders 1 to n go out: their salaries are part of the shift's cost.
+  const salaries = salariesKr(xp, fleet.length, experience)
   return {
     fleet,
     suggested,
     advice,
     rules,
     struck,
-    costKr: fleetCostKr(fleet, vehicleCostKr),
+    costKr: fleetCostKr(fleet, vehicleCostKr) + salaries,
     moneyKr,
     hired,
-    canStart: canStart(fleet, moneyKr, vehicleCostKr),
+    canStart: canStart(fleet, moneyKr, vehicleCostKr, salaries),
     canHireHere: canUseMoreRiders(levelFleet, hired),
     hireKr: economy.hireRiderKr,
     setFleet: (next) => chooseFleet(levelId, next),

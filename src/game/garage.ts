@@ -43,12 +43,17 @@ export function chosenFleet(saved: readonly string[] | undefined, levelFleet: re
 }
 
 /**
- * Whether the shift can start: the fleet has to be paid with the money in hand. A single rider can always go out,
+ * Whether the shift can start: the fleet (vehicles and salaries) has to be paid with the money in hand. A single rider can always go out,
  * even without money (the money goes below zero), so the player never gets stuck.
  */
-export function canStart(fleet: readonly string[], moneyKr: number, costOf: (vehicle: string) => number): boolean {
+export function canStart(
+  fleet: readonly string[],
+  moneyKr: number,
+  costOf: (vehicle: string) => number,
+  salariesKr = 0,
+): boolean {
   if (fleet.length === 0) return false
-  return fleet.length === 1 || fleetCostKr(fleet, costOf) <= moneyKr
+  return fleet.length === 1 || fleetCostKr(fleet, costOf) + salariesKr <= moneyKr
 }
 
 /** Hiring one more rider: costs hireKr once and stays forever. Undefined when the money is not enough. */

@@ -14,6 +14,9 @@ export function ShiftMoneySummary({ money, totalKr }: ShiftMoneyProps) {
     { key: 'pay', label: t('results.money.pay'), value: formatKr(money.payKr, true) },
     { key: 'tips', label: t('results.money.tips'), value: formatKr(money.tipsKr, true) },
     { key: 'cost', label: t('results.money.cost'), value: formatKr(-money.costKr, true) },
+    ...(money.salariesKr > 0
+      ? [{ key: 'salaries', label: t('results.money.salaries'), value: formatKr(-money.salariesKr, true) }]
+      : []),
   ]
   return (
     <div className="results__money" data-testid="results-money">

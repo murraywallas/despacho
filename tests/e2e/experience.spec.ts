@@ -2,9 +2,9 @@
 import { readFileSync } from 'node:fs'
 
 const balance = JSON.parse(readFileSync(new URL('../../data/balance.json', import.meta.url), 'utf8')) as {
-  riders: { xpPerLevel: number; trainingKr: number; speedBonusPerLevelPct: number }
+  riders: { xpPerLevel: number; trainingKr: number; speedBonusPerLevelPct: number; salaryPerLevelKr: number }
 }
-const { xpPerLevel, trainingKr, speedBonusPerLevelPct } = balance.riders
+const { xpPerLevel, trainingKr, speedBonusPerLevelPct, salaryPerLevelKr } = balance.riders
 const kr = (amount: number) => `${Math.abs(amount).toLocaleString('es-AR')} kr`
 const MONEY = 1000
 
@@ -27,6 +27,10 @@ test('el garage muestra el nivel de cada repartidor, un curso lo sube y en el tu
   await expect(levels.nth(0)).toContainText('Nivel 2')
   await expect(levels.nth(0)).toContainText(`+${Math.round(2 * speedBonusPerLevelPct * 100)} %`)
   await expect(levels.nth(1)).toHaveText('Nivel 0')
+  // El de nivel 2 cobra sueldo; los de nivel 0, no.
+  const salaries = garage.getByTestId('rider-salary')
+  await expect(salaries).toHaveCount(1)
+  await expect(salaries.first()).toHaveText(`sueldo ${kr(2 * salaryPerLevelKr)}`)
   const next = garage.getByTestId('rider-next-level')
   await expect(next.nth(1)).toHaveText(`${xpPerLevel} entregas para el nivel 1`)
 
@@ -34,6 +38,8 @@ test('el garage muestra el nivel de cada repartidor, un curso lo sube y en el tu
   await garage.getByRole('button', { name: /^Pagar un curso a Repartidor 2/ }).click()
   await expect(levels.nth(1)).toContainText('Nivel 1')
   await expect(next.nth(1)).toHaveText(`${xpPerLevel} entregas para el nivel 2`)
+  // Con el curso, el repartidor 2 también cobra.
+  await expect(salaries).toHaveCount(2)
   await expect(garage.getByTestId('garage-money')).toHaveText(kr(MONEY - trainingKr))
 
   // Queda guardado.

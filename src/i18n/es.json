@@ -295,7 +295,7 @@
   "garage.levelBonus": "+{bonus} %",
   "garage.levelProgress": "Experiencia de {rider} para el próximo nivel",
   "garage.course": "Curso · {cost}",
-  "garage.courseLabel": "Pagar un curso a {rider}: sube un nivel por {cost}",
+  "garage.courseLabel": "Pagar un curso a {rider}: sube un nivel por {cost} (y cobra más sueldo)",
   "riders.level": "Nv {level}",
   "riders.levelTitle": "Nivel {level} de experiencia: va más rápido",
   "radio.riderFree": "Repartidor {rider} quedó libre",
@@ -308,5 +308,7 @@
   "garage.nextLevelOne": "1 entrega para el nivel {level}",
   "list.and": "y",
   "weather.swapped": "{name}: la flota sugerida sale en {to} en vez de {slow}, que se frenan mucho.",
-  "weather.keep": "{name}: en {slow} se va mucho más lento. Conviene salir en {to}."
+  "weather.keep": "{name}: en {slow} se va mucho más lento. Conviene salir en {to}.",
+  "results.money.salaries": "Sueldos",
+  "garage.salary": "sueldo {cost}"
 }

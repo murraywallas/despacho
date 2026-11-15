@@ -13,6 +13,8 @@ export interface ExperienceRules {
   readonly speedBonusPerLevelPct: number
   /** Price of a course that takes a rider up one level, in kr. */
   readonly trainingKr: number
+  /** What a rider earns per shift for each level, in kr (level 0 earns nothing). */
+  readonly salaryPerLevelKr?: number
 }
 
 /** A rider's level from their experience (0 to maxLevel). */
@@ -78,4 +80,14 @@ export function deliveriesToNextLevel(xp: number, rules: ExperienceRules): numbe
   const level = levelOf(xp, rules)
   if (level >= rules.maxLevel) return undefined
   return Math.ceil(((level + 1) * rules.xpPerLevel - Math.max(0, xp)) / rules.xpPerDelivery)
+}
+
+/** A rider's salary for one shift, by level: a faster rider costs more. */
+export function salaryKr(level: number, rules: ExperienceRules): number {
+  return level * (rules.salaryPerLevelKr ?? 0)
+}
+
+/** The salaries of the first count riders of the garage (places 0 to count − 1) for one shift. */
+export function salariesKr(xp: readonly number[], count: number, rules: ExperienceRules): number {
+  return xpOfRiders(xp, count).reduce((sum, points) => sum + salaryKr(levelOf(points, rules), rules), 0)
 }
