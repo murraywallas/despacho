@@ -9,9 +9,9 @@ import { calmMapOf, mapWith, type StreetConditions } from './streetConditions'
 import { closedStretches, rerouteAround } from './closures'
 import { CLOSURES } from './neighborhoods'
 import type { StreetGraphFile } from './streetGraph'
-import { cancelExpired, closeShift } from './cancellation'
+import { cancelExpired, closeShift, hasFoodOnTheWay } from './cancellation'
 import { createCityMap, type CityMap, type RestaurantCluster } from './cityMap'
-import { createClock, tick, type ShiftClock } from './clock'
+import { createClock, finishClosing, startClosing, tick, type ShiftClock } from './clock'
 import { assignOrders, capacityOf } from './dispatch'
 
 export { capacityOf }
@@ -33,6 +33,8 @@ export interface ShiftSettings {
   readonly lowBatteryShare?: number
   /** How long after its deadline an undelivered order is cancelled. */
   readonly cancelAfterSec: number
+  /** Clock speed after the closing hour, while the food on its way is delivered. */
+  readonly closingSpeed?: number
 }
 
 export interface ShiftSnapshot {
@@ -94,6 +96,7 @@ export function shiftSettingsFrom(balance: PrototypeBalance): ShiftSettings {
       rechargeSec: balance.riders.rechargeSec ?? 0,
     },
     cancelAfterSec: balance.orders.cancelAfterSec,
+    closingSpeed: clockBalance.closingSpeed,
     lowBatteryShare: balance.riders.lowBatteryPct ?? 0,
   }
 }
@@ -173,7 +176,8 @@ export function createShift(
 
 /**
  * Advances the shift by dtSec real seconds. Returns the same snapshot when the clock did not move
- * (paused, finished or no time).
+ * (paused, finished or no time). At the closing hour, if riders still carry food, the shift goes on (faster, with
+ * no new orders) until they deliver it.
  */
 export function advanceShift(
   shift: ShiftSnapshot,
@@ -201,12 +205,20 @@ export function advanceShift(
   )
   // Deliveries in this step happen before cancellations, so a rider arriving just in time still counts.
   const expired = cancelExpired(fleet.orders, fleet.riders, clock.elapsedSec, settings.cancelAfterSec)
-  // The shift just closed: whatever is still undelivered counts as cancelled.
+  // The closing hour: what nobody picked up yet is cancelled; food already on its way is still delivered.
   const after = clock.finished ? closeShift(expired.orders, expired.riders, clock.elapsedSec) : expired
   const kept =
     after.orders === shift.orderQueue.orders ? shift.orderQueue : { ...shift.orderQueue, orders: [...after.orders] }
-  const orderQueue = spawnOrders(kept, clock.elapsedSec, map, random, settings.orders)
-  return { ...shift, map, clock, riders: after.riders, orderQueue }
+  // While closing no orders come in; the shift is finished once the last food on its way arrives.
+  const orderQueue = clock.closing ? kept : spawnOrders(kept, clock.elapsedSec, map, random, settings.orders)
+  const onTheWay = hasFoodOnTheWay(after.orders)
+  const nextClock =
+    clock.finished && onTheWay
+      ? startClosing(clock, settings.closingSpeed ?? clock.speed)
+      : clock.closing && !onTheWay
+        ? finishClosing(clock)
+        : clock
+  return { ...shift, map, clock: nextClock, riders: after.riders, orderQueue }
 }
 
 /**

@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { clock as clockBalance, clockSpeeds, prototype } from '../game/balance'
 import type { CityMap } from '../game/cityMap'
-import { setSpeed, togglePause, type ShiftClock } from '../game/clock'
+import { setSpeed, togglePause, type ShiftClock, isOver } from '../game/clock'
 import { reorderStops } from '../game/movement'
 import { waitingAt, type Order, type OrderQueue, type OrderSettings } from '../game/orders'
 import type { Random } from '../game/random'
@@ -198,7 +198,7 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
     }),
   setSpeed: (speed) =>
     set((state) => {
-      if (!clockSpeeds(clockBalance).includes(speed) || state.clock.finished) return state
+      if (!clockSpeeds(clockBalance).includes(speed) || isOver(state.clock)) return state
       return { clock: setSpeed(state.clock, speed) }
     }),
   selectOrder: (orderId, add = false) =>
@@ -212,7 +212,7 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
         return { addedOrderIds: [...state.addedOrderIds, orderId] }
       }
       if (orderId === state.selectedOrderId) return { selectedOrderId: null, addedOrderIds: NO_ORDERS, refusal: null }
-      if (!order || state.clock.finished) return state
+      if (!order || isOver(state.clock)) return state
       if (order.status === 'assigned' && state.selectedRiderId) {
         // Rider first, then an order already going with someone else: it is reassigned to the rider.
         const result = reassignAndStart(state.map, state.orderQueue, state.riders, orderId, state.selectedRiderId, prototype.tools.reassignPenaltySec, state.clock.elapsedSec)
@@ -229,7 +229,7 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
   pickRider: (riderNumber) =>
     set((state) => {
       const rider = state.riders.find((candidate) => candidate.number === riderNumber)
-      if (!rider || state.clock.finished) return state
+      if (!rider || isOver(state.clock)) return state
       const picked = selectedOrderIds(state)
       const first = state.orderQueue.orders.find((order) => order.id === picked[0])
       if (first?.status === 'assigned') {
@@ -250,7 +250,7 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
     const state = get()
     const rider = state.riders.find((candidate) => candidate.id === state.selectedRiderId)
     const waiting = waitingAt(state.orderQueue.orders, restaurantId)
-    if (!rider || waiting.length === 0 || state.clock.finished) return false
+    if (!rider || waiting.length === 0 || isOver(state.clock)) return false
     const take = fill ? waiting.slice(0, capacityOf(rider.vehicle)) : waiting.slice(0, 1)
     const result = dispatchOrders(state.map, state.orderQueue, state.riders, take.map((order) => order.id), rider.id)
     if (!result) return false
@@ -263,7 +263,7 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
     })),
   callCustomer: () => {
     const state = get()
-    if (!state.selectedOrderId || state.callsLeft <= 0 || state.clock.finished) return false
+    if (!state.selectedOrderId || state.callsLeft <= 0 || isOver(state.clock)) return false
     const orders = callCustomer(state.orderQueue.orders, state.selectedOrderId, prototype.tools.callExtendSec)
     if (orders === state.orderQueue.orders) return false
     set({ orderQueue: { ...state.orderQueue, orders }, callsLeft: state.callsLeft - 1 })

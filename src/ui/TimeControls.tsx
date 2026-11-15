@@ -1,4 +1,5 @@
 import { Pause, Play } from 'lucide-react'
+import { isOver } from '../game/clock'
 import { clock as clockBalance, clockSpeeds } from '../game/balance'
 import { t } from '../i18n'
 import { useShiftStore } from '../store/shiftStore'
@@ -9,7 +10,8 @@ const SPEEDS = clockSpeeds(clockBalance)
 /** Pause (Space) and a segmented control with the clock speeds of balance.json: 1x / 2x / 3x. */
 export function TimeControls() {
   const paused = useShiftStore((state) => state.clock.paused)
-  const finished = useShiftStore((state) => state.clock.finished)
+  // Closing (the last deliveries go by fast) or finished: the speed is no longer the player's.
+  const finished = useShiftStore((state) => isOver(state.clock))
   const speed = useShiftStore((state) => state.clock.speed)
   const togglePause = useShiftStore((state) => state.togglePause)
   const setSpeed = useShiftStore((state) => state.setSpeed)

@@ -209,7 +209,8 @@ describe('pilar 1 en cada nivel', () => {
     const careful = play(levelId, carefulBot(levelId))
     expect(careful.outcome).toBe('win')
     expect(careful.average).toBeLessThan(prototype.rating.max)
-    expect(careful.cancelled).toBeGreaterThan(0)
+    // Algo sale mal: tarde o cancelado (la comida en camino ya no se cancela, #95).
+    expect(careful.late + careful.cancelled).toBeGreaterThan(0)
   })
 
   test.each(levelNeighborhoods())(

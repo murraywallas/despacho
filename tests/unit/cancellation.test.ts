@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { cancelExpired, closeShift } from '../../src/game/cancellation'
+import { cancelExpired, closeShift, hasFoodOnTheWay } from '../../src/game/cancellation'
 import type { Order } from '../../src/game/orders'
 import type { Rider } from '../../src/game/riders'
 
@@ -31,21 +31,32 @@ describe('cancelación de pedidos vencidos', () => {
     expect(orders[0]).toMatchObject({ status: 'cancelled', cancelledAtSec: 180 })
   })
 
-  test('el repartidor que lo llevaba queda libre donde está', () => {
-    const carrying: Order = { ...pending, status: 'pickedUp', riderId: 'k1', pickedUpAtSec: 150 }
+  test('asignado pero sin recoger: se cancela y el repartidor queda libre donde está', () => {
+    const assigned: Order = { ...pending, status: 'assigned', riderId: 'k1' }
     const busy: Rider = {
       ...idle,
-      status: 'toCustomer',
+      status: 'toRestaurant',
       orderIds: ['o1'],
       trip: { path: [17, 18], pathMeters: [0, 100], traveledM: 50, kitchenLeftSec: 0 },
     }
     const other: Rider = { ...idle, id: 'k2', number: 2 }
-    const result = cancelExpired([carrying], [busy, other], 200, CANCEL_AFTER)
+    const result = cancelExpired([assigned], [busy, other], 200, CANCEL_AFTER)
     expect(result.orders[0].status).toBe('cancelled')
     expect(result.riders[0]).toMatchObject({ status: 'idle', node: 17 })
     expect(result.riders[0].trip).toBeUndefined()
     expect(result.riders[0].orderIds).toBeUndefined()
     expect(result.riders[1]).toBe(other)
+  })
+
+  test('la comida ya recogida no se cancela nunca: llega tarde, y cuenta como tarde', () => {
+    const carrying: Order = { ...pending, status: 'pickedUp', riderId: 'k1', pickedUpAtSec: 150 }
+    const busy: Rider = { ...idle, status: 'toCustomer', orderIds: ['o1'] }
+    const orders = [carrying]
+    const riders = [busy]
+    // Mucho después del plazo + el margen.
+    const result = cancelExpired(orders, riders, 1000, CANCEL_AFTER)
+    expect(result.orders).toBe(orders)
+    expect(result.riders).toBe(riders)
   })
 
   test('los entregados y los ya cancelados no cambian', () => {
@@ -57,17 +68,22 @@ describe('cancelación de pedidos vencidos', () => {
 })
 
 describe('cierre del turno', () => {
-  test('lo que sigue sin entregar al cierre cuenta como cancelado, y el repartidor queda libre', () => {
-    const carrying: Order = { ...pending, id: 'o2', status: 'pickedUp', riderId: 'k1', pickedUpAtSec: 150 }
-    const busy: Rider = { ...idle, status: 'toCustomer', orderIds: ['o2'] }
-    const done: Order = { ...pending, id: 'o3', status: 'delivered', deliveredAtSec: 100 }
-    const result = closeShift([pending, carrying, done], [busy], 300)
+  test('al cierre se cancela lo que nadie recogió; la comida en camino sigue', () => {
+    const assigned: Order = { ...pending, id: 'o2', status: 'assigned', riderId: 'k1' }
+    const toRestaurant: Rider = { ...idle, status: 'toRestaurant', orderIds: ['o2'] }
+    const carrying: Order = { ...pending, id: 'o3', status: 'pickedUp', riderId: 'k2', pickedUpAtSec: 150 }
+    const toCustomer: Rider = { ...idle, id: 'k2', number: 2, status: 'toCustomer', orderIds: ['o3'] }
+    const done: Order = { ...pending, id: 'o4', status: 'delivered', deliveredAtSec: 100 }
+    const result = closeShift([pending, assigned, carrying, done], [toRestaurant, toCustomer], 300)
     expect(result.orders.map((order) => [order.id, order.status, order.cancelledAtSec])).toEqual([
       ['o1', 'cancelled', 300],
       ['o2', 'cancelled', 300],
-      ['o3', 'delivered', undefined],
+      ['o3', 'pickedUp', undefined],
+      ['o4', 'delivered', undefined],
     ])
     expect(result.riders[0]).toMatchObject({ status: 'idle' })
+    expect(result.riders[1]).toBe(toCustomer)
+    expect(hasFoodOnTheWay(result.orders)).toBe(true)
   })
 
   test('si todo estaba entregado o cancelado, devuelve los mismos arreglos', () => {

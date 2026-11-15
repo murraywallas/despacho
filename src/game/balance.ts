@@ -113,6 +113,8 @@ export interface ClockBalance {
   readonly gameSecondsPerRealSecond: number
   /** Speeds the player can pick, separated by commas ("1, 2, 3"). */
   readonly speeds: string
+  /** Clock speed after the closing hour, while the food already on its way is delivered. */
+  readonly closingSpeed?: number
 }
 
 /** The clock speeds the player can pick, from slowest to fastest. Always includes normal speed (1). */
