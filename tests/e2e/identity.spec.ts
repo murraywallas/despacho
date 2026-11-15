@@ -26,6 +26,8 @@ test('el primer turno guiado enseña dos despachos y no vuelve a aparecer', asyn
     await expect(guide).toContainText('elegí quién lo lleva')
     const free = await riders.first().getAttribute('data-rider-number')
     await page.keyboard.press(free ?? '1')
+    // Después del primero, la espera habla del próximo pedido, no del primero.
+    if (dispatch === 1) await expect(guide).toContainText('el próximo pedido llega')
   }
   await expect(guide).toHaveCount(0)
 

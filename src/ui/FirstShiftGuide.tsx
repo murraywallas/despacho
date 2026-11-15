@@ -43,7 +43,7 @@ export function FirstShiftGuide() {
   return (
     <aside className={`guide guide--${step} floating-panel`} role="note" aria-live="polite" data-testid="guide">
       <p className="guide__step">{t('guide.progress', { done: dispatched + 1, total: DISPATCHES_TAUGHT })}</p>
-      <p className="guide__text">{t(STEP_TEXT[step])}</p>
+      <p className="guide__text">{t(step === 'wait' && dispatched > 0 ? 'guide.waitNext' : STEP_TEXT[step])}</p>
       <button type="button" className="guide__skip" onClick={finishGuide}>
         <X size={14} aria-hidden />
         {t('guide.skip')}

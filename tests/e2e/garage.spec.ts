@@ -4,7 +4,7 @@ import { fleetCostKr, startingKr } from './balance.ts'
 /** "1.296 kr", as the screens show it. */
 const kr = (amount: number) => `${amount < 0 ? '−' : ''}${Math.abs(amount).toLocaleString('es-AR')} kr`
 
-test('en el garage se cambia la patineta por un monopatín, y el turno sale con el monopatín en el mapa', async ({ page }) => {
+test('en el garage se cambia el skate por un monopatín eléctrico, y el turno sale con él en el mapa', async ({ page }) => {
   await page.goto('/')
   await page.getByTestId('level-card').first().click()
   const briefing = page.getByTestId('briefing')

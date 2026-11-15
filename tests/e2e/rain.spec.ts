@@ -23,17 +23,17 @@ test('la cena de Vesterbro avisa la lluvia en el briefing, y en el turno aparece
 
   // La flota sugerida ya sale en bici en vez de lo que más se frena con el agua.
   await expect(briefing.getByTestId('briefing-weather')).toHaveText(
-    'Lluvia: la flota sugerida sale en bicicleta en vez de patineta y rollers, que se frenan mucho.',
+    'Lluvia: la flota sugerida sale en bicicleta en vez de skate y rollers, que se frenan mucho.',
   )
-  await expect(briefing.getByTestId('briefing-fleet')).not.toContainText('Patineta')
+  await expect(briefing.getByTestId('briefing-fleet')).not.toContainText('Skate')
   await expect(briefing.getByTestId('briefing-fleet')).not.toContainText('Rollers')
 
-  // Si el jugador vuelve a poner una patineta, el garage avisa que conviene cambiarla.
+  // Si el jugador vuelve a poner un skate, el garage avisa que conviene cambiarlo.
   await briefing.getByTestId('briefing-garage').click()
   const garage = page.getByTestId('garage')
   await garage.getByLabel('Vehículo de Repartidor 3').selectOption('skateboard')
   await expect(garage.getByTestId('garage-weather')).toHaveText(
-    'Lluvia: en patineta se va mucho más lento. Conviene salir en bicicleta.',
+    'Lluvia: en skate se va mucho más lento. Conviene salir en bicicleta.',
   )
   await garage.getByRole('button', { name: 'Usar la flota sugerida' }).click()
   await expect(garage.getByTestId('garage-weather')).toContainText('la flota sugerida sale en bicicleta')

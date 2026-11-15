@@ -4,13 +4,13 @@ import { EventIcon } from './EventNotices'
 import { eventName } from './eventText'
 import { VEHICLE_TEXT } from './VehicleIcon'
 
-/** "patineta": a vehicle's name in lower case, for the middle of a sentence. */
+/** "skate": a vehicle's name in lower case, for the middle of a sentence. */
 function lowerName(vehicle: string): string {
   const key = VEHICLE_TEXT[vehicle]
   return (key ? t(key) : vehicle).toLocaleLowerCase('es')
 }
 
-/** "patineta y rollers": a list the Spanish way. */
+/** "skate y rollers": a list the Spanish way. */
 function listOf(names: readonly string[]): string {
   return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} ${t('list.and')} ${names.at(-1)}`
 }

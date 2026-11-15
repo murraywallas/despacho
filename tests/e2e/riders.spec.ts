@@ -7,8 +7,8 @@ test('los 3 repartidores aparecen libres, cada uno con su vehículo, en el panel
   const panel = page.getByRole('complementary', { name: /Repartidores/ })
   const cards = panel.getByTestId('rider-card')
   await expect(cards).toHaveCount(3)
-  // La flota de la planilla, en orden: bici, patineta y monopatín.
-  const vehicles = ['Bicicleta', 'Patineta', 'Monopatín']
+  // La flota de la planilla, en orden: bici, skate y monopatín eléctrico.
+  const vehicles = ['Bicicleta', 'Skate', 'Monopatín eléctrico']
   for (const [index, card] of (await cards.all()).entries()) {
     await expect(card).toContainText(`Repartidor ${index + 1}`)
     await expect(card).toContainText(vehicles[index])
