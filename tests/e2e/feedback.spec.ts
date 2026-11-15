@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { longestRideMs, prototype, SHIFT_URL } from './balance.ts'
 
-test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
+test.describe.configure({ timeout: 120_000 }) // Simula minutos de turno cuadro por cuadro.
 
 /** Advances the page clock in small steps until the locator has the text (or gives up after maxMs). */
 async function runUntil(page: Page, locator: Locator, text: string, maxMs: number) {

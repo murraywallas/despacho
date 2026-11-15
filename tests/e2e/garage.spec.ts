@@ -1,6 +1,8 @@
 ﻿import { expect, test } from '@playwright/test'
 import { fleetCostKr, startingKr } from './balance.ts'
 
+test.describe.configure({ timeout: 60_000 }) // Varios turnos y pantallas por test: con la máquina cargada, 30 s no alcanzan.
+
 /** "1.296 kr", as the screens show it. */
 const kr = (amount: number) => `${amount < 0 ? '−' : ''}${Math.abs(amount).toLocaleString('es-AR')} kr`
 

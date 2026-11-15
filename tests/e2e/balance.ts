@@ -51,6 +51,8 @@ export const shiftEndsAt = clockAt(prototype.shift.durationSec)
 export const clockSpeeds = [
   ...new Set([1, ...data.clock.speeds.split(',').map((speed) => Number(speed.trim()))]),
 ].sort((a, b) => a - b)
+/** The fastest of them: the tests that play a whole shift use it, so the fake clock simulates fewer frames. */
+export const fastestSpeed = clockSpeeds[clockSpeeds.length - 1]
 
 /** Real seconds the game clock needs to move one minute. */
 export const gameMinuteMs = (60 / data.clock.gameSecondsPerRealSecond) * 1000

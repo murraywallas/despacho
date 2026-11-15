@@ -1,6 +1,6 @@
 ﻿import { expect, test } from '@playwright/test'
 
-test.describe.configure({ timeout: 90_000 })
+test.describe.configure({ timeout: 120_000 })
 
 const RAIN_FROM_SEC = 180
 

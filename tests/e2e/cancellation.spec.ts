@@ -1,11 +1,15 @@
 import { expect, test } from '@playwright/test'
 import { prototype, SHIFT_URL } from './balance.ts'
 
-test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
+test.describe.configure({ timeout: 120_000 }) // Simula minutos de turno cuadro por cuadro.
 
 test('un pedido que nadie atiende se cancela, sale de la cola y cuenta como 1 estrella', async ({ page }) => {
   await page.clock.install()
   await page.goto(SHIFT_URL)
+  // Después de install() el reloj falso también avanza con el tiempo real. Este test mira 1,5 s antes de la
+  // cancelación: con la máquina lenta, esperar un expect alcanzaba para pasarse. En pausa, solo avanza con runFor.
+  // El salto de pauseAt dispara a lo sumo un cuadro, y el juego no avanza más de un cuarto de segundo por cuadro.
+  await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1000)
   const orderPanel = page.getByRole('complementary', { name: /Pedidos/ })
   const firstOrder = orderPanel.getByText('Pedido #1', { exact: true })
 

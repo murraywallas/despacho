@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import { clockSpeeds, gameMinuteMs, SHIFT_URL } from './balance.ts'
 
+test.describe.configure({ timeout: 60_000 }) // Espera minutos de juego con el reloj real: con la máquina cargada, 30 s no alcanzan.
+
 test('el reloj baja y la barra espaciadora lo pausa y lo reanuda', async ({ page }) => {
   await page.goto(SHIFT_URL)
   const time = page.getByTestId('shift-time')

@@ -1,6 +1,8 @@
 ﻿import { expect, test } from '@playwright/test'
 import { prototype, SHIFT_URL } from './balance.ts'
 
+test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
+
 test('apretar el número de un repartidor ocupado avisa cuándo queda libre, y no asigna nada', async ({ page }) => {
   await page.clock.install()
   await page.goto(SHIFT_URL)

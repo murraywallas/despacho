@@ -1,12 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
-import { prototype, shiftStartsAt } from './balance.ts'
+import { fastestSpeed, prototype, shiftStartsAt } from './balance.ts'
 
 test.describe.configure({ timeout: 90_000 }) // Algunos juegan un turno entero con el reloj falso.
 
 /** Plays the current shift to the end without dispatching anything (every order gets cancelled). */
 async function runShiftToEnd(page: Page) {
-  await page.getByRole('button', { name: '2x', exact: true }).click()
-  await page.clock.runFor((prototype.shift.durationSec * 1000) / 2 + 2000)
+  await page.getByRole('button', { name: `${fastestSpeed}x`, exact: true }).click()
+  await page.clock.runFor((prototype.shift.durationSec * 1000) / fastestSpeed + 2000)
   await expect(page.getByTestId('results')).toBeVisible()
 }
 
