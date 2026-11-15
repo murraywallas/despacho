@@ -93,7 +93,7 @@
   "economy": {
     "deliveryPayKr": 30,
     "tipPerStarKr": 4,
-    "startingKr": 600,
+    "startingKr": 700,
     "startingRiders": 3,
     "hireRiderKr": 200
   },
@@ -395,11 +395,11 @@
         "skateboard",
         "e_scooter"
       ],
-      "spawnIntervalSec": 20,
-      "peakFromSec": 120,
-      "peakToSec": 240,
+      "spawnIntervalSec": 24,
+      "peakFromSec": 150,
+      "peakToSec": 210,
       "peakIntervalSec": 15,
-      "deadlineSec": 150,
+      "deadlineSec": 180,
       "seed": 101,
       "light": "noon"
     },

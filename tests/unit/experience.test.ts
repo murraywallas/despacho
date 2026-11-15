@@ -102,7 +102,8 @@ describe('pilar 1 con repartidores al nivel máximo', () => {
     for (const area of levelNeighborhoods()) expect(won).not.toContain(levelsOf(area).at(-1))
   })
 
-  test.each(levelIds)('%s: con todos al nivel máximo, despachar con cuidado no sale perfecto', (levelId) => {
+  // Menos el tutorial (#94), que con repartidores expertos puede salir perfecto.
+  test.each(levelIds.slice(1))('%s: con todos al nivel máximo, despachar con cuidado no sale perfecto', (levelId) => {
     const careful = play(levelId, neighborhoodOf(levelId) === 'norrebro' ? triageBot : batchingBot)
     expect(careful.average).toBeLessThan(prototype.rating.max)
   })

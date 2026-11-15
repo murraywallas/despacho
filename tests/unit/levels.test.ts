@@ -32,6 +32,9 @@ import { shiftSettingsFrom } from '../../src/game/shift'
 import { useShiftStore } from '../../src/store/shiftStore'
 
 const UNLOCK = progression.unlockAvgRating
+/** The tutorial level (#94), in its own seed: stars of a player who dispatches without thinking, and of a careful one. */
+const TUTORIAL_CARELESS_AT_LEAST = 3.5
+const TUTORIAL_CAREFUL_AT_LEAST = 4.5
 
 describe('la pestaña Niveles', () => {
   test('Nørrebro, Vesterbro y Frederiksberg, con tres niveles cada uno: almuerzo, cena y viernes a la noche', () => {
@@ -190,7 +193,18 @@ describe('pilar 1 en cada nivel', () => {
   const averageOf = (levelId: string, bot: Bot) =>
     seeds.reduce((sum, seed) => sum + (play(levelId, bot, seed).average ?? 0), 0) / seeds.length
 
-  test.each(levelIds)('%s: despachar sin pensar no gana; con cuidado se gana, pero no sale perfecto', (levelId) => {
+  // El primer nivel es el tutorial (#94): un mediodía tranquilo, que se gana aunque no se piense mucho.
+  const [tutorial, ...pressured] = levelIds
+
+  test(`${tutorial}: es tranquilo de verdad: hasta despachando sin pensar se gana, y con cuidado se saca más`, () => {
+    const careless = play(tutorial, firstComeBot)
+    const careful = play(tutorial, carefulBot(tutorial))
+    expect(careless.average).toBeGreaterThanOrEqual(TUTORIAL_CARELESS_AT_LEAST)
+    expect(careful.average).toBeGreaterThanOrEqual(TUTORIAL_CAREFUL_AT_LEAST)
+    expect(careful.average).toBeGreaterThan(careless.average ?? 0)
+  })
+
+  test.each(pressured)('%s: despachar sin pensar no gana; con cuidado se gana, pero no sale perfecto', (levelId) => {
     expect(play(levelId, firstComeBot).outcome).not.toBe('win')
     const careful = play(levelId, carefulBot(levelId))
     expect(careful.outcome).toBe('win')
