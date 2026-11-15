@@ -69,7 +69,8 @@
     "xpPerDelivery": 1,
     "xpPerLevel": 12,
     "maxLevel": 5,
-    "trainingKr": 250
+    "trainingKr": 250,
+    "salaryPerLevelKr": 40
   },
   "progression": {
     "unlockAvgRating": 4

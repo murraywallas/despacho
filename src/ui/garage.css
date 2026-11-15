@@ -189,8 +189,10 @@
   background: var(--accent-strong, var(--ink));
 }
 
-/* Lo que falta para el próximo nivel: en su propia línea, debajo de la barra (no ensancha la fila a 1024 px). */
-.rider-skill__next {
+/* Sueldo y lo que falta para el próximo nivel: en su propia línea, debajo de la barra (no ensancha la fila a 1024 px). */
+.rider-skill__details {
+  display: flex;
+  gap: 12px;
   order: 1;
   flex-basis: 100%;
   color: var(--ink-quiet);

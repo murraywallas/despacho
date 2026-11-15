@@ -50,9 +50,18 @@ describe('dinero del turno', () => {
       payKr: 80,
       tipsKr: 45,
       costKr: 150,
+      salariesKr: 0,
       profitKr: -25,
     })
     expect(shiftMoney([perfect, perfect, perfect], ['skateboard'], costOf, heat, rating, money).profitKr).toBe(115)
+  })
+
+  test('los sueldos de los repartidores se restan de la ganancia', () => {
+    expect(shiftMoney([perfect, perfect, perfect], ['skateboard'], costOf, heat, rating, money, 80)).toMatchObject({
+      costKr: 80,
+      salariesKr: 80,
+      profitKr: 35,
+    })
   })
 
   test('los números salen de la hoja: Reglas (Dinero) y Vehículos', () => {

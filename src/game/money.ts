@@ -18,7 +18,9 @@ export interface ShiftMoney {
   readonly tipsKr: number
   /** What the riders cost: their vehicles' cost per shift. */
   readonly costKr: number
-  /** payKr + tipsKr − costKr; negative when the shift lost money. */
+  /** The riders' salaries, by their level. */
+  readonly salariesKr: number
+  /** payKr + tipsKr − costKr − salariesKr; negative when the shift lost money. */
   readonly profitKr: number
 }
 
@@ -39,7 +41,7 @@ export function fleetCostKr(fleet: readonly string[], costOf: (vehicle: string) 
   return fleet.reduce((sum, vehicle) => sum + costOf(vehicle), 0)
 }
 
-/** Income, cost and profit of a finished shift. */
+/** Income, cost and profit of a finished shift; salariesKr are the riders' salaries for it. */
 export function shiftMoney(
   orders: readonly Order[],
   fleet: readonly string[],
@@ -47,6 +49,7 @@ export function shiftMoney(
   heat: HeatSettings,
   rating: RatingSettings,
   money: MoneySettings,
+  salariesKr = 0,
 ): ShiftMoney {
   let payKr = 0
   let tipsKr = 0
@@ -56,5 +59,5 @@ export function shiftMoney(
     tipsKr += earned.tipsKr
   }
   const costKr = fleetCostKr(fleet, costOf)
-  return { payKr, tipsKr, costKr, profitKr: payKr + tipsKr - costKr }
+  return { payKr, tipsKr, costKr, salariesKr, profitKr: payKr + tipsKr - costKr - salariesKr }
 }

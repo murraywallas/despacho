@@ -7,6 +7,8 @@ import {
   deliveriesToNextLevel,
   levelOf,
   levelProgress,
+  salariesKr,
+  salaryKr,
   speedBonusOf,
   train,
   xpOfRiders,
@@ -119,5 +121,24 @@ describe('entregas que faltan para el próximo nivel', () => {
   test('en el nivel máximo ya no falta nada', () => {
     expect(deliveriesToNextLevel(30, rules)).toBeUndefined()
     expect(deliveriesToNextLevel(99, rules)).toBeUndefined()
+  })
+})
+
+describe('sueldo por nivel', () => {
+  const rules: ExperienceRules = { xpPerDelivery: 1, xpPerLevel: 10, maxLevel: 5, speedBonusPerLevelPct: 0.05, trainingKr: 250, salaryPerLevelKr: 40 }
+
+  test('cada nivel cobra más; el nivel 0 no cobra', () => {
+    expect(salaryKr(0, rules)).toBe(0)
+    expect(salaryKr(1, rules)).toBe(40)
+    expect(salaryKr(3, rules)).toBe(120)
+    // Sin el valor en la planilla, no hay sueldo.
+    expect(salaryKr(3, { ...rules, salaryPerLevelKr: undefined })).toBe(0)
+  })
+
+  test('los sueldos de los que salen: los primeros del garage', () => {
+    // Niveles 2, 0 y 1; el cuarto lugar todavía no tiene experiencia.
+    expect(salariesKr([25, 5, 10], 4, rules)).toBe(120)
+    expect(salariesKr([25, 5, 10], 2, rules)).toBe(80)
+    expect(salariesKr([], 3, rules)).toBe(0)
   })
 })
