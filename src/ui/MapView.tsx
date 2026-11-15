@@ -26,6 +26,7 @@ import { useWindArrow } from './WindArrow'
 import { useAttention } from './useAttention'
 import { neighborhoodName } from './levelText'
 import { useMapMarkers, type MarkerAction } from './useMapMarkers'
+import { useRevealPicked, useSpreadRestaurants } from './useMapLayout'
 
 interface MapViewProps {
   map: CityMap
@@ -36,6 +37,8 @@ interface MapViewProps {
 
 /** Space around the area when the map opens, beyond the floating panels, in CSS pixels. */
 const FIT_PADDING = 24
+/** Restaurant and rider cards stand above their spot: room for them under the top bar, in CSS pixels. */
+const PIN_HEIGHT = 40
 /**
  * How far past the area the player can drag the map, as a share of its size. The map runs under the panels,
  * so it needs room to center the area in the part of the screen between them.
@@ -57,6 +60,12 @@ const POPUP_OFFSETS: Record<PositionAnchor, [number, number]> = {
 // (the base map adds its own: OpenFreeMap, OpenMapTiles).
 const ATTRIBUTION =
   '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>'
+
+/** The panels' space plus a margin, and room at the top for the cards that stand above a spot near the edge. */
+function fitPadding(container: HTMLElement) {
+  const insets = panelInsets(container, FIT_PADDING)
+  return { ...insets, top: insets.top + PIN_HEIGHT }
+}
 
 /**
  * The map of the area, where dispatching happens: restaurants with orders waiting show a "!", a tap opens their
@@ -88,7 +97,7 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
       container,
       style: fallbackStyle(palette),
       bounds: areaBounds(streets),
-      fitBoundsOptions: { padding: panelInsets(container, FIT_PADDING) },
+      fitBoundsOptions: { padding: fitPadding(container) },
       maxBounds: areaBounds(streets, DRAG_MARGIN),
       attributionControl: false,
       locale: {
@@ -187,6 +196,14 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   )
   const windArrow = useWindArrow(instanceRef, ready)
   const elements = useMapMarkers(instanceRef, ready, markers, describe, onAction)
+  // The picked order's restaurant and customers never stay hidden; during the guide, neither do the waiting ones.
+  const pickedFirst = orders.find((order) => order.id === pickedIds[0])
+  const revealKeys = pickedFirst
+    ? [`restaurant:${pickedFirst.restaurantId}`, ...pickedIds.map((id) => `customer:${id}`)]
+    : []
+  const waitingKeys = markers.filter((marker) => marker.waiting).map((marker) => marker.key)
+  useRevealPicked(instanceRef, containerRef, ready, elements, revealKeys, waitingKeys)
+  useSpreadRestaurants(instanceRef, ready, markers, elements)
   useDeliveryFx(instanceRef, ready, map)
 
   // The card shows the selected order's restaurant (while it waits for a rider), or the one the player opened.
