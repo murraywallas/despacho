@@ -203,16 +203,21 @@
 
 .rider-card__vehicle {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 2px 5px;
   min-width: 0;
   font-weight: 600;
 }
 
+.rider-card__vehicle > svg {
+  flex-shrink: 0;
+}
+
+/* El vehículo es el trade-off: su nombre se lee entero; si no entra (a 1024 px, "Monopatín eléctrico"), pasa a dos líneas. */
 .rider-card__vehicle-name {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  min-width: 0;
+  line-height: 1.15;
 }
 
 /* Carga: pedidos que lleva / que le entran. */
