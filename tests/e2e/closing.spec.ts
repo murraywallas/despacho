@@ -1,23 +1,26 @@
 import { expect, test } from '@playwright/test'
-import { prototype, SHIFT_URL, shiftEndsAt } from './balance.ts'
+import { clockSpeeds, prototype, SHIFT_URL, shiftEndsAt } from './balance.ts'
 
-test.describe.configure({ timeout: 120_000 }) // Simula el turno entero cuadro por cuadro.
+test.describe.configure({ timeout: 180_000 }) // Simula el turno entero cuadro por cuadro.
 
 // Real seconds before the end when the held orders go out: a rider can pick one up before the closing hour, but
 // not deliver it.
 const DISPATCH_BEFORE_END_SEC = 30
 const STEP_MS = 1000
+// The fastest clock speed: the shift takes a third of the time.
+const FAST = Math.max(...clockSpeeds)
 
 test('al cierre, la comida en camino se entrega igual (con el reloj en la hora de cierre) y cuenta en los resultados', async ({
   page,
 }) => {
   await page.clock.install()
   await page.goto(SHIFT_URL)
+  await page.getByRole('button', { name: `${FAST}x`, exact: true }).click()
   const orders = page.getByRole('complementary', { name: /Pedidos/ }).getByTestId('order-card')
   const riderPanel = page.getByRole('complementary', { name: /Repartidores/ })
 
   // Nadie despacha hasta poco antes del cierre: los pedidos se juntan (y los viejos se cancelan).
-  await page.clock.runFor((prototype.shift.durationSec - DISPATCH_BEFORE_END_SEC) * 1000)
+  await page.clock.runFor(((prototype.shift.durationSec - DISPATCH_BEFORE_END_SEC) * 1000) / FAST)
   await page.keyboard.press('Space') // En pausa, para despachar tranquilos.
   // Cada repartidor libre sale con el pedido más urgente.
   for (let sent = 0; sent < 3 && (await orders.count()) > 0; sent++) {

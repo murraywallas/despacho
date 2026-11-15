@@ -23,6 +23,7 @@ import {
   neighborhoodOf,
   neighborhoodAverage,
   nextLevel,
+  nextToOpen,
   recordResult,
   withFleet,
 } from '../../src/game/levels'
@@ -236,5 +237,20 @@ describe('pilar 1 en cada nivel', () => {
 
   test.each(levelsOf('vesterbro'))('%s: juntar dos pedidos del mismo restaurante saca más estrellas que llevarlos de a uno', { timeout: 120_000 }, (levelId) => {
     expect(averageOf(levelId, batchingBot)).toBeGreaterThan(averageOf(levelId, triageBot))
+  })
+})
+
+describe('qué abriría ganar un nivel', () => {
+  test('el nivel siguiente del barrio, mientras siga cerrado', () => {
+    expect(nextToOpen(levelIds, {}, 'lunch', UNLOCK)).toEqual({ kind: 'level', id: 'dinner' })
+    expect(nextToOpen(levelIds, { lunch: UNLOCK }, 'lunch', UNLOCK)).toBeUndefined()
+  })
+
+  test('después del último nivel, el barrio siguiente; nada si ya está abierto o no hay otro', () => {
+    const norrebro = levelsOf('norrebro')
+    expect(nextToOpen(levelIds, {}, norrebro.at(-1)!, UNLOCK)).toEqual({ kind: 'neighborhood', id: 'vesterbro' })
+    const allNorrebro = Object.fromEntries(norrebro.map((id) => [id, UNLOCK]))
+    expect(nextToOpen(levelIds, allNorrebro, norrebro.at(-1)!, UNLOCK)).toBeUndefined()
+    expect(nextToOpen(levelIds, {}, levelIds.at(-1)!, UNLOCK)).toBeUndefined()
   })
 })

@@ -40,7 +40,7 @@
   "topbar.ratingValue": "Promedio del turno: {rating} de {max} estrellas. Se gana con {goal}.",
   "topbar.ratingNone": "Todavía sin estrellas: llegan con la primera entrega. Se gana con {goal}.",
   "results.outcome.win": "¡Ganaste el turno!",
-  "results.outcome.close": "Pasaste justo",
+  "results.outcome.close": "Casi: se gana con {goal}",
   "results.outcome.lose": "Perdiste el turno",
   "results.ratingLabel": "Promedio del turno: {rating} de {max} estrellas",
   "results.ratingMax": "de {max}",
@@ -311,5 +311,8 @@
   "weather.keep": "{name}: en {slow} se va mucho más lento. Conviene salir en {to}.",
   "results.money.salaries": "Sueldos",
   "garage.salary": "sueldo {cost}",
-  "topbar.closing": "Cerrando el turno…"
+  "topbar.closing": "Cerrando el turno…",
+  "results.outcome.closeLevel": "Casi: necesitás {goal} para abrir {level}",
+  "results.outcome.closeNeighborhood": "Casi: necesitás {goal} de promedio en el barrio para abrir {neighborhood}",
+  "results.barLabel": "Promedio {rating} de {max}. Con menos de {lose} se pierde; con {win} o más se gana."
 }
