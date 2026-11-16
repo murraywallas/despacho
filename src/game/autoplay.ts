@@ -9,13 +9,16 @@ import { riderSpeed } from './movement'
 import { parkingSecOf } from './parking'
 import { batteryShare, hasBatteryFor, isLowBattery, sendToCharge, tripMeters } from './battery'
 import { createAreaShift } from './levels'
+import { canShareTrip } from './pickups'
+import { tripArrivals } from './stops'
+import type { Order } from './orders'
 import { DEFAULT_NEIGHBORHOOD } from './neighborhoods'
 import { advanceShift, dispatchOrders, settingsAt, type ShiftSettings, type ShiftSnapshot } from './shift'
 
 export interface BotPick {
   readonly orderId: string
   readonly riderId: string
-  /** Other orders of the same restaurant the rider takes on the same trip. */
+  /** Other orders the rider takes on the same trip (same restaurant, or one close by). */
   readonly withOrderIds?: readonly string[]
 }
 
@@ -83,7 +86,7 @@ export const triageBot: Bot = (shift, settings) => {
 
 /**
  * Careful dispatching that also batches: like triageBot, but when the rider carries more than one order, it takes
- * the other most urgent orders waiting at the same restaurant on the same trip.
+ * on the same trip the other most urgent orders waiting at the same restaurant, then at the ones close by.
  */
 export const batchingBot: Bot = (shift, settings) => {
   const pick = triageBot(shift, settings)
@@ -93,12 +96,27 @@ export const batchingBot: Bot = (shift, settings) => {
   if (!rider || !order) return pick
   const room = capacityOf(rider.vehicle) - 1
   if (room <= 0) return pick
-  const others = pendingOrders(shift)
-    .filter((candidate) => candidate.id !== order.id && candidate.restaurantId === order.restaurantId)
-    .sort((x, y) => x.deadlineAtSec - y.deadlineAtSec)
-    .slice(0, room)
-    // Only what the battery lasts, if the vehicle has one.
-    .filter((_, index, list) => hasBatteryFor(rider, tripMeters(shift.map, rider, [order, ...list.slice(0, index + 1)])))
+  const candidates = pendingOrders(shift)
+    .filter((candidate) => candidate.id !== order.id)
+    .sort((x, y) => Number(x.restaurantId !== order.restaurantId) - Number(y.restaurantId !== order.restaurantId) || x.deadlineAtSec - y.deadlineAtSec)
+  const speeds = settings.movement.metersPerSec
+  const now = shift.clock.elapsedSec
+  const lateIn = (orders: readonly Order[]) =>
+    tripArrivals(shift.map, rider, orders, speeds, now).filter((arrival) => arrival.late).length
+  const trip = [order]
+  let late = lateIn(trip)
+  for (const candidate of candidates) {
+    if (trip.length > room) break
+    const longer = [...trip, candidate]
+    // Restaurants close enough to each other, and only what the battery lasts, if the vehicle has one.
+    if (!canShareTrip(shift.map, longer) || !hasBatteryFor(rider, tripMeters(shift.map, rider, longer))) continue
+    // A careful player looks at the arrivals of the trip: an order that makes one more late stays for someone else.
+    const lateWith = lateIn(longer)
+    if (lateWith > late) continue
+    trip.push(candidate)
+    late = lateWith
+  }
+  const others = trip.slice(1)
   return others.length > 0 ? { ...pick, withOrderIds: others.map((other) => other.id) } : pick
 }
 

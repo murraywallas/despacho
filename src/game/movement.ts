@@ -1,10 +1,10 @@
 /**
- * Riders on the move along real streets: riding to the restaurant, waiting until the kitchen has every order of
- * the trip ready, then riding to each customer in turn and delivering.
+ * Riders on the move along real streets: riding to each restaurant of the trip (one, or a few close together),
+ * waiting until its kitchen has the trip's orders ready, then riding to each customer in turn and delivering.
  * Everything advances with seconds of play, so pause and fast speed come for free. Pure.
  */
 import { networkFor, positionOf, type CityMap, type NodeId } from './cityMap'
-import { restaurantOf } from './dispatch'
+import { laterPickups, pickupsOf } from './pickups'
 import type { Order } from './orders'
 import type { Rider, Trip } from './riders'
 import { cumulativeMeters, findRoute, type StreetNetwork } from './routing'
@@ -53,12 +53,12 @@ export function ordersOf(rider: Rider, orders: readonly Order[]): Order[] {
   return (rider.orderIds ?? []).flatMap((id) => orders.find((order) => order.id === id) ?? [])
 }
 
-/** Starts the first leg (to the restaurant) of a rider who just got their orders. */
+/** Starts the first leg (to the first restaurant) of a rider who just got their orders. */
 export function startTrip(map: CityMap, rider: Rider, orders: readonly Order[]): Rider {
-  const [first] = ordersOf(rider, orders)
+  const [first] = pickupsOf(map, ordersOf(rider, orders))
   if (!first) return rider
   const network = networkFor(map, rider.vehicle)
-  const restaurant = restaurantOf(map, first).node
+  const restaurant = first.restaurant.node
   const trip = leg(network, routeNodes(network, rider.node, restaurant))
   return { ...rider, trip: { ...trip, kitchenLeftSec: 0, parkLeftSec: parkingSecOf(rider.vehicle) } }
 }
@@ -99,11 +99,14 @@ export function upcomingLegs(map: CityMap, rider: Rider, orders: readonly Order[
   const network = networkFor(map, rider.vehicle)
   const legs: NodeId[][] = []
   let from: NodeId
-  if (rider.status === 'toRestaurant') {
-    legs.push(trip.path.slice(passedIndex(trip)))
-    from = restaurantOf(map, stops[0]).node
-  } else if (rider.status === 'atKitchen') {
-    from = rider.node
+  if (rider.status === 'toRestaurant' || rider.status === 'atKitchen') {
+    // The leg to this restaurant, then one to each other restaurant still to visit.
+    if (rider.status === 'toRestaurant') legs.push(trip.path.slice(passedIndex(trip)))
+    from = trip.path[trip.path.length - 1]
+    for (const pickup of laterPickups(map, stops, from)) {
+      legs.push(routeNodes(network, from, pickup.restaurant.node))
+      from = pickup.restaurant.node
+    }
   } else {
     const current = headsTo(trip, stops[0].customer) ? trip.path.slice(passedIndex(trip)) : routeNodes(network, rider.node, stops[0].customer)
     legs.push(current)
@@ -129,8 +132,8 @@ export function remainingRoute(map: CityMap, rider: Rider, orders: readonly Orde
 
 interface RiderStep {
   readonly rider: Rider
-  /** When the food left the restaurant (all the trip's orders at once). */
-  readonly pickedUpAtSec?: number
+  /** Orders picked up in this step, with the second each one left its restaurant. */
+  readonly pickedUp: readonly { readonly orderId: string; readonly atSec: number }[]
   /** Orders delivered in this step, with the second each one reached its customer. */
   readonly delivered: readonly { readonly orderId: string; readonly atSec: number }[]
 }
@@ -151,7 +154,10 @@ export function advanceRider(
   let stops = [...orders]
   let left = dtSec
   let now = startSec
-  let pickedUpAtSec: number | undefined
+  const pickedUp: { orderId: string; atSec: number }[] = []
+  // Orders already on board: picked up before this step, or in it.
+  const onBoard = new Set(orders.filter((order) => order.status === 'pickedUp').map((order) => order.id))
+  const toPick = () => pickupsOf(map, stops.filter((order) => !onBoard.has(order.id)))
   // Meters ridden in this step: they come off the battery.
   let movedM = 0
   const delivered: { orderId: string; atSec: number }[] = []
@@ -159,6 +165,13 @@ export function advanceRider(
   const metersPerSec = riderSpeed(settings.metersPerSec, rider)
   const parkSec = parkingSecOf(rider.vehicle)
   const idle = (at: NodeId): Rider => ({ ...current, node: at, status: 'idle', orderIds: undefined, trip: undefined })
+  // From a restaurant: on to the next one still to visit, or (with all the food on board) to the first customer.
+  const leave = (from: NodeId): Rider => {
+    const [next] = toPick()
+    const to = next ? next.restaurant.node : stops[0].customer
+    const trip = { ...leg(network, routeNodes(network, from, to)), kitchenLeftSec: 0, parkLeftSec: parkSec }
+    return { ...current, node: from, status: next ? 'toRestaurant' : 'toCustomer', trip }
+  }
 
   while (current.trip && left > EPSILON) {
     if (stops.length === 0) {
@@ -175,9 +188,11 @@ export function advanceRider(
       }
       left -= trip.kitchenLeftSec
       now += trip.kitchenLeftSec
-      pickedUpAtSec = now
-      trip = { ...leg(network, routeNodes(network, current.node, stops[0].customer)), kitchenLeftSec: 0, parkLeftSec: parkSec }
-      current = { ...current, status: 'toCustomer', trip }
+      for (const order of toPick().find((pickup) => pickup.restaurant.node === current.node)?.orders ?? []) {
+        onBoard.add(order.id)
+        pickedUp.push({ orderId: order.id, atSec: now })
+      }
+      current = leave(current.node)
       continue
     }
 
@@ -211,7 +226,13 @@ export function advanceRider(
     left -= timeToEnd + park
     now += timeToEnd + park
     if (current.status === 'toRestaurant') {
-      const readyAtSec = Math.max(...stops.map((order) => order.readyAtSec))
+      const here = toPick().find((pickup) => pickup.restaurant.node === end)
+      // Nothing left to pick up here (the orders went to someone else): on to the next stop.
+      if (!here) {
+        current = leave(end)
+        continue
+      }
+      const readyAtSec = here.readyAtSec
       current = {
         ...current,
         node: end,
@@ -238,7 +259,7 @@ export function advanceRider(
     }
   }
 
-  return { rider: drain(current, movedM), pickedUpAtSec, delivered }
+  return { rider: drain(current, movedM), pickedUp, delivered }
 }
 
 /**
@@ -264,9 +285,7 @@ export function advanceFleet(
     if (!rider.trip) return rider
     const tripOrders = ordersOf(rider, orders)
     const step = advanceRider(map, rider, tripOrders, dtSec, startSec, settings)
-    if (step.pickedUpAtSec !== undefined) {
-      for (const order of tripOrders) orderUpdates.set(order.id, { status: 'pickedUp', pickedUpAtSec: step.pickedUpAtSec })
-    }
+    for (const { orderId, atSec } of step.pickedUp) orderUpdates.set(orderId, { status: 'pickedUp', pickedUpAtSec: atSec })
     for (const { orderId, atSec } of step.delivered) {
       orderUpdates.set(orderId, { ...orderUpdates.get(orderId), status: 'delivered', deliveredAtSec: atSec })
     }

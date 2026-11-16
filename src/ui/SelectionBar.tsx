@@ -10,10 +10,14 @@ import { Keycap } from './Keycap'
 import { restaurantName } from './restaurantName'
 import { useNeighborhood } from './useNeighborhood'
 
-/** "#3 y #4", "#3, #4 y #5": the orders of a trip, the Spanish way. */
-function listNumbers(picked: readonly { readonly number: number }[]): string {
-  const names = picked.map((order) => `#${order.number}`)
+/** "A y B", "A, B y C": a list, the Spanish way. */
+function listNames(names: readonly string[]): string {
   return names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} ${t('list.and')} ${names.at(-1)}`
+}
+
+/** "#3 y #4", "#3, #4 y #5": the orders of a trip. */
+function listNumbers(picked: readonly { readonly number: number }[]): string {
+  return listNames(picked.map((order) => `#${order.number}`))
 }
 
 /**
@@ -34,7 +38,11 @@ export function SelectionBar() {
 
   const order = orders.find((candidate) => candidate.id === selectedOrderId)
   if (!order) return null
-  const restaurant = restaurants.find((candidate) => candidate.id === order.restaurantId)
+  const picked = [order, ...addedOrderIds.flatMap((id) => orders.filter((candidate) => candidate.id === id))]
+  // The trip's restaurants: one, or a few close together.
+  const tripRestaurants = [...new Set(picked.map((candidate) => candidate.restaurantId))].flatMap(
+    (id) => restaurants.find((candidate) => candidate.id === id) ?? [],
+  )
   const rider = riders.find((candidate) => candidate.id === order.riderId)
   const left = timeLeftSec(order, nowSec)
   const extra = gameMinutes(prototype.tools.callExtendSec, gameTime)
@@ -54,10 +62,8 @@ export function SelectionBar() {
         <span className="selection-bar__title">
           {addedOrderIds.length === 0
             ? t('orders.number', { number: order.number })
-            : t('selection.orders', {
-                numbers: listNumbers([order, ...addedOrderIds.flatMap((id) => orders.filter((candidate) => candidate.id === id))]),
-              })}
-          {restaurant && ` · ${restaurantName(restaurant, neighborhood)}`}
+            : t('selection.orders', { numbers: listNumbers(picked) })}
+          {tripRestaurants.length > 0 && ` · ${listNames(tripRestaurants.map((restaurant) => restaurantName(restaurant, neighborhood)))}`}
           {' · '}
           {left > 0 ? t('orders.minutesLeft', { minutes: gameMinutes(left, gameTime) }) : t('orders.late')}
         </span>

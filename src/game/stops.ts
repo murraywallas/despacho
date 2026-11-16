@@ -1,6 +1,6 @@
 /**
- * When a rider reaches each customer of their trip: the rest of the ride to the restaurant, the wait until every
- * order is ready, then each customer in turn. The last customer waits the most: that is the price of batching.
+ * When a rider reaches each customer of their trip: the rest of the ride to the restaurant, the wait until its
+ * orders are ready, the same at each other restaurant of the trip, then each customer in turn. The last customer waits the most: that is the price of batching.
  * Also what a free rider would do with a trip before getting it, so the player can compare riders by when the food
  * reaches the customer (not by who gets to the restaurant first). Pure.
  */
@@ -8,6 +8,7 @@ import { networkFor, type CityMap, type NodeId } from './cityMap'
 import { capacityOf, rankRiders, restaurantOf, travelTimeSec, type RankedRider } from './dispatch'
 import { hasBatteryFor, tripMeters } from './battery'
 import { ordersOf, riderSpeed, startTrip, type Speeds } from './movement'
+import { laterPickups, pickupsOf } from './pickups'
 import type { Order } from './orders'
 import { parkingSecOf } from './parking'
 import type { Rider } from './riders'
@@ -31,13 +32,15 @@ export function stopEtas(map: CityMap, rider: Rider, orders: readonly Order[], s
   let at = nowSec
   let from: NodeId
 
-  if (rider.status === 'toRestaurant') {
-    at += leftOfLeg
-    at = Math.max(at, ...stops.map((order) => order.readyAtSec))
-    from = restaurantOf(map, stops[0]).node
-  } else if (rider.status === 'atKitchen') {
-    at += trip.kitchenLeftSec
-    from = rider.node
+  if (rider.status === 'toRestaurant' || rider.status === 'atKitchen') {
+    from = trip.path[trip.path.length - 1]
+    const here = pickupsOf(map, stops).find((pickup) => pickup.restaurant.node === from)
+    at += rider.status === 'toRestaurant' ? Math.max(leftOfLeg, (here?.readyAtSec ?? 0) - nowSec) : trip.kitchenLeftSec
+    // Then each other restaurant of the trip: the ride, the parking and the wait for its kitchen.
+    for (const pickup of laterPickups(map, stops, from)) {
+      at = Math.max(at + travelTimeSec(network, from, pickup.restaurant.node, speed) + park, pickup.readyAtSec)
+      from = pickup.restaurant.node
+    }
   } else if (trip.path[trip.path.length - 1] === stops[0].customer) {
     at += leftOfLeg
     etas.push({ orderId: stops[0].id, atSec: at })
@@ -57,13 +60,13 @@ export function stopEtas(map: CityMap, rider: Rider, orders: readonly Order[], s
 }
 
 /**
- * When a free rider would reach each customer if they got these orders now (same restaurant, in delivery order):
- * the ride to the restaurant and the parking, the wait until the kitchen has every order, then each customer in
- * turn. Empty when the rider can't reach the restaurant.
+ * When a free rider would reach each customer if they got these orders now (in delivery order): the ride to each
+ * restaurant and the parking, the wait until its kitchen has the orders, then each customer in turn. Empty when the
+ * rider can't reach the first restaurant.
  */
 export function plannedEtas(map: CityMap, rider: Rider, trip: readonly Order[], speeds: Speeds, nowSec: number): StopEta[] {
   if (trip.length === 0) return []
-  const restaurant = restaurantOf(map, trip[0]).node
+  const restaurant = pickupsOf(map, trip)[0]?.restaurant.node ?? restaurantOf(map, trip[0]).node
   if (!Number.isFinite(travelTimeSec(networkFor(map, rider.vehicle), rider.node, restaurant, riderSpeed(speeds, rider)))) return []
   const planned = startTrip(map, { ...rider, status: 'toRestaurant', orderIds: trip.map((order) => order.id) }, trip)
   return stopEtas(map, planned, trip, speeds, nowSec)

@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, test } from 'vitest'
 import { clock as clockBalance, prototype } from '../../src/game/balance'
 import { createClock } from '../../src/game/clock'
 import { speedOf } from '../../src/game/movement'
-import { createOrderQueue } from '../../src/game/orders'
+import { createOrderQueue, type Order } from '../../src/game/orders'
+import { canShareTrip } from '../../src/game/pickups'
 import { orderSettings, settings, useShiftStore } from '../../src/store/shiftStore'
 
 const interval = prototype.orders.spawnIntervalSec
@@ -362,22 +363,43 @@ describe('varios pedidos por viaje', () => {
     throw new Error('Nunca hubo dos pedidos del mismo restaurante.')
   }
 
-  test('Shift + clic suma un pedido del mismo restaurante; otro restaurante no entra', () => {
+  test('Shift + clic suma un pedido del mismo restaurante; uno de un restaurante lejano no entra', () => {
     const [a, b] = twoFromOneRestaurant()
     const { selectOrder } = useShiftStore.getState()
     selectOrder(a.id)
     selectOrder(b.id, true)
     expect(useShiftStore.getState()).toMatchObject({ selectedOrderId: a.id, addedOrderIds: [b.id] })
-    const other = useShiftStore
-      .getState()
-      .orderQueue.orders.find((order) => order.status === 'pending' && order.restaurantId !== a.restaurantId)
-    if (other) {
-      selectOrder(other.id, true)
+    const { map, orderQueue } = useShiftStore.getState()
+    const far = orderQueue.orders.find((order) => order.status === 'pending' && !canShareTrip(map, [a, order]))
+    if (far) {
+      selectOrder(far.id, true)
       expect(useShiftStore.getState().addedOrderIds).toEqual([b.id])
     }
     // Volver a sumar el mismo lo saca.
     selectOrder(b.id, true)
     expect(useShiftStore.getState().addedOrderIds).toEqual([])
+  })
+
+  test('Shift + clic suma un pedido de un restaurante cercano, y la bici pasa por los dos', () => {
+    const { map } = useShiftStore.getState()
+    const { tick } = useShiftStore.getState()
+    let pair: Order[] | undefined
+    for (let i = 0; i < 300 && !pair; i++) {
+      tick(1)
+      const waiting = useShiftStore.getState().orderQueue.orders.filter((order) => order.status === 'pending')
+      for (const order of waiting) {
+        const other = waiting.find((candidate) => candidate.restaurantId !== order.restaurantId && canShareTrip(map, [order, candidate]))
+        if (other) pair = [order, other]
+      }
+    }
+    if (!pair) throw new Error('Nunca hubo pedidos de dos restaurantes cercanos.')
+    const [a, b] = pair
+    const { selectOrder, pickRider } = useShiftStore.getState()
+    selectOrder(a.id)
+    selectOrder(b.id, true)
+    expect(useShiftStore.getState().addedOrderIds).toEqual([b.id])
+    pickRider(1) // bici
+    expect(useShiftStore.getState().riders[0]).toMatchObject({ status: 'toRestaurant', orderIds: [a.id, b.id] })
   })
 
   test('la bici lleva los dos; la patineta, que lleva uno, no los acepta', () => {

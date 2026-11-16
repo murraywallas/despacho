@@ -7,6 +7,7 @@ import { closedLines } from '../game/closures'
 import { networkFor, positionOf, type CityMap, type NodeId } from '../game/cityMap'
 import { restaurantOf } from '../game/dispatch'
 import { passedIndex, riderDisplayPosition, upcomingLegs } from '../game/movement'
+import { pickupsOf } from '../game/pickups'
 import { waitingAt, type Order, type Urgency } from '../game/orders'
 import type { Rider, RiderStatus } from '../game/riders'
 import { findRoute } from '../game/routing'
@@ -54,8 +55,10 @@ export function buildMarkers(
   selection: MapSelection,
   urgencyOf: (order: Order) => Urgency,
 ): MapMarker[] {
-  const selected = orders.find((order) => order.id === selection.orderIds[0])
-  const selectedRestaurant = selected && restaurantOf(map, selected).id
+  // Every restaurant of the picked trip (one, or a few close together).
+  const selectedRestaurants = new Set(
+    selection.orderIds.flatMap((id) => orders.find((order) => order.id === id) ?? []).map((order) => order.restaurantId),
+  )
   const hovered = orders.find((order) => order.id === selection.hoveredOrderId)
   const hoveredRestaurant = hovered && restaurantOf(map, hovered).id
   return [
@@ -70,7 +73,7 @@ export function buildMarkers(
         id: restaurant.id,
         lngLat: positionOf(map, restaurant.node),
         label: restaurant.label,
-        selected: restaurant.id === selectedRestaurant,
+        selected: selectedRestaurants.has(restaurant.id),
         highlighted: restaurant.id === hoveredRestaurant,
         ...(waiting.length > 0 ? { waiting: { count: waiting.length, urgency } } : {}),
       }
@@ -147,7 +150,8 @@ export function routesGeoJson(
 }
 
 /**
- * For the selected order: the way each free rider would ride to its restaurant, and then on to the customer.
+ * For the selected order: the way each free rider would ride to its restaurant, and then on to the customer (with
+ * more orders picked: on to each other restaurant of the trip, then to each customer).
  * Without `withRiders` (an order under the mouse), only the ride from the restaurant to the customer.
  */
 export function previewGeoJson(
@@ -158,14 +162,12 @@ export function previewGeoJson(
 ): FeatureCollection<LineString> {
   const trip = selected.filter((order) => order.status === 'pending')
   if (trip.length === 0) return { type: 'FeatureCollection', features: [] }
-  const restaurant = restaurantOf(map, trip[0]).node
   const nodesOf = (from: NodeId, to: NodeId, vehicle?: string) =>
     findRoute(vehicle ? networkFor(map, vehicle) : map.network, from, to)?.nodes ?? []
-  // From the restaurant to each customer of the trip, in order.
-  const stops = trip.map((order) => order.customer)
-  const planned = stops.flatMap((customer, index) =>
-    routeLine(map, nodesOf(index === 0 ? restaurant : stops[index - 1], customer), 'planned'),
-  )
+  // From the first restaurant to each other one of the trip, then to each customer, in order.
+  const stops = [...pickupsOf(map, trip).map((pickup) => pickup.restaurant.node), ...trip.map((order) => order.customer)]
+  const [restaurant] = stops
+  const planned = stops.slice(1).flatMap((to, index) => routeLine(map, nodesOf(stops[index], to), 'planned'))
   return {
     type: 'FeatureCollection',
     features: [
