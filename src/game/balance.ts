@@ -41,6 +41,8 @@ export interface PrototypeBalance {
     readonly urgentBelowSec: number
     /** Customers live at least this far from the restaurant, in meters. */
     readonly minCustomerDistanceM: number
+    /** Orders of restaurants at most this far apart (straight line, meters) can go on one trip. Missing: only the same restaurant. */
+    readonly nearbyRestaurantsM?: number
     /** The kitchen closes this long before the end of the shift: no new orders after that. */
     readonly lastOrderBeforeEndSec: number
     /** The rush of the shift (optional): from this second to that one, orders come every peakIntervalSec. */

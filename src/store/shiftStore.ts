@@ -3,6 +3,7 @@ import { clock as clockBalance, clockSpeeds, prototype } from '../game/balance'
 import type { CityMap } from '../game/cityMap'
 import { setSpeed, togglePause, type ShiftClock, isOver } from '../game/clock'
 import { reorderStops } from '../game/movement'
+import { canShareTrip } from '../game/pickups'
 import { waitingAt, type Order, type OrderQueue, type OrderSettings } from '../game/orders'
 import type { Random } from '../game/random'
 import type { Rider } from '../game/riders'
@@ -207,8 +208,9 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
       const order = state.orderQueue.orders.find((candidate) => candidate.id === orderId)
       if (add && state.selectedOrderId && orderId !== state.selectedOrderId) {
         if (state.addedOrderIds.includes(orderId)) return { addedOrderIds: state.addedOrderIds.filter((id) => id !== orderId) }
-        const first = state.orderQueue.orders.find((candidate) => candidate.id === state.selectedOrderId)
-        if (order?.status !== 'pending' || order.restaurantId !== first?.restaurantId) return state
+        // Orders of the same restaurant, or of restaurants close together (Kødbyen…), go on one trip.
+        const trip = [state.selectedOrderId, ...state.addedOrderIds].flatMap((id) => state.orderQueue.orders.find((candidate) => candidate.id === id) ?? [])
+        if (order?.status !== 'pending' || trip.length === 0 || !canShareTrip(state.map, [...trip, order])) return state
         return { addedOrderIds: [...state.addedOrderIds, orderId] }
       }
       if (orderId === state.selectedOrderId) return { selectedOrderId: null, addedOrderIds: NO_ORDERS, refusal: null }

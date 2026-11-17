@@ -42,9 +42,11 @@ export function reassignOrder(
     const left = (rider.orderIds ?? []).filter((id) => id !== orderId)
     if (left.length === 0) return { ...rider, status: 'idle' as const, orderIds: undefined, trip: undefined }
     if (rider.status !== 'atKitchen' || !rider.trip) return { ...rider, orderIds: left }
-    // At the kitchen: wait only for the orders still on the trip.
+    // At the kitchen: wait only for the orders still on the trip (never longer than before: some of them may be
+    // waiting at another restaurant of the trip).
     const readyAtSec = Math.max(...left.map((id) => released.find((candidate) => candidate.id === id)?.readyAtSec ?? 0))
-    return { ...rider, orderIds: left, trip: { ...rider.trip, kitchenLeftSec: Math.max(0, readyAtSec - nowSec) } }
+    const kitchenLeftSec = Math.min(rider.trip.kitchenLeftSec, Math.max(0, readyAtSec - nowSec))
+    return { ...rider, orderIds: left, trip: { ...rider.trip, kitchenLeftSec } }
   })
 
   const result = assignOrders(released, dropped, [orderId], toRiderId, capacity)

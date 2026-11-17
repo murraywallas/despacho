@@ -60,7 +60,7 @@ describe('armar un viaje con varios pedidos', () => {
 
   test('no se mezclan restaurantes', () => {
     const other = order('o3', 3, nodeAt(2, 4), START + 5, 'r2')
-    expect(assignOrders([first, other], [rider], ['o1', 'o3'], 'k1', 2)).toEqual({ ok: false, error: 'different-restaurants' })
+    expect(assignOrders([first, other], [rider], ['o1', 'o3'], 'k1', 2)).toEqual({ ok: false, error: 'restaurants-too-far' })
   })
 })
 

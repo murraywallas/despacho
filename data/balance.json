@@ -14,7 +14,8 @@
       "cancelAfterSec": 60,
       "urgentBelowSec": 40,
       "minCustomerDistanceM": 400,
-      "lastOrderBeforeEndSec": 150
+      "lastOrderBeforeEndSec": 150,
+      "nearbyRestaurantsM": 400
     },
     "kitchen": {
       "cookSec": 15
@@ -565,7 +566,7 @@
       "spawnIntervalSec": 10,
       "peakFromSec": 150,
       "peakToSec": 300,
-      "peakIntervalSec": 7,
+      "peakIntervalSec": 6,
       "deadlineSec": 138,
       "seed": 602,
       "light": "dusk",

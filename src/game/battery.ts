@@ -3,7 +3,7 @@
  * left is refused, and the rider goes back to base to recharge, which takes a while. Pure.
  */
 import { networkFor, type CityMap, type NodeId } from './cityMap'
-import { restaurantOf } from './dispatch'
+import { pickupsOf } from './pickups'
 import type { Order } from './orders'
 import type { Rider } from './riders'
 import { cumulativeMeters, findRoute, type StreetNetwork } from './routing'
@@ -22,12 +22,16 @@ function metersBetween(network: StreetNetwork, from: NodeId, to: NodeId): number
   return findRoute(network, from, to)?.effectiveM ?? Infinity
 }
 
-/** Meters of a whole trip: from where the rider is to the restaurant, then to each customer in turn. */
+/** Meters of a whole trip: from where the rider is to each restaurant still to visit, then to each customer in turn. */
 export function tripMeters(map: CityMap, rider: Rider, orders: readonly Order[]): number {
   if (orders.length === 0) return 0
   const network = networkFor(map, rider.vehicle)
-  let from = restaurantOf(map, orders[0]).node
-  let meters = metersBetween(network, rider.node, from)
+  let from = rider.node
+  let meters = 0
+  for (const pickup of pickupsOf(map, orders)) {
+    meters += metersBetween(network, from, pickup.restaurant.node)
+    from = pickup.restaurant.node
+  }
   for (const order of orders) {
     meters += metersBetween(network, from, order.customer)
     from = order.customer

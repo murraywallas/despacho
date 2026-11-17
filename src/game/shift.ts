@@ -16,6 +16,7 @@ import { assignOrders, capacityOf } from './dispatch'
 
 export { capacityOf }
 import { advanceFleet, startTrip, type MovementSettings } from './movement'
+import { canShareTrip } from './pickups'
 import { createOrderQueue, spawnOrders, type OrderPeak, type OrderQueue, type OrderSettings } from './orders'
 import { createRandom, type Random } from './random'
 import { norrebroBikeNetwork, norrebroNetworkFor } from './norrebro'
@@ -222,8 +223,9 @@ export function advanceShift(
 }
 
 /**
- * Gives one or more orders of the same restaurant to a rider and starts the trip, delivering them in the order
- * given. Undefined when the orders or the rider can't go together (busy, over capacity, two restaurants…).
+ * Gives one or more orders (of one restaurant, or of a few close together) to a rider and starts the trip,
+ * delivering them in the order given. Undefined when the orders or the rider can't go together (busy, over
+ * capacity, restaurants too far apart…).
  */
 export function dispatchOrders(
   map: CityMap,
@@ -236,7 +238,7 @@ export function dispatchOrders(
   const rider = riders.find((candidate) => candidate.id === riderId)
   const refused = refuseForBattery(map, orderQueue, riders, orderIds, riderId, rechargeSec)
   if (refused) return refused
-  const result = assignOrders(orderQueue.orders, riders, orderIds, riderId, rider ? capacityOf(rider.vehicle) : 1)
+  const result = assignOrders(orderQueue.orders, riders, orderIds, riderId, rider ? capacityOf(rider.vehicle) : 1, (trip) => canShareTrip(map, trip))
   if (!result.ok) return undefined
   return {
     orderQueue: { ...orderQueue, orders: result.orders },

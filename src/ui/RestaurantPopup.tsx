@@ -44,8 +44,10 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
   const waiting = waitingAt(orders, restaurant.id)
   const selectedOrder = waiting.find((order) => order.id === selectedOrderId)
   const selectedRider = riders.find((rider) => rider.id === selectedRiderId)
-  // The trip in delivery order: the picked order, then the ones added with Shift.
-  const trip = selectedOrder ? [selectedOrder, ...addedOrderIds.flatMap((id) => waiting.find((order) => order.id === id) ?? [])] : []
+  // The trip in delivery order: the picked order, then the ones added with Shift (here, or at a restaurant close by).
+  const trip = selectedOrder
+    ? [selectedOrder, ...addedOrderIds.flatMap((id) => orders.find((order) => order.id === id && order.status === 'pending') ?? [])]
+    : []
   const picked = trip.length
   const ranked = rankByDelivery(map, riders, trip, speedsAt(nowSec), nowSec)
   const isPicked = (id: string) => id === selectedOrderId || addedOrderIds.includes(id)

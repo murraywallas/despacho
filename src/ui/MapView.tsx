@@ -197,10 +197,8 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   const windArrow = useWindArrow(instanceRef, ready)
   const elements = useMapMarkers(instanceRef, ready, markers, describe, onAction)
   // The picked order's restaurant and customers never stay hidden; during the guide, neither do the waiting ones.
-  const pickedFirst = orders.find((order) => order.id === pickedIds[0])
-  const revealKeys = pickedFirst
-    ? [`restaurant:${pickedFirst.restaurantId}`, ...pickedIds.map((id) => `customer:${id}`)]
-    : []
+  const pickedRestaurants = new Set(pickedIds.flatMap((id) => orders.find((order) => order.id === id)?.restaurantId ?? []))
+  const revealKeys = [...[...pickedRestaurants].map((id) => `restaurant:${id}`), ...(pickedRestaurants.size > 0 ? pickedIds.map((id) => `customer:${id}`) : [])]
   const waitingKeys = markers.filter((marker) => marker.waiting).map((marker) => marker.key)
   useRevealPicked(instanceRef, containerRef, ready, elements, revealKeys, waitingKeys)
   useSpreadRestaurants(instanceRef, ready, markers, elements)

@@ -65,7 +65,7 @@ export type AssignError =
   | 'order-not-pending'
   | 'rider-busy'
   | 'no-orders'
-  | 'different-restaurants'
+  | 'restaurants-too-far'
   | 'over-capacity'
 
 export type AssignResult =
@@ -73,8 +73,9 @@ export type AssignResult =
   | { readonly ok: false; readonly error: AssignError }
 
 /**
- * Gives one or more pending orders of the same restaurant to a free rider, who heads there and delivers them in
- * the order given. `capacity` is how many orders the rider's vehicle carries (from the Vehículos tab).
+ * Gives one or more pending orders to a free rider, who picks them up and delivers them in the order given. They
+ * come from one restaurant, or from a few close together (`sameTrip`, with the map: see canShareTrip).
+ * `capacity` is how many orders the rider's vehicle carries (from the Vehículos tab).
  */
 export function assignOrders(
   orders: readonly Order[],
@@ -82,6 +83,7 @@ export function assignOrders(
   orderIds: readonly string[],
   riderId: string,
   capacity = 1,
+  sameTrip: (trip: readonly Order[]) => boolean = (trip) => trip.every((order) => order.restaurantId === trip[0].restaurantId),
 ): AssignResult {
   const picked = orderIds.map((id) => orders.find((candidate) => candidate.id === id))
   const rider = riders.find((candidate) => candidate.id === riderId)
@@ -91,7 +93,7 @@ export function assignOrders(
   const trip = picked as Order[]
   if (trip.some((order) => order.status !== 'pending')) return { ok: false, error: 'order-not-pending' }
   if (rider.status !== 'idle') return { ok: false, error: 'rider-busy' }
-  if (trip.some((order) => order.restaurantId !== trip[0].restaurantId)) return { ok: false, error: 'different-restaurants' }
+  if (!sameTrip(trip)) return { ok: false, error: 'restaurants-too-far' }
   if (trip.length > capacity) return { ok: false, error: 'over-capacity' }
 
   const ids = new Set(orderIds)
