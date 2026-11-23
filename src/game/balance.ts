@@ -275,7 +275,7 @@ export function struckOf(level: LevelBalance): string[] {
 
 /** A kind of event (Eventos tab), only what the game uses so far. */
 export interface EventKindBalance {
-  /** speed, roads, fleet, demand, kitchen. */
+  /** speed, roads, fleet, demand, kitchen, bulk. */
   readonly effectType: string
   /** Extra orders while it lasts (0.3 = 30 % more). */
   readonly demandPct?: number
@@ -283,6 +283,10 @@ export interface EventKindBalance {
   readonly swapBelowPct?: number
   /** …for this vehicle. */
   readonly swapTo?: string
+  /** Big order (effect "bulk"): how many orders come at once, their deadline, and how close their customers live. */
+  readonly bulkOrders?: number
+  readonly bulkDeadlineSec?: number
+  readonly bulkSpreadM?: number
 }
 
 export const eventKinds: Readonly<Record<string, EventKindBalance>> = data.events

@@ -47,8 +47,33 @@ function Rollers({ size = 24, strokeWidth = 2, ...props }: LucideProps) {
   )
 }
 
+/** A cargo bike seen from the side: the box in front, over a small wheel, in the Lucide style. */
+function CargoBike({ size = 24, strokeWidth = 2, ...props }: LucideProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <rect x="2" y="8" width="8" height="6" rx="1" />
+      <circle cx="5" cy="18.5" r="2" />
+      <circle cx="18.5" cy="17.5" r="3" />
+      <path d="M7 18.5h5l3-7h-4" />
+      <path d="M12 18.5 18.5 17.5 16 9h2.5" />
+    </svg>
+  )
+}
+
 const ICONS: Record<string, (props: LucideProps) => React.ReactNode> = {
   bike: Bike,
+  cargo_bike: CargoBike,
   skateboard: Skateboard,
   e_scooter: Scooter,
   rollers: Rollers,
@@ -58,6 +83,7 @@ const ICONS: Record<string, (props: LucideProps) => React.ReactNode> = {
 /** Visible names, by vehicle id of the Vehículos tab. */
 export const VEHICLE_TEXT: Record<string, TextKey | undefined> = {
   bike: 'vehicles.bike',
+  cargo_bike: 'vehicles.cargo_bike',
   skateboard: 'vehicles.skateboard',
   e_scooter: 'vehicles.e_scooter',
   rollers: 'vehicles.rollers',

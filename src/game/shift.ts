@@ -17,6 +17,7 @@ import { assignOrders, capacityOf } from './dispatch'
 export { capacityOf }
 import { advanceFleet, startTrip, type MovementSettings } from './movement'
 import { canShareTrip } from './pickups'
+import { spawnBulkOrders } from './bulkOrders'
 import { createOrderQueue, spawnOrders, type OrderPeak, type OrderQueue, type OrderSettings } from './orders'
 import { createRandom, type Random } from './random'
 import { norrebroBikeNetwork, norrebroNetworkFor } from './norrebro'
@@ -211,7 +212,9 @@ export function advanceShift(
   const kept =
     after.orders === shift.orderQueue.orders ? shift.orderQueue : { ...shift.orderQueue, orders: [...after.orders] }
   // While closing no orders come in; the shift is finished once the last food on its way arrives.
-  const orderQueue = clock.closing ? kept : spawnOrders(kept, clock.elapsedSec, map, random, settings.orders)
+  const orderQueue = clock.closing
+    ? kept
+    : spawnBulkOrders(spawnOrders(kept, clock.elapsedSec, map, random, settings.orders), clock.elapsedSec, map, random, settings.orders, settings.events, eventKinds)
   const onTheWay = hasFoodOnTheWay(after.orders)
   const nextClock =
     clock.finished && onTheWay
