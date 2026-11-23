@@ -117,7 +117,7 @@
     "cargo_bike": {
       "speedKmh": 14,
       "capacity": 5,
-      "costPerShiftKr": 250,
+      "costPerShiftKr": 180,
       "rainSpeedPct": -0.15,
       "snowSpeedPct": -0.4,
       "canRideInSnow": true,
@@ -216,6 +216,7 @@
       "riders": 4,
       "vehicles": [
         "bike",
+        "cargo_bike",
         "skateboard",
         "rollers",
         "e_scooter"
@@ -228,6 +229,7 @@
       "riders": 5,
       "vehicles": [
         "bike",
+        "cargo_bike",
         "skateboard",
         "rollers",
         "e_scooter",
@@ -354,6 +356,13 @@
       "effectType": "kitchen",
       "inDemo": false,
       "kitchenMultiplier": 2
+    },
+    "office_order": {
+      "effectType": "bulk",
+      "inDemo": true,
+      "bulkOrders": 5,
+      "bulkDeadlineSec": 300,
+      "bulkSpreadM": 200
     }
   },
   "shiftEvents": {
@@ -383,6 +392,12 @@
       "toSec": 420,
       "announced": true,
       "vehicle": "bike"
+    },
+    "vesterbro_lunch_office": {
+      "event": "office_order",
+      "fromSec": 150,
+      "toSec": 151,
+      "announced": true
     }
   },
   "levels": {
@@ -461,16 +476,19 @@
         "rollers",
         "e_scooter"
       ],
-      "spawnIntervalSec": 12,
+      "spawnIntervalSec": 14,
       "peakFromSec": 120,
       "peakToSec": 240,
-      "peakIntervalSec": 9,
+      "peakIntervalSec": 11,
       "deadlineSec": 144,
       "seed": 301,
       "light": "noon",
       "zone": "kodbyen",
       "zoneRestaurants": 3,
-      "zoneRadiusM": 300
+      "zoneRadiusM": 300,
+      "events": [
+        "vesterbro_lunch_office"
+      ]
     },
     "vesterbro_dinner": {
       "order": 5,

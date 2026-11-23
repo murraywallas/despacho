@@ -38,6 +38,8 @@ export interface Order {
   readonly cancelledAtSec?: number
   /** The operator called the customer to extend the deadline. */
   readonly called?: boolean
+  /** Event of the shift that brought it (a big office order), if any. */
+  readonly fromEvent?: string
 }
 
 export interface OrderQueue {

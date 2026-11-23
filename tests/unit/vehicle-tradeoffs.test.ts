@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { autoplay, triageBot, type AutoplayOptions } from '../../src/game/autoplay'
+import { autoplay, batchingBot, triageBot, type AutoplayOptions, type Bot } from '../../src/game/autoplay'
 import { economy, fleetOf, shift as shiftBalance, vehicles } from '../../src/game/balance'
 import { balanceFor, neighborhoodOf, withFleet } from '../../src/game/levels'
 import { shiftMoney } from '../../src/game/money'
@@ -11,10 +11,10 @@ const seeds = [11, 23, 37, 41, 59, 67, 73, 89]
 const costOf = (vehicle: string) => vehicles[vehicle]?.costPerShiftKr ?? 0
 
 /** Average stars and profit of a level with a fleet, over several shifts, played with care. */
-function averages(levelId: string, fleet: string[]) {
+function averages(levelId: string, fleet: string[], bot: Bot = triageBot) {
   const results = seeds.map((seed) => {
     const balance = withFleet(balanceFor(levelId), fleet)
-    const end = autoplay(balance, shiftSettingsFrom(balance), seed, triageBot, options, neighborhoodOf(levelId))
+    const end = autoplay(balance, shiftSettingsFrom(balance), seed, bot, options, neighborhoodOf(levelId))
     const orders = end.orderQueue.orders
     return {
       stars: summarizeShift(orders, balance.heat, balance.rating, shiftBalance).average ?? 0,
@@ -37,5 +37,17 @@ describe('pilar 2: la patineta contra la bici', { timeout: 120_000 }, () => {
     const bike = averages('lunch', withBike)
     expect(bike.stars).toBeGreaterThan(skateboard.stars)
     expect(skateboard.profitKr).toBeGreaterThan(bike.profitKr)
+  })
+})
+
+describe('pilar 2: la bici de carga contra la bici', { timeout: 120_000 }, () => {
+  // El Almuerzo en Vesterbro trae un pedido de oficina (5 de golpe): la cargo los lleva todos en un viaje.
+  test('en el Almuerzo de Vesterbro, con el pedido de oficina, la cargo en vez de una bici saca más estrellas', () => {
+    const levelFleet = fleetOf(balanceFor('vesterbro_lunch'))
+    const withCargo = levelFleet.map((vehicle, index) => (index === levelFleet.indexOf('bike') ? 'cargo_bike' : vehicle))
+    expect(withCargo).toContain('cargo_bike')
+    const bike = averages('vesterbro_lunch', levelFleet, batchingBot)
+    const cargo = averages('vesterbro_lunch', withCargo, batchingBot)
+    expect(cargo.stars).toBeGreaterThan(bike.stars)
   })
 })

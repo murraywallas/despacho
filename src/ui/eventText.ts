@@ -1,6 +1,8 @@
 ﻿import { eventKinds } from '../game/balance'
 import { hasText, t } from '../i18n'
 import { VEHICLE_TEXT } from './VehicleIcon'
+import { gameMinutes } from './formatClock'
+import { gameTime } from './gameTime'
 
 const PERCENT = 100
 
@@ -39,5 +41,14 @@ export function eventEffect(event: {
   const route = event.closure === undefined ? '' : closureName(event.closure)
   const vehicleKey = event.vehicle === undefined ? undefined : VEHICLE_TEXT[event.vehicle]
   const vehicle = vehicleKey ? t(vehicleKey).toLocaleLowerCase('es') : (event.vehicle ?? '')
-  return hasText(key) ? t(key, { demand, from, route, vehicle }) : ''
+  // A big order: how many come at once, and their deadline.
+  const kind = eventKinds[event.event]
+  const count = kind?.bulkOrders ?? 0
+  const minutes = gameMinutes(kind?.bulkDeadlineSec ?? 0, gameTime)
+  return hasText(key) ? t(key, { demand, from, route, vehicle, count, minutes }) : ''
+}
+
+/** An event that happens at one moment (a big order) rather than lasting a while. */
+export function isMoment(event: { readonly event: string }): boolean {
+  return eventKinds[event.event]?.effectType === 'bulk'
 }

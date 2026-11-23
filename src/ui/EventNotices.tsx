@@ -1,9 +1,15 @@
-import { CircleAlert, CloudRain, Construction, Megaphone, Wind, type LucideIcon } from 'lucide-react'
+import { Building2, CircleAlert, CloudRain, Construction, Megaphone, Wind, type LucideIcon } from 'lucide-react'
 import { activeEvents, type ShiftEvent } from '../game/shiftEvents'
 import { levelEvents, useShiftStore } from '../store/shiftStore'
 import { eventEffect, eventName } from './eventText'
 
-const ICONS: Readonly<Record<string, LucideIcon>> = { rain: CloudRain, wind: Wind, marathon: Construction, strike: Megaphone }
+const ICONS: Readonly<Record<string, LucideIcon>> = {
+  rain: CloudRain,
+  wind: Wind,
+  marathon: Construction,
+  strike: Megaphone,
+  office_order: Building2,
+}
 /** The icon of an event (an alert for one without its own). */
 export function EventIcon({ event, size }: { event: string; size: number }) {
   const Icon = ICONS[event] ?? CircleAlert

@@ -14,7 +14,7 @@ import { VEHICLE_TEXT, VehicleIcon } from './VehicleIcon'
 import { BackdropMap, type BackdropPin } from './BackdropMap'
 import { formatKr } from './formatKr'
 import { EventIcon } from './EventNotices'
-import { eventEffect, eventName } from './eventText'
+import { eventEffect, eventName, isMoment } from './eventText'
 import { useGarage } from './useGarage'
 import { WeatherAdviceNote } from './WeatherAdviceNote'
 import './garage.css'
@@ -123,12 +123,14 @@ function Briefing({ levelId }: { levelId: string }) {
               <EventIcon event={event.event} size={14} />
               {event.fromSec <= 0 && event.toSec >= balance.shift.durationSec
                 ? t('briefing.eventAllShift', { name: eventName(event.event), effect: eventEffect(event) })
-                : t('briefing.event', {
-                    name: eventName(event.event),
-                    from: formatGameTime(event.fromSec, time),
-                    to: formatGameTime(event.toSec, time),
-                    effect: eventEffect(event),
-                  })}
+                : isMoment(event)
+                  ? t('briefing.eventAt', { name: eventName(event.event), from: formatGameTime(event.fromSec, time), effect: eventEffect(event) })
+                  : t('briefing.event', {
+                      name: eventName(event.event),
+                      from: formatGameTime(event.fromSec, time),
+                      to: formatGameTime(event.toSec, time),
+                      effect: eventEffect(event),
+                    })}
             </p>
           ))}
 
