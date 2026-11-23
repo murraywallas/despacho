@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 test.describe.configure({ timeout: 90_000 })
 
-const WIND_FROM_SEC = 60
+const WIND_FROM_SEC = 42
 
 test('el almuerzo de Frederiksberg avisa el viento del oeste, y en el turno una flecha muestra hacia dónde sopla', async ({ page }) => {
   await page.addInitScript(() => {
@@ -19,7 +19,7 @@ test('el almuerzo de Frederiksberg avisa el viento del oeste, y en el turno una 
 
   const briefing = page.getByTestId('briefing')
   const wind = briefing.getByTestId('briefing-event').filter({ hasText: 'Viento' })
-  await expect(wind).toContainText('Viento de 12:10 a 13:00')
+  await expect(wind).toContainText('Viento de 12:07 a 12:43')
   await expect(wind).toContainText('Sopla del oeste')
   await briefing.getByRole('button', { name: 'Empezar turno' }).click()
 

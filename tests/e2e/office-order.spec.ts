@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 test.describe.configure({ timeout: 120_000 }) // Simula minutos de turno cuadro por cuadro.
 
-const OFFICE_FROM_SEC = 150
+const OFFICE_FROM_SEC = 108
 const OFFICE_ORDERS = 5
 
 test('el Almuerzo de Vesterbro anuncia el pedido de oficina; con la bici de carga, los 5 llegan de golpe', async ({ page }) => {
@@ -20,7 +20,7 @@ test('el Almuerzo de Vesterbro anuncia el pedido de oficina; con la bici de carg
 
   const briefing = page.getByTestId('briefing')
   const event = briefing.getByTestId('briefing-event')
-  await expect(event).toContainText('Pedido de oficina a las 12:25')
+  await expect(event).toContainText('Pedido de oficina a las 12:18')
   await expect(event).toContainText(`${OFFICE_ORDERS} pedidos de golpe`)
   await expect(event).toContainText('bici de carga')
 
@@ -36,7 +36,7 @@ test('el Almuerzo de Vesterbro anuncia el pedido de oficina; con la bici de carg
   await expect(riders.locator('[data-rider-number="1"]')).toContainText('Bici de carga')
   await expect(riders.locator('[data-rider-number="1"]')).toContainText('0/5')
 
-  // A las 12:25 llegan los 5 del mismo restaurante, todos juntos.
+  // A las 12:18 llegan los 5 del mismo restaurante, todos juntos.
   await page.clock.runFor(OFFICE_FROM_SEC * 1000 + 500)
   await page.keyboard.press('Space')
   const names = await page.getByRole('complementary', { name: /Pedidos/ }).locator('.order-card__name').allTextContents()

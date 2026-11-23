@@ -2,7 +2,7 @@
   "prototype": {
     "shift": {
       "startHour": 18,
-      "durationSec": 420
+      "durationSec": 300
     },
     "restaurants": {
       "count": 4,
@@ -14,7 +14,7 @@
       "cancelAfterSec": 60,
       "urgentBelowSec": 40,
       "minCustomerDistanceM": 400,
-      "lastOrderBeforeEndSec": 150,
+      "lastOrderBeforeEndSec": 105,
       "nearbyRestaurantsM": 400
     },
     "kitchen": {
@@ -54,7 +54,7 @@
   "shift": {
     "winAtLeast": 4,
     "loseBelow": 3,
-    "minDurationMin": 6,
+    "minDurationMin": 5,
     "maxDurationMin": 8
   },
   "orders": {
@@ -72,7 +72,7 @@
     "xpPerLevel": 12,
     "maxLevel": 5,
     "trainingKr": 250,
-    "salaryPerLevelKr": 40
+    "salaryPerLevelKr": 30
   },
   "progression": {
     "unlockAvgRating": 4
@@ -97,13 +97,13 @@
     "tipPerStarKr": 4,
     "startingKr": 700,
     "startingRiders": 3,
-    "hireRiderKr": 200
+    "hireRiderKr": 300
   },
   "vehicles": {
     "bike": {
       "speedKmh": 18,
       "capacity": 2,
-      "costPerShiftKr": 150,
+      "costPerShiftKr": 105,
       "rainSpeedPct": -0.1,
       "snowSpeedPct": -0.3,
       "canRideInSnow": true,
@@ -117,7 +117,7 @@
     "cargo_bike": {
       "speedKmh": 14,
       "capacity": 5,
-      "costPerShiftKr": 180,
+      "costPerShiftKr": 130,
       "rainSpeedPct": -0.15,
       "snowSpeedPct": -0.4,
       "canRideInSnow": true,
@@ -131,7 +131,7 @@
     "e_scooter": {
       "speedKmh": 20,
       "capacity": 1,
-      "costPerShiftKr": 180,
+      "costPerShiftKr": 130,
       "rainSpeedPct": -0.25,
       "canRideInSnow": false,
       "cobblestoneSpeedPct": 0,
@@ -145,7 +145,7 @@
     "rollers": {
       "speedKmh": 15,
       "capacity": 1,
-      "costPerShiftKr": 100,
+      "costPerShiftKr": 75,
       "rainSpeedPct": -0.4,
       "canRideInSnow": false,
       "cobblestoneSpeedPct": -0.5,
@@ -157,7 +157,7 @@
     "skateboard": {
       "speedKmh": 13,
       "capacity": 1,
-      "costPerShiftKr": 80,
+      "costPerShiftKr": 60,
       "rainSpeedPct": -0.4,
       "canRideInSnow": false,
       "cobblestoneSpeedPct": -0.5,
@@ -170,7 +170,7 @@
     "motorcycle": {
       "speedKmh": 30,
       "capacity": 3,
-      "costPerShiftKr": 400,
+      "costPerShiftKr": 285,
       "rainSpeedPct": -0.15,
       "snowSpeedPct": -0.4,
       "canRideInSnow": true,
@@ -184,7 +184,7 @@
     "car": {
       "speedKmh": 25,
       "capacity": 6,
-      "costPerShiftKr": 600,
+      "costPerShiftKr": 430,
       "rainSpeedPct": 0,
       "snowSpeedPct": -0.2,
       "canRideInSnow": true,
@@ -216,10 +216,10 @@
       "riders": 4,
       "vehicles": [
         "bike",
-        "cargo_bike",
         "skateboard",
         "rollers",
-        "e_scooter"
+        "e_scooter",
+        "cargo_bike"
       ]
     },
     "frederiksberg": {
@@ -229,11 +229,11 @@
       "riders": 5,
       "vehicles": [
         "bike",
-        "cargo_bike",
         "skateboard",
         "rollers",
         "e_scooter",
-        "motorcycle"
+        "motorcycle",
+        "cargo_bike"
       ]
     },
     "indre_by": {
@@ -368,35 +368,35 @@
   "shiftEvents": {
     "vesterbro_dinner_rain": {
       "event": "rain",
-      "fromSec": 180,
-      "toSec": 300,
+      "fromSec": 126,
+      "toSec": 216,
       "announced": true
     },
     "frederiksberg_lunch_wind": {
       "event": "wind",
-      "fromSec": 60,
-      "toSec": 360,
+      "fromSec": 42,
+      "toSec": 258,
       "announced": true,
       "directionDeg": 270
     },
     "dinner_marathon": {
       "event": "marathon",
-      "fromSec": 120,
-      "toSec": 300,
+      "fromSec": 84,
+      "toSec": 216,
       "announced": true,
       "closure": "norrebrogade"
     },
     "frederiksberg_lunch_strike": {
       "event": "strike",
       "fromSec": 0,
-      "toSec": 420,
+      "toSec": 300,
       "announced": true,
       "vehicle": "bike"
     },
     "vesterbro_lunch_office": {
       "event": "office_order",
-      "fromSec": 150,
-      "toSec": 151,
+      "fromSec": 108,
+      "toSec": 109,
       "announced": true
     }
   },
@@ -405,16 +405,16 @@
       "order": 1,
       "neighborhood": "norrebro",
       "startHour": 12,
-      "durationSec": 420,
+      "durationSec": 300,
       "restaurants": 4,
       "fleet": [
         "bike",
         "skateboard",
         "e_scooter"
       ],
-      "spawnIntervalSec": 24,
-      "peakFromSec": 150,
-      "peakToSec": 210,
+      "spawnIntervalSec": 20,
+      "peakFromSec": 105,
+      "peakToSec": 150,
       "peakIntervalSec": 15,
       "deadlineSec": 180,
       "seed": 101,
@@ -424,7 +424,7 @@
       "order": 2,
       "neighborhood": "norrebro",
       "startHour": 19,
-      "durationSec": 420,
+      "durationSec": 300,
       "restaurants": 4,
       "fleet": [
         "bike",
@@ -433,11 +433,11 @@
         "e_scooter"
       ],
       "spawnIntervalSec": 13,
-      "peakFromSec": 150,
-      "peakToSec": 300,
+      "peakFromSec": 105,
+      "peakToSec": 215,
       "peakIntervalSec": 9,
       "deadlineSec": 132,
-      "seed": 2026,
+      "seed": 2028,
       "light": "dusk",
       "events": [
         "dinner_marathon"
@@ -447,7 +447,7 @@
       "order": 3,
       "neighborhood": "norrebro",
       "startHour": 21,
-      "durationSec": 420,
+      "durationSec": 300,
       "restaurants": 5,
       "fleet": [
         "bike",
@@ -457,9 +457,9 @@
         "e_scooter"
       ],
       "spawnIntervalSec": 10,
-      "peakFromSec": 120,
-      "peakToSec": 330,
-      "peakIntervalSec": 7,
+      "peakFromSec": 85,
+      "peakToSec": 235,
+      "peakIntervalSec": 6,
       "deadlineSec": 114,
       "seed": 202,
       "light": "night"
@@ -468,7 +468,7 @@
       "order": 4,
       "neighborhood": "vesterbro",
       "startHour": 12,
-      "durationSec": 420,
+      "durationSec": 300,
       "restaurants": 4,
       "fleet": [
         "bike",
@@ -477,9 +477,9 @@
         "e_scooter"
       ],
       "spawnIntervalSec": 14,
-      "peakFromSec": 120,
-      "peakToSec": 240,
-      "peakIntervalSec": 11,
+      "peakFromSec": 85,
+      "peakToSec": 170,
+      "peakIntervalSec": 12,
       "deadlineSec": 144,
       "seed": 301,
       "light": "noon",
@@ -494,7 +494,7 @@
       "order": 5,
       "neighborhood": "vesterbro",
       "startHour": 19,
-      "durationSec": 420,
+      "durationSec": 300,
       "restaurants": 5,
       "fleet": [
         "bike",
@@ -504,8 +504,8 @@
         "e_scooter"
       ],
       "spawnIntervalSec": 9,
-      "peakFromSec": 150,
-      "peakToSec": 300,
+      "peakFromSec": 105,
+      "peakToSec": 215,
       "peakIntervalSec": 6,
       "deadlineSec": 126,
       "seed": 404,
@@ -521,7 +521,7 @@
       "order": 6,
       "neighborhood": "vesterbro",
       "startHour": 21,
-      "durationSec": 420,
+      "durationSec": 300,
       "restaurants": 5,
       "fleet": [
         "bike",
@@ -532,9 +532,9 @@
         "e_scooter"
       ],
       "spawnIntervalSec": 7,
-      "peakFromSec": 120,
-      "peakToSec": 330,
-      "peakIntervalSec": 5,
+      "peakFromSec": 85,
+      "peakToSec": 235,
+      "peakIntervalSec": 4,
       "deadlineSec": 114,
       "seed": 521,
       "light": "night",
@@ -546,7 +546,7 @@
       "order": 7,
       "neighborhood": "frederiksberg",
       "startHour": 12,
-      "durationSec": 420,
+      "durationSec": 300,
       "restaurants": 4,
       "fleet": [
         "bike",
@@ -556,8 +556,8 @@
         "motorcycle"
       ],
       "spawnIntervalSec": 12,
-      "peakFromSec": 120,
-      "peakToSec": 240,
+      "peakFromSec": 85,
+      "peakToSec": 170,
       "peakIntervalSec": 9,
       "deadlineSec": 150,
       "seed": 653,
@@ -572,7 +572,7 @@
       "order": 8,
       "neighborhood": "frederiksberg",
       "startHour": 19,
-      "durationSec": 420,
+      "durationSec": 300,
       "restaurants": 5,
       "fleet": [
         "bike",
@@ -582,8 +582,8 @@
         "motorcycle"
       ],
       "spawnIntervalSec": 10,
-      "peakFromSec": 150,
-      "peakToSec": 300,
+      "peakFromSec": 105,
+      "peakToSec": 215,
       "peakIntervalSec": 6,
       "deadlineSec": 138,
       "seed": 602,
@@ -594,7 +594,7 @@
       "order": 9,
       "neighborhood": "frederiksberg",
       "startHour": 21,
-      "durationSec": 420,
+      "durationSec": 300,
       "restaurants": 5,
       "fleet": [
         "bike",
@@ -605,9 +605,9 @@
         "motorcycle"
       ],
       "spawnIntervalSec": 8,
-      "peakFromSec": 120,
-      "peakToSec": 330,
-      "peakIntervalSec": 6,
+      "peakFromSec": 85,
+      "peakToSec": 235,
+      "peakIntervalSec": 5,
       "deadlineSec": 126,
       "seed": 603,
       "light": "night",

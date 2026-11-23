@@ -22,9 +22,9 @@ test('al cierre, la comida en camino se entrega igual (con el reloj en la hora d
   // Nadie despacha hasta poco antes del cierre: los pedidos se juntan (y los viejos se cancelan).
   await page.clock.runFor(((prototype.shift.durationSec - DISPATCH_BEFORE_END_SEC) * 1000) / FAST)
   await page.keyboard.press('Space') // En pausa, para despachar tranquilos.
-  // Cada repartidor libre sale con el pedido más urgente.
+  // Cada repartidor libre sale con el pedido más nuevo (los viejos se cancelan antes de que lo retiren).
   for (let sent = 0; sent < 3 && (await orders.count()) > 0; sent++) {
-    await page.keyboard.press('ArrowDown')
+    await orders.last().getByRole('button').first().click()
     const first = riderPanel.getByTestId('rider-card').first()
     const number = await first.getAttribute('data-rider-number')
     const before = await orders.count()

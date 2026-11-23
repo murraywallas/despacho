@@ -1,4 +1,4 @@
-﻿import { expect, test } from '@playwright/test'
+﻿import { expect, test, type Page } from '@playwright/test'
 import { fleetCostKr, startingKr } from './balance.ts'
 
 test.describe.configure({ timeout: 60_000 }) // Varios turnos y pantallas por test: con la máquina cargada, 30 s no alcanzan.
@@ -33,30 +33,46 @@ test('en el garage se cambia el skate por un monopatín eléctrico, y el turno s
   await expect(page.getByTestId('briefing-fleet')).toContainText('Repartidor 2 · Monopatín')
 })
 
-test('sin plata para la flota no se empieza; con un solo repartidor sí, y contratar suma un lugar', async ({ page }) => {
-  await page.addInitScript(() => {
+/** Opens the Cena briefing with this much money and three riders hired. */
+async function dinnerWith(page: Page, moneyKr: number) {
+  await page.addInitScript((money) => {
     if (!localStorage.getItem('despacho-progress')) {
-      const state = { best: { lunch: 4.5 }, played: 2, guideDone: true, moneyKr: 250, hired: 3 }
+      const state = { best: { lunch: 4.5 }, played: 2, guideDone: true, moneyKr: money, hired: 3 }
       localStorage.setItem('despacho-progress', JSON.stringify({ state, version: 0 }))
     }
-  })
+  }, moneyKr)
   await page.goto('/')
   await page.getByTestId('level-card').nth(1).click()
-  const briefing = page.getByTestId('briefing')
+  return page.getByTestId('briefing')
+}
+
+// Poca plata: alcanza para salir con un repartidor, no para la flota de tres ni para contratar.
+const LITTLE_KR = 150
+const PLENTY_KR = 5000
+
+test('sin plata para la flota no se empieza; con un solo repartidor sí', async ({ page }) => {
+  const briefing = await dinnerWith(page, LITTLE_KR)
   await expect(briefing.getByTestId('briefing-warning')).toBeVisible()
   await expect(briefing.getByRole('button', { name: 'Empezar turno' })).toBeDisabled()
 
+  await briefing.getByRole('button', { name: 'Garage' }).click()
+  const garage = page.getByTestId('garage')
+  await expect(garage.getByTestId('garage-hire')).toBeDisabled()
+
+  // Sacando repartidores hasta que quede uno, se puede salir aunque no alcance.
+  for (const rider of [3, 2]) await garage.getByRole('button', { name: `Sacar a Repartidor ${rider} de este turno` }).click()
+  await expect(garage.getByTestId('garage-warning')).toHaveCount(0)
+  await garage.getByRole('button', { name: 'Listo, volver al briefing' }).click()
+  await expect(briefing.getByRole('button', { name: 'Empezar turno' })).toBeEnabled()
+  await expect(briefing.getByTestId('briefing-fleet').getByRole('listitem')).toHaveCount(1)
+})
+
+test('contratar suma un lugar en el garage', async ({ page }) => {
+  const briefing = await dinnerWith(page, PLENTY_KR)
   await briefing.getByRole('button', { name: 'Garage' }).click()
   const garage = page.getByTestId('garage')
   await expect(garage.getByTestId('garage-hired')).toHaveText('3')
   await garage.getByRole('button', { name: /^Contratar un repartidor/ }).click()
   await expect(garage.getByTestId('garage-hired')).toHaveText('4')
   await expect(garage.getByTestId('garage-vehicle')).toHaveCount(4)
-
-  // Sacando repartidores hasta que quede uno, se puede salir aunque no alcance.
-  for (const rider of [4, 3, 2]) await garage.getByRole('button', { name: `Sacar a Repartidor ${rider} de este turno` }).click()
-  await expect(garage.getByTestId('garage-warning')).toHaveCount(0)
-  await garage.getByRole('button', { name: 'Listo, volver al briefing' }).click()
-  await expect(briefing.getByRole('button', { name: 'Empezar turno' })).toBeEnabled()
-  await expect(briefing.getByTestId('briefing-fleet').getByRole('listitem')).toHaveCount(1)
 })

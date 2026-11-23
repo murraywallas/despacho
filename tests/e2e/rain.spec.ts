@@ -2,7 +2,7 @@
 
 test.describe.configure({ timeout: 120_000 })
 
-const RAIN_FROM_SEC = 180
+const RAIN_FROM_SEC = 126
 
 test('la cena de Vesterbro avisa la lluvia en el briefing, y en el turno aparece en la barra de arriba cuando empieza', async ({ page }) => {
   await page.addInitScript(() => {
@@ -18,7 +18,7 @@ test('la cena de Vesterbro avisa la lluvia en el briefing, y en el turno aparece
   await page.locator('[data-level="vesterbro_dinner"]').click()
 
   const briefing = page.getByTestId('briefing')
-  await expect(briefing.getByTestId('briefing-event')).toContainText('Lluvia de 19:30 a 19:50')
+  await expect(briefing.getByTestId('briefing-event')).toContainText('Lluvia de 19:21 a 19:36')
   await expect(briefing.getByTestId('briefing-event')).toContainText('30 % más de pedidos')
 
   // La flota sugerida ya sale en bici en vez de lo que más se frena con el agua.
