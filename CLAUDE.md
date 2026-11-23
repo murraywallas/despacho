@@ -6,9 +6,10 @@ llegue caliente y a tiempo. Inspirado en 112 Operator. Diseño completo: ver el 
 
 ## Fase actual
 
-**Fase 2 — Prototipo gris.** Mapa falso (grilla), sin datos reales de Copenhague todavía.
-El objetivo es comprobar que el loop de despacho es divertido. No agregar mapa real, sonido
-ni arte hasta que una tarea lo pida.
+**Fase 5 — Progresión y eventos.** El juego corre sobre calles reales de OpenStreetMap
+(Nørrebro, Vesterbro y Frederiksberg), con garage, eventos y guardado. El objetivo es un
+recorrido de unos 45 minutos de juego con sensación de avance. Arte y recursos propios
+llegan recién en la Fase 7, si un disparador del plan lo pide.
 
 ## Pilares (toda decisión debe reforzar al menos uno)
 
@@ -21,7 +22,7 @@ ni arte hasta que una tarea lo pida.
 
 - Vite + React 19 + TypeScript (modo `strict`)
 - Zustand para el estado del juego
-- Canvas 2D para el mapa del prototipo (MapLibre GL JS llega en la Fase 3)
+- MapLibre GL JS con OpenFreeMap para el mapa; calles de OpenStreetMap en `data/streets/` (`npm run streets`)
 - Vitest (reglas) + Playwright (juego en el navegador)
 - Deploy: Vercel (preview por cada Pull Request)
 
