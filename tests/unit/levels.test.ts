@@ -9,6 +9,7 @@ import {
   progression,
   prototype,
   shift as shiftBalance,
+  tuning,
   vehicles,
 } from '../../src/game/balance'
 import { weatherAdvice } from '../../src/game/garage'
@@ -224,6 +225,13 @@ describe('pilar 1 en cada nivel', () => {
       expect(averages[0]).toBeGreaterThanOrEqual(shiftBalance.winAtLeast)
     },
   )
+
+  // #71: ningún nivel muy fácil ni muy difícil para el bot cuidadoso (Reglas, grupo Ajuste).
+  test.each(levelIds)('%s: el bot cuidadoso no lo encuentra ni muy fácil ni muy difícil', { timeout: 120_000 }, (levelId) => {
+    const average = averageOf(levelId, carefulBot(levelId))
+    expect(average).toBeLessThanOrEqual(tuning.tooEasyAbove)
+    expect(average).toBeGreaterThanOrEqual(tuning.tooHardBelow)
+  })
 
   test('vesterbro_dinner: con la flota sugerida para la lluvia, juntar pedidos gana en la mayoría de los turnos', { timeout: 120_000 }, () => {
     expect(suggestedFleetOf('vesterbro_dinner')).not.toEqual(fleetOf(balanceFor('vesterbro_dinner')))

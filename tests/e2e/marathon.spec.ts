@@ -2,7 +2,7 @@
 
 test.describe.configure({ timeout: 90_000 })
 
-const MARATHON_FROM_SEC = 120
+const MARATHON_FROM_SEC = 84
 
 test('la cena de Nørrebro avisa el maratón por Nørrebrogade, y en el turno aparece cuando empieza', async ({ page }) => {
   await page.addInitScript(() => {
@@ -16,7 +16,7 @@ test('la cena de Nørrebro avisa el maratón por Nørrebrogade, y en el turno ap
   await page.locator('[data-level="dinner"]').click()
 
   const briefing = page.getByTestId('briefing')
-  await expect(briefing.getByTestId('briefing-event')).toContainText('Maratón de 19:20 a 19:50')
+  await expect(briefing.getByTestId('briefing-event')).toContainText('Maratón de 19:14 a 19:36')
   await expect(briefing.getByTestId('briefing-event')).toContainText('Nørrebrogade queda cortada')
   await briefing.getByRole('button', { name: 'Empezar turno' }).click()
 

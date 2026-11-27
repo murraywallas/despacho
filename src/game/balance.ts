@@ -291,6 +291,18 @@ export interface EventKindBalance {
 
 export const eventKinds: Readonly<Record<string, EventKindBalance>> = data.events
 
+/** Balance targets (Reglas tab, group Ajuste): what the balance bot checks. */
+export interface TuningBalance {
+  /** No vehicle should deliver more than this share of the orders (0.5 = half). */
+  readonly maxVehicleSharePct: number
+  /** Shifts the bot plays per level to average its stars. */
+  readonly botShiftsPerLevel: number
+  /** A level is too easy above this average, and too hard below the other. */
+  readonly tooEasyAbove: number
+  readonly tooHardBelow: number
+}
+
+export const tuning: TuningBalance = data.tuning
 export const routing: RoutingBalance = data.routing
 export const shift: ShiftBalance = data.shift
 export const clock: ClockBalance = data.clock

@@ -11,7 +11,8 @@
     "test:e2e": "playwright test",
     "balance": "node scripts/balance/export.ts",
     "streets": "node scripts/streets/export.ts",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "recorrido": "vitest run --config scripts/recorrido/vitest.config.ts"
   },
   "dependencies": {
     "howler": "^2.2.4",
