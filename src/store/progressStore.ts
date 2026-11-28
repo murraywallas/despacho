@@ -26,7 +26,7 @@ interface ProgressState extends SavedGame {
 }
 
 /** A new game, with the money and riders of the Reglas tab. */
-const fresh = (): SavedGame => newGame(economy.startingKr, economy.startingRiders)
+const fresh = (): SavedGame => newGame(economy.startingKr)
 
 /**
  * The player's game, saved by itself in this browser as one versioned save: stars of each level, shifts played,

@@ -1,6 +1,6 @@
 ﻿import { expect, test } from '@playwright/test'
 import { openLevels } from './title.ts'
-import { fastestSpeed, fleetCostKr, prototype, startingKr } from './balance.ts'
+import { fastestSpeed, prototype, startingKr } from './balance.ts'
 
 test.describe.configure({ timeout: 90_000 }) // Juega un turno entero con el reloj falso.
 
@@ -16,16 +16,14 @@ test('los resultados muestran el dinero del turno y el total queda guardado al r
   await page.clock.runFor((prototype.shift.durationSec * 1000) / fastestSpeed + 2000)
   await expect(page.getByTestId('results')).toBeVisible()
 
-  // Sin despachar nada no entra plata, pero la flota se paga igual.
+  // Sin despachar nada no entra plata; la flota del nivel no cuesta (#141) y nadie cobra sueldo todavía.
   const money = page.getByTestId('results-money')
   await expect(money.getByTestId('money-pay')).toContainText('0 kr')
-  await expect(money.getByTestId('money-cost')).toContainText(kr(-fleetCostKr))
-  await expect(money.getByTestId('money-profit')).toContainText('Pérdida')
-  await expect(money.getByTestId('money-profit')).toContainText(kr(-fleetCostKr))
-  await expect(money.getByTestId('money-total')).toContainText(kr(startingKr - fleetCostKr))
+  await expect(money.getByTestId('money-cost')).toContainText(kr(0))
+  await expect(money.getByTestId('money-total')).toContainText(kr(startingKr))
 
   // El total sobrevive a recargar: el turno siguiente lo suma.
   await page.reload()
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('despacho-progress') ?? '{}').state.moneyKr)
-  expect(saved).toBe(startingKr - fleetCostKr)
+  expect(saved).toBe(startingKr)
 })

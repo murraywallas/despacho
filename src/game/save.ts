@@ -6,7 +6,7 @@
 import type { Progress } from './levels'
 
 /** Version of the save format. Raise it when the shape changes, and add the step to migrateSave. */
-export const SAVE_VERSION = 2
+export const SAVE_VERSION = 3
 
 export interface SavedGame {
   /** Best average stars of each level finished. */
@@ -17,7 +17,7 @@ export interface SavedGame {
   readonly guideDone: boolean
   /** Money saved between shifts, in kr. */
   readonly moneyKr: number
-  /** Riders hired. */
+  /** Extra riders hired, beyond each level's own fleet (which goes out free, #141). */
   readonly hired: number
   /** Fleet last chosen in the garage for each level. */
   readonly fleets: Readonly<Record<string, readonly string[]>>
@@ -25,9 +25,9 @@ export interface SavedGame {
   readonly xp: readonly number[]
 }
 
-/** What a new game starts with (money and riders from the Reglas tab). */
-export function newGame(startingKr: number, startingRiders: number): SavedGame {
-  return { best: {}, played: 0, guideDone: false, moneyKr: startingKr, hired: startingRiders, fleets: {}, xp: [] }
+/** What a new game starts with: the money of the Reglas tab, and no extra riders. */
+export function newGame(startingKr: number): SavedGame {
+  return { best: {}, played: 0, guideDone: false, moneyKr: startingKr, hired: 0, fleets: {}, xp: [] }
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -60,7 +60,7 @@ export function cleanSave(raw: unknown, fresh: SavedGame): SavedGame {
     played: isNumber(raw.played) && raw.played >= 0 ? Math.floor(raw.played) : fresh.played,
     guideDone: typeof raw.guideDone === 'boolean' ? raw.guideDone : fresh.guideDone,
     moneyKr: isNumber(raw.moneyKr) ? raw.moneyKr : fresh.moneyKr,
-    hired: isNumber(raw.hired) && raw.hired >= fresh.hired ? Math.floor(raw.hired) : fresh.hired,
+    hired: isNumber(raw.hired) && raw.hired >= 0 ? Math.floor(raw.hired) : fresh.hired,
     fleets: cleanFleets(raw.fleets),
     xp: Array.isArray(raw.xp) ? raw.xp.map((points) => (isNumber(points) && points > 0 ? points : 0)) : [],
   }
@@ -71,6 +71,8 @@ export function cleanSave(raw: unknown, fresh: SavedGame): SavedGame {
  * - 0 → 1: saves from before money and the garage (#62, #63) had only stars, shifts played and the guide; they
  *   start with the money and riders of a new game, keeping everything they had won.
  * - 1 → 2: experience (#64) arrives; riders hired before it start with none.
+ * - 2 → 3: each level's own fleet goes out free (#141); riders hired before were for that fleet, so there are no
+ *   extra riders yet.
  */
 export function migrateSave(raw: unknown, version: number, fresh: SavedGame): SavedGame {
   let save: unknown = raw
@@ -78,5 +80,6 @@ export function migrateSave(raw: unknown, version: number, fresh: SavedGame): Sa
     save = { ...save, moneyKr: save.moneyKr ?? fresh.moneyKr, hired: save.hired ?? fresh.hired, fleets: save.fleets ?? {} }
   }
   if (version < 2 && isRecord(save)) save = { ...save, xp: [] }
+  if (version < 3 && isRecord(save)) save = { ...save, hired: 0 }
   return cleanSave(save, fresh)
 }

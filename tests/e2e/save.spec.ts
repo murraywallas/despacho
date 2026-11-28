@@ -23,7 +23,7 @@ test('recargar la página en medio del recorrido conserva todo; "Empezar de cero
   const garage = page.getByTestId('garage')
   await expect(garage.getByTestId('garage-money')).toHaveText(kr(startingKr))
   await garage.getByRole('button', { name: /^Contratar un repartidor/ }).click()
-  await expect(garage.getByTestId('garage-hired')).toHaveText('4')
+  await expect(garage.getByTestId('garage-hired')).toHaveText('1')
   await garage.getByRole('combobox', { name: 'Vehículo de Repartidor 3' }).selectOption('e_scooter')
   const money = await garage.getByTestId('garage-money').textContent()
 
@@ -32,7 +32,7 @@ test('recargar la página en medio del recorrido conserva todo; "Empezar de cero
   await expect(page.locator('[data-level="dinner"]')).toContainText('Tu mejor: 4,0 estrellas')
   await page.locator('[data-level="dinner"]').click()
   await page.getByTestId('briefing').getByRole('button', { name: 'Garage' }).click()
-  await expect(garage.getByTestId('garage-hired')).toHaveText('4')
+  await expect(garage.getByTestId('garage-hired')).toHaveText('1')
   await expect(garage.getByTestId('garage-money')).toHaveText(money ?? '')
   await expect(garage.getByRole('combobox', { name: 'Vehículo de Repartidor 3' })).toHaveValue('e_scooter')
 

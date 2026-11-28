@@ -117,7 +117,7 @@ export function ResultsScreen() {
         </dl>
 
         <ShiftMoneySummary
-          money={moneyOfShift(orders, riders)}
+          money={moneyOfShift(orders, riders, levelId)}
           totalKr={levelId === null ? undefined : moneyKr}
         />
 
