@@ -331,5 +331,8 @@
   "language.es": "Español",
   "title.eyebrow": "Delivery dispatch · Copenhagen",
   "title.tagline": "You run the dispatch desk: orders come in, you pick who takes them and plan the trips so the food gets there hot and on time.",
-  "title.play": "Play"
+  "title.play": "Play",
+  "radio.deliveredTo": "{orders} · delivered to {customer}, on time",
+  "radio.deliveredLateTo": "{orders} · delivered to {customer}, late",
+  "radio.deliveredColdTo": "{orders} · delivered to {customer}, cold"
 }

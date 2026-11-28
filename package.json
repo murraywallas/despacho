@@ -12,7 +12,8 @@
     "balance": "node scripts/balance/export.ts",
     "streets": "node scripts/streets/export.ts",
     "preview": "vite preview",
-    "recorrido": "vitest run --config scripts/recorrido/vitest.config.ts"
+    "recorrido": "vitest run --config scripts/recorrido/vitest.config.ts",
+    "addresses": "node scripts/streets/export-addresses.ts"
   },
   "dependencies": {
     "howler": "^2.2.4",

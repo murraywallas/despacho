@@ -7,6 +7,7 @@ import { t, type TextKey } from '../i18n'
 import { usePointerStore } from '../store/pointerStore'
 import { useShiftStore, waitingQueue } from '../store/shiftStore'
 import { useTrip } from './useTrip'
+import { customerFor, customerLabel } from './customerText'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
@@ -30,6 +31,8 @@ interface OrderCardProps {
   order: Order
   nowSec: number
   restaurantName: string
+  /** Who ordered and where: "Mette Hansen · Jagtvej 34". */
+  customer: string
   selected: boolean
   onSelect: (orderId: string, add: boolean) => void
   /** A free rider (by number) was dropped on this order. */
@@ -46,7 +49,7 @@ const URGENCY_TAG: Partial<Record<Urgency, TextKey>> = {
  * A compact order. The time left leads (it decides the triage), in green, amber or red with its icon; under it
  * the order number and restaurant, and the urgency in words when it matters.
  */
-function OrderCard({ order, nowSec, restaurantName, selected, onSelect, onDropRider }: OrderCardProps) {
+function OrderCard({ order, nowSec, restaurantName, customer, selected, onSelect, onDropRider }: OrderCardProps) {
   const hoverOrder = usePointerStore((state) => state.hoverOrder)
   const dragOrder = usePointerStore((state) => state.dragOrder)
   const hovered = usePointerStore((state) => state.hoveredOrderId === order.id)
@@ -109,6 +112,9 @@ function OrderCard({ order, nowSec, restaurantName, selected, onSelect, onDropRi
           <span className="order-card__name">{restaurantName}</span>
           {tag && <span className={`order-card__tag order-card__tag--${urgency}`}>{t(tag)}</span>}
         </span>
+        <span className="order-card__customer" data-testid="order-customer" title={customer}>
+          {customer}
+        </span>
       </button>
       {urgency === 'urgent' && <SuggestedRider order={order} />}
     </li>
@@ -120,6 +126,7 @@ function OrderCard({ order, nowSec, restaurantName, selected, onSelect, onDropRi
  * is the backup: clicking an order picks it, like tapping it on the map.
  */
 export function OrderPanel() {
+  const map = useShiftStore((state) => state.map)
   const orders = useShiftStore((state) => state.orderQueue.orders)
   const restaurants = useShiftStore((state) => state.map.restaurants)
   const neighborhood = useNeighborhood()
@@ -161,6 +168,7 @@ export function OrderPanel() {
               order={order}
               nowSec={nowSec}
               restaurantName={nameOf(order.restaurantId)}
+              customer={customerLabel(customerFor(map, order, neighborhood))}
               selected={order.id === selectedOrderId || trip.includes(order.id)}
               onSelect={selectOrder}
               onDropRider={dispatchByDrop}

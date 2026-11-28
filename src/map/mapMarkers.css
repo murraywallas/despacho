@@ -112,6 +112,7 @@
 
 /* Cliente: punto con el número de pedido. */
 .map-dot {
+  position: relative;
   display: grid;
   place-items: center;
   width: 18px;
@@ -385,4 +386,32 @@
 
 :root[data-motion='reduced'] .map-pin--attention {
   animation: none;
+}
+
+/* Who ordered and where: a small card over the customer's dot, on hover or keyboard focus. */
+.map-dot__card {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  display: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #0b1424;
+  color: #e6f0ff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.4);
+  font: 500 12px/1.3 var(--font-sans);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.map-marker--customer:hover .map-dot__card,
+.map-marker--customer:focus-visible .map-dot__card,
+.map-marker--highlighted .map-dot__card {
+  display: block;
+}
+
+.map-marker--customer:hover,
+.map-marker--customer:focus-visible {
+  z-index: 5;
 }

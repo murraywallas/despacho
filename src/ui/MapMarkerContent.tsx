@@ -37,6 +37,7 @@ export function MapMarkerContent({ marker }: { marker: MapMarker }) {
     <span className={`map-dot map-dot--${marker.urgency ?? 'normal'}`} aria-hidden>
       {marker.label}
       {marker.stop !== undefined && <span className="map-dot__stop">{marker.stop}</span>}
+      {marker.detail && <span className="map-dot__card">{marker.detail}</span>}
     </span>
   )
 }

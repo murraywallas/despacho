@@ -18,6 +18,7 @@ import { addRouteLayers, AREA_SOURCE, CLOSURE_SOURCE, OUTSIDE_SOURCE, PREVIEW_SO
 import { usePointerStore } from '../store/pointerStore'
 import { closedStretchesAt, useShiftStore } from '../store/shiftStore'
 import { useTrip } from './useTrip'
+import { customerFor, customerLabel } from './customerText'
 import { MapMarkerContent } from './MapMarkerContent'
 import { RestaurantPopup } from './RestaurantPopup'
 import { restaurantName } from './restaurantName'
@@ -145,15 +146,20 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
   )
   const urgentBelowSec = prototype.orders.urgentBelowSec
   const attention = useAttention()
-  const markers = useMemo(
-    () =>
-      buildMarkers(map, orders, riders, selection, (order) => urgencyOf(order, nowSec, urgentBelowSec)).map((marker) =>
-        marker.kind === 'rider' && marker.rider && attention.has(marker.id)
-          ? { ...marker, rider: { ...marker.rider, attention: true } }
+  const markers = useMemo(() => {
+    // Who ordered and where, on the customer's dot.
+    const withCustomer = (marker: MapMarker): MapMarker => {
+      const order = orders.find((candidate) => candidate.id === marker.id)
+      return order ? { ...marker, detail: customerLabel(customerFor(map, order, neighborhood)) } : marker
+    }
+    return buildMarkers(map, orders, riders, selection, (order) => urgencyOf(order, nowSec, urgentBelowSec)).map((marker) =>
+      marker.kind === 'rider' && marker.rider && attention.has(marker.id)
+        ? { ...marker, rider: { ...marker.rider, attention: true } }
+        : marker.kind === 'customer'
+          ? withCustomer(marker)
           : marker,
-      ),
-    [map, orders, riders, selection, nowSec, urgentBelowSec, attention],
-  )
+    )
+  }, [map, orders, riders, selection, nowSec, urgentBelowSec, attention, neighborhood])
 
   const describe = useCallback(
     (marker: MapMarker) => {
@@ -168,9 +174,10 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
             ? t('map.customer', { number: marker.label })
             : t('map.customerStop', { number: marker.label, stop: marker.stop })
         // The dot's color and shape say how urgent it is; the name says it too.
-        if (marker.urgency === 'late') return `${name} · ${t('orders.lateTag')}`
-        if (marker.urgency === 'urgent') return `${name} · ${t('orders.urgentTag')}`
-        return name
+        const named = marker.detail ? `${name} · ${marker.detail}` : name
+        if (marker.urgency === 'late') return `${named} · ${t('orders.lateTag')}`
+        if (marker.urgency === 'urgent') return `${named} · ${t('orders.urgentTag')}`
+        return named
       }
       // The icon shows the vehicle; the name says it too.
       const name = t('riders.name', { number: marker.label })
