@@ -328,5 +328,8 @@
   "guide.waitNext": "Esperá un momento: el próximo pedido llega en unos segundos a la cola de la izquierda.",
   "language.label": "Idioma",
   "language.en": "English",
-  "language.es": "Español"
+  "language.es": "Español",
+  "title.eyebrow": "Central de delivery · Copenhague",
+  "title.tagline": "Sos el operador de la central: llegan pedidos, elegís quién los lleva y armás los viajes para que la comida llegue caliente y a tiempo.",
+  "title.play": "Jugar"
 }

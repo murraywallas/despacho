@@ -1,4 +1,5 @@
 ﻿import { expect, test } from '@playwright/test'
+import { openLevels } from './title.ts'
 import { startingKr } from './balance.ts'
 
 const kr = (amount: number) => `${amount < 0 ? '−' : ''}${Math.abs(amount).toLocaleString('es-AR')} kr`
@@ -11,7 +12,7 @@ test('recargar la página en medio del recorrido conserva todo; "Empezar de cero
       localStorage.setItem('despacho-progress', JSON.stringify({ state, version: 0 }))
     }
   })
-  await page.goto('/')
+  await openLevels(page)
   // Con Nørrebro ganado arranca en Vesterbro.
   await expect(page.getByRole('heading', { name: 'Vesterbro' })).toBeVisible()
 
@@ -62,7 +63,7 @@ test('un guardado roto no rompe el juego: arranca una partida nueva, sin errores
   })
   page.on('pageerror', (error) => errors.push(error.message))
   await page.addInitScript(() => localStorage.setItem('despacho-progress', '{"state": {"best": '))
-  await page.goto('/')
+  await openLevels(page)
   await expect(page.getByRole('heading', { name: 'Nørrebro' })).toBeVisible()
   await expect(page.locator('[data-level="lunch"]')).toBeEnabled()
   expect(errors).toEqual([])

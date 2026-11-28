@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openLevels } from './title.ts'
 import { fastestSpeed, prototype, shiftStartsAt } from './balance.ts'
 
 test.describe.configure({ timeout: 90_000 }) // Algunos juegan un turno entero con el reloj falso.
@@ -24,7 +25,7 @@ async function withProgress(page: Page, best: Record<string, number>) {
 }
 
 test('la pantalla de inicio muestra los 3 turnos; el briefing cuenta la flota y arranca el almuerzo', async ({ page }) => {
-  await page.goto('/')
+  await openLevels(page)
   const cards = page.getByTestId('level-card')
   await expect(cards).toHaveCount(3)
   await expect(cards.nth(0)).toContainText('Almuerzo')
@@ -49,7 +50,7 @@ test('la pantalla de inicio muestra los 3 turnos; el briefing cuenta la flota y 
 
 test('el resultado de un turno queda guardado al recargar la página', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/')
+  await openLevels(page)
   await page.getByTestId('level-card').first().click()
   await page.getByRole('button', { name: 'Empezar turno' }).click()
   await runShiftToEnd(page)
@@ -67,7 +68,7 @@ test('el resultado de un turno queda guardado al recargar la página', async ({ 
 test('con 4 estrellas en el almuerzo se abre la cena, y los resultados ofrecen "Siguiente nivel"', async ({ page }) => {
   await withProgress(page, { lunch: 4.4 })
   await page.clock.install()
-  await page.goto('/')
+  await openLevels(page)
   const cards = page.getByTestId('level-card')
   await expect(cards.nth(1)).toBeEnabled()
   await expect(cards.nth(2)).toBeDisabled()
@@ -93,7 +94,7 @@ test('un nivel bloqueado no se abre desde la dirección', async ({ page }) => {
 
 test('el mapa de barrios muestra Vesterbro bloqueado hasta tener 4 estrellas de promedio en Nørrebro', async ({ page }) => {
   await withProgress(page, { lunch: 5, dinner: 5 })
-  await page.goto('/')
+  await openLevels(page)
   const areas = page.getByTestId('neighborhood')
   await expect(areas).toHaveCount(3)
   await expect(areas.nth(0)).toContainText('Nørrebro')
@@ -110,7 +111,7 @@ test('el mapa de barrios muestra Vesterbro bloqueado hasta tener 4 estrellas de 
 
 test('con Nørrebro ganado se abre Vesterbro; se elige con el teclado y el progreso sobrevive a recargar', async ({ page }) => {
   await withProgress(page, { lunch: 5, dinner: 4, friday: 3 })
-  await page.goto('/')
+  await openLevels(page)
   const vesterbro = page.getByRole('button', { name: /^Vesterbro: / })
   await expect(vesterbro).toContainText('Sin jugar')
 
@@ -135,7 +136,7 @@ test('con Nørrebro ganado se abre Vesterbro; se elige con el teclado y el progr
 
 test('con Vesterbro abierto, la pantalla de inicio arranca ahí: Kødbyen en el briefing y restaurantes con nombre propio', async ({ page }) => {
   await withProgress(page, { lunch: 4.5, dinner: 4.2, friday: 4.0 })
-  await page.goto('/')
+  await openLevels(page)
   await expect(page.getByRole('heading', { name: 'Vesterbro' })).toBeVisible()
   const cards = page.getByTestId('level-card')
   await expect(cards).toHaveCount(3)
@@ -155,7 +156,7 @@ test('con Vesterbro abierto, la pantalla de inicio arranca ahí: Kødbyen en el 
 
 test('ganando el viernes de Vesterbro se abre Frederiksberg: clientes lejos y la moto en la flota', async ({ page }) => {
   await withProgress(page, { lunch: 5, dinner: 5, friday: 5, vesterbro_lunch: 5, vesterbro_dinner: 5, vesterbro_friday: 4.1 })
-  await page.goto('/')
+  await openLevels(page)
   await expect(page.getByTestId('neighborhood')).toHaveCount(3)
   await expect(page.getByRole('heading', { name: 'Frederiksberg' })).toBeVisible()
   await page.getByTestId('level-card').first().click()

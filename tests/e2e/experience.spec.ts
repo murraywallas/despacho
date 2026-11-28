@@ -1,4 +1,5 @@
 ﻿import { expect, test } from '@playwright/test'
+import { openLevels } from './title.ts'
 import { readFileSync } from 'node:fs'
 
 const balance = JSON.parse(readFileSync(new URL('../../data/balance.json', import.meta.url), 'utf8')) as {
@@ -18,7 +19,7 @@ test('el garage muestra el nivel de cada repartidor, un curso lo sube y en el tu
     },
     { xp: [xpPerLevel * 2, 0, 0], money: MONEY },
   )
-  await page.goto('/')
+  await openLevels(page)
   await page.locator('[data-level="lunch"]').click()
   await page.getByTestId('briefing').getByRole('button', { name: 'Garage' }).click()
 

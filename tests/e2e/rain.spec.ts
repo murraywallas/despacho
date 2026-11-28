@@ -1,4 +1,5 @@
 ﻿import { expect, test } from '@playwright/test'
+import { openLevels } from './title.ts'
 
 test.describe.configure({ timeout: 120_000 })
 
@@ -13,7 +14,7 @@ test('la cena de Vesterbro avisa la lluvia en el briefing, y en el turno aparece
     }
   })
   await page.clock.install()
-  await page.goto('/')
+  await openLevels(page)
   await page.getByTestId('neighborhood').filter({ hasText: 'Vesterbro' }).click()
   await page.locator('[data-level="vesterbro_dinner"]').click()
 

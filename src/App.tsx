@@ -7,6 +7,7 @@ import { useShiftStore } from './store/shiftStore'
 import { BriefingScreen } from './ui/BriefingScreen'
 import { GarageScreen } from './ui/GarageScreen'
 import { LevelSelect } from './ui/LevelSelect'
+import { TitleScreen } from './ui/TitleScreen'
 import { ShiftScreen } from './ui/ShiftScreen'
 import { useRecordProgress } from './ui/useRecordProgress'
 import { useApplySettings } from './ui/useApplySettings'
@@ -27,7 +28,11 @@ export default function App() {
   useEffect(() => {
     const levelId = new URLSearchParams(window.location.search).get(LEVEL_PARAM)
     if (!levelId || !levelIds.includes(levelId)) return
-    if (!isUnlocked(levelIds, useProgressStore.getState().best, levelId, progression.unlockAvgRating)) return
+    // A link to a level skips the title; a locked one opens the neighborhoods instead.
+    if (!isUnlocked(levelIds, useProgressStore.getState().best, levelId, progression.unlockAvgRating)) {
+      useScreenStore.getState().play()
+      return
+    }
     useShiftStore.getState().startLevel(levelId, undefined, useProgressStore.getState().xp)
     useScreenStore.getState().showShift()
   }, [])
@@ -35,5 +40,6 @@ export default function App() {
   if (screen === 'shift') return <ShiftScreen key={language} />
   if (screen === 'briefing') return <BriefingScreen key={language} />
   if (screen === 'garage') return <GarageScreen key={language} />
+  if (screen === 'title') return <TitleScreen key={language} />
   return <LevelSelect key={language} />
 }

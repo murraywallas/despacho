@@ -1,4 +1,5 @@
 ﻿import { expect, test } from '@playwright/test'
+import { openLevels } from './title.ts'
 
 test('el almuerzo de Frederiksberg anuncia la huelga de bicis, y el garage no deja elegir la bici', async ({ page }) => {
   await page.addInitScript(() => {
@@ -8,7 +9,7 @@ test('el almuerzo de Frederiksberg anuncia la huelga de bicis, y el garage no de
       localStorage.setItem('despacho-progress', JSON.stringify({ state, version: 0 }))
     }
   })
-  await page.goto('/')
+  await openLevels(page)
   await page.getByTestId('neighborhood').filter({ hasText: 'Frederiksberg' }).click()
   await page.locator('[data-level="frederiksberg_lunch"]').click()
 

@@ -1,4 +1,5 @@
 ﻿import { expect, test } from '@playwright/test'
+import { openLevels } from './title.ts'
 import { fastestSpeed, fleetCostKr, prototype, startingKr } from './balance.ts'
 
 test.describe.configure({ timeout: 90_000 }) // Juega un turno entero con el reloj falso.
@@ -8,7 +9,7 @@ const kr = (amount: number) => `${amount < 0 ? '−' : ''}${Math.abs(amount).toL
 
 test('los resultados muestran el dinero del turno y el total queda guardado al recargar', async ({ page }) => {
   await page.clock.install()
-  await page.goto('/')
+  await openLevels(page)
   await page.getByTestId('level-card').first().click()
   await page.getByRole('button', { name: 'Empezar turno' }).click()
   await page.getByRole('button', { name: `${fastestSpeed}x`, exact: true }).click()

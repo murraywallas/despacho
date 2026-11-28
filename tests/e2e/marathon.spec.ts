@@ -1,4 +1,5 @@
 ﻿import { expect, test } from '@playwright/test'
+import { openLevels } from './title.ts'
 
 test.describe.configure({ timeout: 90_000 })
 
@@ -12,7 +13,7 @@ test('la cena de Nørrebro avisa el maratón por Nørrebrogade, y en el turno ap
     }
   })
   await page.clock.install()
-  await page.goto('/')
+  await openLevels(page)
   await page.locator('[data-level="dinner"]').click()
 
   const briefing = page.getByTestId('briefing')

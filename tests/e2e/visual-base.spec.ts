@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openLevels } from './title.ts'
 import { prototype, SHIFT_URL } from './balance.ts'
 
 test.describe.configure({ timeout: 60_000 }) // Espera pedidos con el reloj real: con la máquina cargada, 30 s no alcanzan.
@@ -63,7 +64,7 @@ test('la pantalla de turno: el mapa de borde a borde, sin scroll y sin textos de
 })
 
 test('inicio y briefing entran en la pantalla, sin textos de menos de 12 px', async ({ page }) => {
-  await page.goto('/')
+  await openLevels(page)
   let result = await measure(page)
   expect(result.scrollsDown).toBe(false)
   expect(result.smallest, `"${result.smallestText}" mide ${result.smallest} px`).toBeGreaterThanOrEqual(MIN_TEXT_PX)
