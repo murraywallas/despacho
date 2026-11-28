@@ -18,6 +18,18 @@ function vehicleName(vehicle: string): string {
   return key ? t(key) : vehicle
 }
 
+/**
+ * A vehicle in a rider's list. Riders of the level's fleet (with its vehicle included) pay only what a dearer one
+ * costs more, per shift; extra riders pay their whole vehicle.
+ */
+function optionLabel(vehicle: string, included: string | undefined): string {
+  if (included === undefined) return t('garage.option', { vehicle: vehicleName(vehicle), cost: formatKr(vehicleCostKr(vehicle)) })
+  const more = vehicleCostKr(vehicle) - vehicleCostKr(included)
+  return more > 0
+    ? t('garage.optionMore', { vehicle: vehicleName(vehicle), cost: formatKr(more) })
+    : t('garage.optionIncluded', { vehicle: vehicleName(vehicle) })
+}
+
 /** Before a shift: the vehicle of each rider, how many go out and hiring one more. Back to the briefing when done. */
 export function GarageScreen() {
   const levelId = useScreenStore((state) => state.briefingLevelId)
@@ -42,7 +54,7 @@ function Garage({ levelId }: { levelId: string }) {
         <h1 className="levels__title" id="garage-title">
           {levelName(levelId)}
         </h1>
-        <p className="levels__intro">{t('garage.intro', { max: rules.maxRiders })}</p>
+        <p className="levels__intro">{t('garage.intro', { base: garage.base.length, max: rules.maxRiders })}</p>
 
         <dl className="garage__money">
           <div>
@@ -78,6 +90,11 @@ function Garage({ levelId }: { levelId: string }) {
                 <span className="briefing__badge" aria-hidden>
                   {index + 1}
                 </span>
+                {index >= garage.base.length && (
+                  <span className="garage__extra" data-testid="garage-extra">
+                    {t('garage.extra')}
+                  </span>
+                )}
                 <VehicleIcon vehicle={vehicle} size={18} aria-hidden />
                 <select
                   className="garage__select"
@@ -88,7 +105,7 @@ function Garage({ levelId }: { levelId: string }) {
                 >
                   {rules.vehicles.map((option) => (
                     <option key={option} value={option}>
-                      {t('garage.option', { vehicle: vehicleName(option), cost: formatKr(vehicleCostKr(option)) })}
+                      {optionLabel(option, garage.base[index])}
                     </option>
                   ))}
                   {garage.struck.map((option) => (
@@ -132,21 +149,19 @@ function Garage({ levelId }: { levelId: string }) {
           )}
         </div>
 
-        {garage.canHireHere && (
-          <div className="garage__hire">
-            <p>{t('garage.hireNote', { count: levels[levelId].fleet.length })}</p>
-            <button
-              type="button"
-              className="briefing__back"
-              onClick={garage.hire}
-              disabled={garage.moneyKr < garage.hireKr}
-              data-testid="garage-hire"
-            >
-              <UserPlus size={16} aria-hidden />
-              {t('garage.hire', { cost: formatKr(garage.hireKr) })}
-            </button>
-          </div>
-        )}
+        <div className="garage__hire">
+          <p>{t('garage.hireNote', { count: garage.base.length })}</p>
+          <button
+            type="button"
+            className="briefing__back"
+            onClick={garage.hire}
+            disabled={garage.moneyKr < garage.hireKr}
+            data-testid="garage-hire"
+          >
+            <UserPlus size={16} aria-hidden />
+            {t('garage.hire', { cost: formatKr(garage.hireKr) })}
+          </button>
+        </div>
 
         {!garage.canStart && (
           <p className="garage__warning" role="status" data-testid="garage-warning">

@@ -228,3 +228,14 @@
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
+
+/* "Extra": a rider beyond the level's own fleet, who pays their vehicle. */
+.garage__extra {
+  padding: 0 5px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}

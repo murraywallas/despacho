@@ -1,6 +1,6 @@
 /**
- * The whole game played by a bot, with the money: the starting cash and riders, hiring, taking out the fleet the
- * garage suggests, salaries, and replaying each level until it opens the next one. It measures the balance of the
+ * The whole game played by a bot, with the money: the starting cash, each level's own fleet (free, #141) with its
+ * salaries, and replaying each level until it opens the next one. It measures the balance of the
  * route through the 9 levels (#71): stars, money, vehicles used and minutes of play. It doesn't appear in the
  * game. Pure.
  */
@@ -9,7 +9,7 @@ import { clock as clockBalance, economy, eventKinds, experience, fleetOf, levelI
 import { addShiftXp, salariesKr, xpOfRiders, type ExperienceRules } from './experience'
 import { weatherAdvice } from './garage'
 import { balanceFor, neighborhoodOf, withFleet } from './levels'
-import { fleetCostKr, shiftMoney } from './money'
+import { shiftMoney } from './money'
 import { summarizeShift } from './results'
 import { shiftSettingsFrom } from './shift'
 
@@ -41,11 +41,7 @@ export interface CampaignReport {
   readonly finished: boolean
   readonly moneyKr: number
   readonly lowestKr: number
-  /** The most money saved, counted in shifts of the level's whole fleet (vehicles only). */
-  readonly mostShiftsSaved: number
-  /** Shifts that went out with fewer riders than the level suggests, for lack of money. */
-  readonly shortShifts: number
-  /** The most a level's whole fleet cost for one shift (vehicles and salaries). */
+  /** The most a level's fleet cost for one shift: its salaries (its vehicles come free, #141). */
   readonly fleetKr: number
   readonly tries: Readonly<Record<string, number>>
   readonly levels: readonly LevelReport[]
@@ -71,19 +67,16 @@ export function vehicleShares(deliveredBy: Readonly<Record<string, number>>): Re
 }
 
 /**
- * Plays the whole game: starts with the starting money and riders, hires when it can pay the next level's fleet,
- * takes out what it can pay, and replays each level until it opens the next one (or gives up after maxTries).
+ * Plays the whole game: starts with the starting money, takes out each level's own fleet (free; salaries are paid)
+ * and replays each level until it opens the next one (or gives up after maxTries).
  */
 export function playCampaign(botOf: (levelId: string) => Bot, options: CampaignOptions = {}): CampaignReport {
   const rules = options.rules ?? experience
   const maxTries = options.maxTries ?? DEFAULT_MAX_TRIES
   const fleetFor = options.fleetFor ?? suggestedFleetOf
   let moneyKr = economy.startingKr
-  let hired = economy.startingRiders
   let xp: number[] = []
   let lowestKr = moneyKr
-  let mostShiftsSaved = 0
-  let shortShifts = 0
   let fleetKr = 0
   const tries: Record<string, number> = {}
   const reports: LevelReport[] = []
@@ -92,8 +85,6 @@ export function playCampaign(botOf: (levelId: string) => Bot, options: CampaignO
     finished,
     moneyKr,
     lowestKr,
-    mostShiftsSaved,
-    shortShifts,
     fleetKr,
     tries,
     levels: reports,
@@ -103,29 +94,22 @@ export function playCampaign(botOf: (levelId: string) => Bot, options: CampaignO
 
   for (const levelId of levelIds) {
     const levelFleet = fleetFor(levelId)
-    const costOfFleet = (fleet: readonly string[]) => fleetCostKr(fleet, costOf) + salariesKr(xp, fleet.length, rules)
     const stars: number[] = []
     let fleet: string[] = []
     let realSec = 0
     tries[levelId] = 0
     while (Math.max(0, ...stars) < progression.unlockAvgRating && tries[levelId] < maxTries) {
-      while (hired < levelFleet.length && moneyKr >= economy.hireRiderKr + costOfFleet(levelFleet.slice(0, hired + 1))) {
-        moneyKr -= economy.hireRiderKr
-        hired++
-      }
-      fleet = levelFleet.slice(0, hired)
-      while (fleet.length > 1 && costOfFleet(fleet) > moneyKr) fleet = fleet.slice(0, -1)
-      if (fleet.length < levelFleet.length) shortShifts++
-      fleetKr = Math.max(fleetKr, costOfFleet(levelFleet))
+      // The level's own fleet goes out complete and free (#141): only the salaries are paid.
+      fleet = [...levelFleet]
       const salaries = salariesKr(xp, fleet.length, rules)
+      fleetKr = Math.max(fleetKr, salaries)
       const balance = withFleet(balanceFor(levelId), fleet)
       const autoplayOptions = { reactionSec: 3, picksPerLook: 1, stepSec: 0.25, xp: xpOfRiders(xp, fleet.length) }
       const end = autoplay(balance, shiftSettingsFrom(balance), balance.seed, botOf(levelId), autoplayOptions, neighborhoodOf(levelId))
       const orders = end.orderQueue.orders
-      moneyKr += shiftMoney(orders, fleet, costOf, balance.heat, balance.rating, economy, salaries).profitKr
+      moneyKr += shiftMoney(orders, fleet, costOf, balance.heat, balance.rating, economy, salaries, levelFleet).profitKr
       lowestKr = Math.min(lowestKr, moneyKr)
-      mostShiftsSaved = Math.max(mostShiftsSaved, moneyKr / fleetCostKr(levelFleet, costOf))
-      xp = addShiftXp(xpOfRiders(xp, hired), end.riders, orders, rules)
+      xp = addShiftXp(xpOfRiders(xp, Math.max(xp.length, fleet.length)), end.riders, orders, rules)
       tries[levelId]++
       stars.push(summarizeShift(orders, balance.heat, balance.rating, shiftBalance).average ?? 0)
       // The shift, then the closing (deliveries already on their way) at its faster clock.

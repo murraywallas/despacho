@@ -2,30 +2,30 @@
  * The garage, before a shift: which vehicle each rider takes, how many riders go out, and hiring one more.
  * Pure.
  */
-import { fleetCostKr } from './money'
+import { extraCostKr } from './money'
 import { speedChangeOf, type VehicleSpeedChanges } from './shiftEvents'
 
 export interface GarageRules {
-  /** Riders that can go out: the level's suggested fleet, but never more than the player has hired. */
+  /** Riders that can go out: the level's own fleet (free, #141) plus the extra riders the player hired. */
   readonly maxRiders: number
   /** Vehicles of the neighborhood (Barrios tab). */
   readonly vehicles: readonly string[]
 }
 
-/** What the player can choose in a level, with this many riders hired. Vehicles on strike can't be chosen. */
+/** What the player can choose in a level, with this many extra riders hired. Vehicles on strike can't be chosen. */
 export function garageRules(
   levelFleet: readonly string[],
   neighborhoodVehicles: readonly string[],
-  hired: number,
+  extraRiders: number,
   struck: readonly string[] = [],
 ): GarageRules {
   return {
-    maxRiders: Math.max(1, Math.min(levelFleet.length, hired)),
+    maxRiders: Math.max(1, levelFleet.length + extraRiders),
     vehicles: neighborhoodVehicles.filter((vehicle) => !struck.includes(vehicle)),
   }
 }
 
-/** The level's fleet (Niveles tab), cut to the riders the player has. */
+/** The level's fleet (Niveles tab): it always goes out complete, for free. */
 export function suggestedFleet(levelFleet: readonly string[], rules: GarageRules): string[] {
   return levelFleet.slice(0, rules.maxRiders)
 }
@@ -43,20 +43,23 @@ export function chosenFleet(saved: readonly string[] | undefined, levelFleet: re
 }
 
 /**
- * Whether the shift can start: the fleet (vehicles and salaries) has to be paid with the money in hand. A single rider can always go out,
- * even without money (the money goes below zero), so the player never gets stuck.
+ * Whether the shift can start. The level's own fleet always can (it is free; salaries can take the money below
+ * zero): a level never gets stuck for lack of money (#141). What goes beyond it (dearer vehicles, extra riders) has to
+ * be paid, with the salaries, from the money in hand. A single rider can always go out too.
  */
 export function canStart(
   fleet: readonly string[],
   moneyKr: number,
   costOf: (vehicle: string) => number,
   salariesKr = 0,
+  base: readonly string[] = [],
 ): boolean {
   if (fleet.length === 0) return false
-  return fleet.length === 1 || fleetCostKr(fleet, costOf) + salariesKr <= moneyKr
+  const extraKr = extraCostKr(fleet, base, costOf)
+  return fleet.length === 1 || extraKr === 0 || extraKr + salariesKr <= moneyKr
 }
 
-/** Hiring one more rider: costs hireKr once and stays forever. Undefined when the money is not enough. */
+/** Hiring one extra rider (beyond each level's own fleet): costs hireKr once and stays forever. Undefined when the money is not enough. */
 export function hireRider(
   moneyKr: number,
   hired: number,
@@ -66,10 +69,6 @@ export function hireRider(
   return { moneyKr: moneyKr - hireKr, hired: hired + 1 }
 }
 
-/** Whether hiring would let more riders go out in this level. */
-export function canUseMoreRiders(levelFleet: readonly string[], hired: number): boolean {
-  return hired < levelFleet.length
-}
 
 /** How a kind of event changes the suggested fleet (Eventos tab): vehicles that slow down this much or more go out on swapTo. */
 export interface WeatherSwapRule {

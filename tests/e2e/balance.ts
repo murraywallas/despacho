@@ -68,3 +68,5 @@ export const longestRideMs = (LONGEST_RIDE_M / metersPerSec) * 1000
 /** Money the player starts with, and what the level's fleet costs per shift. */
 export const startingKr = data.economy.startingKr
 export const fleetCostKr = level.fleet.reduce((sum, vehicle) => sum + data.vehicles[vehicle].costPerShiftKr, 0)
+/** What a vehicle costs per shift (Vehículos tab). */
+export const vehicleCostKr = (vehicle: string) => data.vehicles[vehicle].costPerShiftKr

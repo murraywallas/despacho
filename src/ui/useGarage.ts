@@ -2,7 +2,6 @@ import { economy, eventKinds, experience, fleetOf, levels, neighborhoods, struck
 import { salariesKr } from '../game/experience'
 import {
   canStart,
-  canUseMoreRiders,
   chosenFleet,
   garageRules,
   suggestedFleet,
@@ -11,7 +10,7 @@ import {
   type WeatherAdvice,
 } from '../game/garage'
 import { balanceFor } from '../game/levels'
-import { fleetCostKr } from '../game/money'
+import { extraCostKr } from '../game/money'
 import { useProgressStore } from '../store/progressStore'
 
 /** What a vehicle of the Vehículos tab costs per shift. */
@@ -27,14 +26,14 @@ export interface Garage {
   readonly rules: GarageRules
   /** Vehicles of the neighborhood on strike in this shift: shown, but can't be chosen. */
   readonly struck: readonly string[]
-  /** Vehicles and salaries of the fleet chosen, for one shift. */
+  /** What the fleet chosen costs per shift: vehicles beyond the level's free fleet, and salaries. */
   readonly costKr: number
+  /** The level's own fleet: it goes out free (#141). */
+  readonly base: readonly string[]
   readonly moneyKr: number
   readonly hired: number
   /** The fleet can be paid with the money in hand (or it is a single rider). */
   readonly canStart: boolean
-  /** Hiring would let one more rider go out in this level. */
-  readonly canHireHere: boolean
   readonly hireKr: number
   readonly setFleet: (fleet: readonly string[]) => void
   readonly hire: () => void
@@ -57,17 +56,19 @@ export function useGarage(levelId: string): Garage {
   const fleet = chosenFleet(saved, suggested, rules)
   // Riders 1 to n go out: their salaries are part of the shift's cost.
   const salaries = salariesKr(xp, fleet.length, experience)
+  // The level's own fleet comes free: the suggested one (with the weather swap).
+  const base = suggested.slice(0, levelFleet.length)
   return {
     fleet,
     suggested,
+    base,
     advice,
     rules,
     struck,
-    costKr: fleetCostKr(fleet, vehicleCostKr) + salaries,
+    costKr: extraCostKr(fleet, base, vehicleCostKr) + salaries,
     moneyKr,
     hired,
-    canStart: canStart(fleet, moneyKr, vehicleCostKr, salaries),
-    canHireHere: canUseMoreRiders(levelFleet, hired),
+    canStart: canStart(fleet, moneyKr, vehicleCostKr, salaries, base),
     hireKr: economy.hireRiderKr,
     setFleet: (next) => chooseFleet(levelId, next),
     hire,

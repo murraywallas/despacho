@@ -4,7 +4,7 @@ import { cleanSave, migrateSave, newGame, SAVE_VERSION, type SavedGame } from '.
 import { browserStorage } from '../../src/store/safeStorage'
 import { useProgressStore } from '../../src/store/progressStore'
 
-const fresh = newGame(600, 3)
+const fresh = newGame(600)
 const played: SavedGame = {
   best: { lunch: 4.5, dinner: 3.2 },
   played: 7,
@@ -39,13 +39,13 @@ describe('guardado de la partida', () => {
     expect(cleanSave(JSON.parse(JSON.stringify(played)), fresh)).toEqual(played)
   })
 
-  test('una partida nueva arranca con la plata y los repartidores de Reglas', () => {
-    expect(newGame(economy.startingKr, economy.startingRiders)).toEqual({
+  test('una partida nueva arranca con la plata de Reglas y sin repartidores extra', () => {
+    expect(newGame(economy.startingKr)).toEqual({
       best: {},
       played: 0,
       guideDone: false,
       moneyKr: economy.startingKr,
-      hired: economy.startingRiders,
+      hired: 0,
       fleets: {},
       xp: [],
     })
@@ -57,6 +57,11 @@ describe('guardado de la partida', () => {
     expect(migrateSave(old, 0, fresh)).toEqual({ ...fresh, best: { lunch: 4.8 }, played: 3, guideDone: true })
   })
 
+  test('un guardado de antes de la flota gratis (#141) queda sin extra: los contratados eran para la flota del nivel', () => {
+    const before = { ...played, hired: 6 }
+    expect(migrateSave(before, 2, fresh)).toEqual({ ...played, hired: 0 })
+  })
+
   test('un guardado roto no rompe el juego: lo raro se descarta y el resto se conserva', () => {
     expect(cleanSave('basura', fresh)).toEqual(fresh)
     expect(cleanSave(null, fresh)).toEqual(fresh)
@@ -66,7 +71,7 @@ describe('guardado de la partida', () => {
       played: -2,
       guideDone: 'sí',
       moneyKr: 'mucha',
-      hired: 1,
+      hired: -1,
       fleets: { lunch: 'bike', dinner: ['bike', 3], friday: ['e_scooter'] },
     }
     expect(cleanSave(odd, fresh)).toEqual({ ...fresh, best: { dinner: 4 }, fleets: { friday: ['e_scooter'] } })
@@ -96,7 +101,7 @@ describe('guardado de la partida', () => {
     expect(after.best).toEqual({})
     expect(after.played).toBe(0)
     expect(after.moneyKr).toBe(economy.startingKr)
-    expect(after.hired).toBe(economy.startingRiders)
+    expect(after.hired).toBe(0)
     expect(after.fleets).toEqual({})
   })
 })

@@ -16,7 +16,7 @@ export function useRecordProgress(): void {
         if (!state.clock.finished || previous.clock.finished || state.levelId === null) return
         const average = averageRating(state.orderQueue.orders, prototype.heat, prototype.rating)
         if (average !== undefined) useProgressStore.getState().record(state.levelId, average)
-        useProgressStore.getState().earn(moneyOfShift(state.orderQueue.orders, state.riders).profitKr)
+        useProgressStore.getState().earn(moneyOfShift(state.orderQueue.orders, state.riders, state.levelId).profitKr)
         useProgressStore.getState().gainXp(state.riders, state.orderQueue.orders)
       }),
     [],
