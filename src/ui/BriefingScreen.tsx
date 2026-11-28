@@ -3,7 +3,7 @@ import { levels, shift as shiftBalance, vehicles } from '../game/balance'
 import { balanceFor, briefingOf, createLevelShift, neighborhoodOf } from '../game/levels'
 import { positionOf } from '../game/cityMap'
 import { shiftSettingsFrom } from '../game/shift'
-import { hasText, t } from '../i18n'
+import { hasText, locale, t } from '../i18n'
 import { useProgressStore } from '../store/progressStore'
 import { useScreenStore } from '../store/screenStore'
 import { useShiftStore } from '../store/shiftStore'
@@ -17,6 +17,7 @@ import { EventIcon } from './EventNotices'
 import { eventEffect, eventName, isMoment } from './eventText'
 import { useGarage } from './useGarage'
 import { WeatherAdviceNote } from './WeatherAdviceNote'
+import { LanguageSwitch } from './LanguageSwitch'
 import './garage.css'
 import './levels.css'
 
@@ -28,9 +29,9 @@ function zoneName(zone: string): string {
 
 const METERS_PER_KM = 1000
 
-/** "1,1": kilometers with one decimal, the Spanish way. */
+/** "1,1" ("1.1" in English): kilometers with one decimal. */
 function formatKm(meters: number): string {
-  return (meters / METERS_PER_KM).toLocaleString('es', { maximumFractionDigits: 1 })
+  return (meters / METERS_PER_KM).toLocaleString(locale(), { maximumFractionDigits: 1 })
 }
 
 const pinsByLevel = new Map<string, readonly BackdropPin[]>()
@@ -76,7 +77,10 @@ function Briefing({ levelId }: { levelId: string }) {
     <main className="levels" aria-labelledby="briefing-title">
       <BackdropMap pins={pins} leftInset={PANEL_INSET} light={mapLightOf(levelId)} neighborhood={neighborhoodOf(levelId)} />
       <section className="briefing levels__panel floating-panel" data-testid="briefing">
-        <p className="levels__app">{t('briefing.eyebrow')}</p>
+        <div className="levels__top">
+          <p className="levels__app">{t('briefing.eyebrow')}</p>
+          <LanguageSwitch />
+        </div>
         <h1 className="levels__title" id="briefing-title">
           {levelName(levelId)}
         </h1>

@@ -36,6 +36,19 @@
   border-radius: var(--radius-lg);
 }
 
+/* The app or screen name, with the language switch on its right. */
+.levels__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.levels__top .levels__app {
+  margin: 0;
+}
+
 .levels__app {
   margin: 0 0 4px;
   font-size: calc(12px * var(--text-scale));

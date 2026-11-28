@@ -4,6 +4,7 @@ import { useScreenStore } from '../store/screenStore'
 import { TEXT_SCALES, useSettingsStore } from '../store/settingsStore'
 import { useShiftStore } from '../store/shiftStore'
 import { useSoundStore } from '../store/soundStore'
+import { LanguageSwitch } from './LanguageSwitch'
 import { Keycap } from './Keycap'
 
 const PERCENT = 100
@@ -91,6 +92,10 @@ export function PauseMenu({ onClose, onShowShortcuts }: PauseMenuProps) {
 
         <h3 className="pause-menu__section">{t('pause.settings')}</h3>
         <div className="pause-menu__settings">
+          <div className="pause-menu__row">
+            <span>{t('language.label')}</span>
+            <LanguageSwitch />
+          </div>
           <Switch label={t('pause.sound')} on={!muted} onToggle={toggleMute} />
           <label className="pause-menu__row">
             <span>{t('sound.volume')}</span>

@@ -121,10 +121,11 @@ test('con Nørrebro ganado se abre Vesterbro; se elige con el teclado y el progr
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { name: 'Nørrebro' })).toBeVisible()
   await expect(page.getByTestId('level-card').nth(2)).toContainText('Tu mejor: 3,0 estrellas')
-  // El foco pasa al primer turno del barrio; volviendo atrás están los otros barrios.
+  // El foco pasa al primer turno del barrio; volviendo atrás (pasando el idioma) están los otros barrios.
   await expect(page.getByTestId('level-card').first()).toBeFocused()
-  await page.keyboard.press('Shift+Tab')
-  await page.keyboard.press('Shift+Tab')
+  for (let step = 0; step < 6 && !(await vesterbro.evaluate((element) => element === document.activeElement)); step++) {
+    await page.keyboard.press('Shift+Tab')
+  }
   await expect(vesterbro).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { name: 'Vesterbro' })).toBeVisible()

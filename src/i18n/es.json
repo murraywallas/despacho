@@ -325,5 +325,8 @@
   "map.tripStop": "{stop}. Pedido #{number}",
   "map.customerStop": "Cliente del pedido #{number} · parada {stop} del viaje",
   "selection.orders": "Pedidos {numbers}",
-  "guide.waitNext": "Esperá un momento: el próximo pedido llega en unos segundos a la cola de la izquierda."
+  "guide.waitNext": "Esperá un momento: el próximo pedido llega en unos segundos a la cola de la izquierda.",
+  "language.label": "Idioma",
+  "language.en": "English",
+  "language.es": "Español"
 }

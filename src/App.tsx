@@ -11,12 +11,15 @@ import { ShiftScreen } from './ui/ShiftScreen'
 import { useRecordProgress } from './ui/useRecordProgress'
 import { useApplySettings } from './ui/useApplySettings'
 import { useSounds } from './ui/useSounds'
+import { useLanguage } from './ui/useLanguage'
 
 /** `?level=<id>` opens that level straight away, if it is unlocked (handy to share or test a level). */
 const LEVEL_PARAM = 'level'
 
 export default function App() {
   const screen = useScreenStore((state) => state.screen)
+  // Every text follows the language: changing it draws the screen again from scratch.
+  const language = useLanguage()
   useSounds()
   useApplySettings()
   useRecordProgress()
@@ -29,8 +32,8 @@ export default function App() {
     useScreenStore.getState().showShift()
   }, [])
 
-  if (screen === 'shift') return <ShiftScreen />
-  if (screen === 'briefing') return <BriefingScreen />
-  if (screen === 'garage') return <GarageScreen />
-  return <LevelSelect />
+  if (screen === 'shift') return <ShiftScreen key={language} />
+  if (screen === 'briefing') return <BriefingScreen key={language} />
+  if (screen === 'garage') return <GarageScreen key={language} />
+  return <LevelSelect key={language} />
 }
