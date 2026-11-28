@@ -8,13 +8,13 @@ import { urgencyOf, type Order } from '../game/orders'
 import type { Rider } from '../game/riders'
 import { t } from '../i18n'
 import '../map/mapMarkers.css'
-import { areaBounds, areaOutline, buildMarkers, closuresGeoJson, previewGeoJson, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
+import { areaBounds, areaOutline, outsideArea, buildMarkers, closuresGeoJson, previewGeoJson, routesGeoJson, routesKey, type MapMarker } from '../map/mapData'
 import { AttributionControl, MapLibreMap, NavigationControl, Popup, type GeoJSONSource, type PositionAnchor } from '../map/maplibre'
 import { fallbackStyle, LIGHTS, loadNightStyle } from '../map/nightStyle'
 import { mapLightOf } from './levelText'
 import { panelInsets } from './panelInsets'
 import { useDeliveryFx } from './useDeliveryFx'
-import { addRouteLayers, AREA_SOURCE, CLOSURE_SOURCE, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
+import { addRouteLayers, AREA_SOURCE, CLOSURE_SOURCE, OUTSIDE_SOURCE, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
 import { usePointerStore } from '../store/pointerStore'
 import { closedStretchesAt, useShiftStore } from '../store/shiftStore'
 import { useTrip } from './useTrip'
@@ -254,9 +254,10 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     instanceRef.current?.getSource<GeoJSONSource>(PREVIEW_SOURCE)?.setData(preview)
   }, [preview, styleVersion])
 
-  // Where the neighborhood's streets end.
+  // Where the neighborhood's streets end, with everything outside shaded.
   useEffect(() => {
     instanceRef.current?.getSource<GeoJSONSource>(AREA_SOURCE)?.setData(areaOutline(streets))
+    instanceRef.current?.getSource<GeoJSONSource>(OUTSIDE_SOURCE)?.setData(outsideArea(streets))
   }, [streets, styleVersion])
 
   // Streets closed by an event (marathon): the same set object while it lasts, so this only runs when it changes.

@@ -4,7 +4,7 @@ import { startTrip } from '../../src/game/movement'
 import type { Order } from '../../src/game/orders'
 import type { Rider } from '../../src/game/riders'
 import { waitingAt } from '../../src/game/orders'
-import { areaBounds, buildMarkers, previewGeoJson, routesGeoJson, type MapSelection } from '../../src/map/mapData'
+import { areaBounds, buildMarkers, outsideArea, previewGeoJson, routesGeoJson, type MapSelection } from '../../src/map/mapData'
 import { latticeOf, nodeAt, smallCity, smallStreets } from './smallCity'
 
 const map = smallCity([nodeAt(3, 0), nodeAt(0, 4)])
@@ -153,5 +153,22 @@ describe('límites del barrio', () => {
     const [[w, s], [e, n]] = areaBounds(streets, 0.5)
     expect(e - w).toBeCloseTo((east - west) * 2)
     expect(n - s).toBeCloseTo((north - south) * 2)
+  })
+})
+
+describe('la zona jugable se destaca', () => {
+  test('lo de afuera es una sola forma, con el recuadro del barrio como hueco', () => {
+    const streets = smallStreets()
+    const [south, west, north, east] = streets.bbox
+    const [shape] = outsideArea(streets).features
+    const [outer, hole] = shape.geometry.coordinates
+    // El anillo de afuera cubre el mundo y contiene el barrio.
+    expect(Math.min(...outer.map(([lon]) => lon))).toBeLessThan(west)
+    expect(Math.max(...outer.map(([, lat]) => lat))).toBeGreaterThan(north)
+    // El hueco es justo el recuadro del barrio, cerrado.
+    expect(hole).toHaveLength(5)
+    expect(hole[0]).toEqual(hole[4])
+    expect(new Set(hole.map(([lon]) => lon))).toEqual(new Set([west, east]))
+    expect(new Set(hole.map(([, lat]) => lat))).toEqual(new Set([south, north]))
   })
 })

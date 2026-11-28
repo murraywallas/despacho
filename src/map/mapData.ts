@@ -2,7 +2,7 @@
  * What the map shows, as plain data: markers for restaurants, waiting customers and riders, and the routes of the
  * trips in progress as GeoJSON. Pure, so it is tested without a browser.
  */
-import type { Feature, FeatureCollection, LineString } from 'geojson'
+import type { Feature, FeatureCollection, LineString, Polygon } from 'geojson'
 import { closedLines } from '../game/closures'
 import { networkFor, positionOf, type CityMap, type NodeId } from '../game/cityMap'
 import { restaurantOf } from '../game/dispatch'
@@ -211,6 +211,32 @@ export function areaOutline(streets: StreetGraphFile): FeatureCollection<LineStr
         },
       },
     ],
+  }
+}
+
+/** The whole world: the outer ring of the shade around the neighborhood. */
+const WORLD: [number, number][] = [
+  [-180, -85],
+  [180, -85],
+  [180, 85],
+  [-180, 85],
+  [-180, -85],
+]
+
+/** Everything outside the neighborhood, as one shape with the neighborhood as a hole: it is shaded on the map. */
+export function outsideArea(streets: StreetGraphFile): FeatureCollection<Polygon> {
+  const [south, west, north, east] = streets.bbox
+  // The hole goes the other way around from the outer ring.
+  const hole: [number, number][] = [
+    [west, south],
+    [west, north],
+    [east, north],
+    [east, south],
+    [west, south],
+  ]
+  return {
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [WORLD, hole] } }],
   }
 }
 
