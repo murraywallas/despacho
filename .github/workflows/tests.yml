@@ -1,0 +1,192 @@
+# Prueba un Pull Request: corre build, lint y tests, saca capturas y le pide al agente tester
+# que compare el resultado con los "Listo cuando" de la tarea. Comenta el reporte en el PR.
+# Corre solo en cada PR, y también lo llama desarrollo.yml en cada ronda.
+name: Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_call:
+    inputs:
+      pr_number:
+        type: string
+        required: true
+      branch:
+        type: string
+        required: true
+      round:
+        type: string
+        required: false
+        default: "1"
+    outputs:
+      verdict:
+        description: "aprobado o rechazado"
+        value: ${{ jobs.test.outputs.verdict }}
+
+jobs:
+  test:
+    name: Probar el Pull Request
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    outputs:
+      verdict: ${{ steps.verdict.outputs.verdict }}
+    env:
+      PR_NUMBER: ${{ inputs.pr_number || github.event.pull_request.number }}
+      ROUND: ${{ inputs.round || 'pr' }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch || github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Preparar carpeta de resultados
+        env:
+          CLAUDE_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          echo "OUT=$RUNNER_TEMP/tester" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/tester/capturas"
+          if [ -n "$CLAUDE_TOKEN" ]; then echo "HAS_CLAUDE=true" >> "$GITHUB_ENV"; fi
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Correr build, lint y tests
+        run: |
+          set +e
+          has_script() { node -e "process.exit(require('./package.json').scripts?.['$1'] ? 0 : 1)"; }
+          has_playwright() { node -e "process.exit(require('./package.json').devDependencies?.['@playwright/test'] ? 0 : 1)"; }
+          if has_playwright; then
+            npx playwright install --with-deps chromium > "$OUT/playwright-install.log" 2>&1
+          fi
+          fail=0
+          echo "| Comando | Resultado |" > "$OUT/comandos.md"
+          echo "| --- | --- |" >> "$OUT/comandos.md"
+          for cmd in build lint test test:e2e; do
+            log="$OUT/${cmd/:/-}.log"
+            if has_script "$cmd"; then
+              npm run "$cmd" > "$log" 2>&1
+              code=$?
+              if [ $code -eq 0 ]; then result="pasó"; else result="falló (código $code)"; fail=1; fi
+            else
+              result="no existe todavía"
+            fi
+            echo "| \`npm run $cmd\` | $result |" >> "$OUT/comandos.md"
+          done
+          echo "CHECKS_FAILED=$fail" >> "$GITHUB_ENV"
+          cat "$OUT/comandos.md"
+
+      - name: Sacar capturas a 1440 y 1024 px
+        run: |
+          set +e
+          if [ -d dist ] && node -e "process.exit(require('./package.json').devDependencies?.['@playwright/test'] ? 0 : 1)"; then
+            npx vite preview --port 4173 --strictPort > "$OUT/preview.log" 2>&1 &
+            for i in $(seq 1 30); do curl -sf http://localhost:4173 > /dev/null && break; sleep 1; done
+            npx playwright screenshot --viewport-size=1440,900 --wait-for-timeout=1500 http://localhost:4173 "$OUT/capturas/1440.png"
+            npx playwright screenshot --viewport-size=1024,768 --wait-for-timeout=1500 http://localhost:4173 "$OUT/capturas/1024.png"
+          else
+            echo "Sin capturas: todavía no hay build o Playwright." > "$OUT/capturas/LEEME.txt"
+          fi
+
+      - name: Juntar la tarea y el Pull Request
+        run: |
+          gh pr view "$PR_NUMBER" --json body --jq .body > "$OUT/pr.md"
+          issue=$(grep -oiE '(closes|fixes|resolves) #[0-9]+' "$OUT/pr.md" | head -1 | grep -oE '[0-9]+' || true)
+          if [ -n "$issue" ]; then
+            gh issue view "$issue" --comments > "$OUT/tarea.md"
+          else
+            echo "El Pull Request no dice qué tarea cierra (falta 'Closes #número')." > "$OUT/tarea.md"
+          fi
+
+      - name: Revisar con el agente tester
+        if: env.HAS_CLAUDE == 'true'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          allowed_bots: "claude[bot]"
+          prompt: |
+            Revisá el Pull Request #${{ env.PR_NUMBER }}.
+            - La tarea, con sus comentarios: ${{ env.OUT }}/tarea.md
+            - La descripción del Pull Request: ${{ env.OUT }}/pr.md
+            - Resultado de cada comando: ${{ env.OUT }}/comandos.md, y el log de cada uno en ${{ env.OUT }}/*.log
+            - Capturas: ${{ env.OUT }}/capturas/
+            Escribí el reporte en ${{ env.OUT }}/reporte.md y el veredicto en ${{ env.OUT }}/veredicto.txt.
+          claude_args: |
+            --agent tester
+            --max-turns 40
+            --allowedTools "Read,Glob,Grep,Write,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(ls:*)"
+
+      - name: Decidir el resultado
+        id: verdict
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          verdict=""
+          if [ -f "$OUT/veredicto.txt" ]; then
+            verdict=$(tr -d '[:space:]' < "$OUT/veredicto.txt" | tr '[:upper:]' '[:lower:]')
+          fi
+          if [ "$CHECKS_FAILED" = "1" ]; then verdict="rechazado"; fi
+          {
+            if [ -s "$OUT/reporte.md" ]; then
+              cat "$OUT/reporte.md"
+            else
+              echo "## Reporte del tester"
+              echo
+              if [ "$HAS_CLAUDE" = "true" ]; then
+                echo "El agente tester no terminó su reporte. Revisá el log del workflow."
+                verdict="rechazado"
+              else
+                echo "Solo se corrieron los comandos: falta el secreto \`CLAUDE_CODE_OAUTH_TOKEN\` para que el agente revise los \"Listo cuando\"."
+              fi
+            fi
+            echo
+            echo "---"
+            echo "<details><summary>Comandos (automático)</summary>"
+            echo
+            cat "$OUT/comandos.md"
+            echo
+            echo "</details>"
+            echo
+            echo "Logs y capturas: [workflow]($RUN_URL), sección *Artifacts*."
+          } > "$OUT/comentario.md"
+          if [ "$verdict" != "aprobado" ] && [ "$verdict" != "rechazado" ]; then
+            if [ "$CHECKS_FAILED" = "1" ] || [ "$HAS_CLAUDE" = "true" ]; then verdict="rechazado"; else verdict="aprobado"; fi
+          fi
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+          echo "Resultado: $verdict"
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: pruebas-pr${{ env.PR_NUMBER }}-ronda-${{ env.ROUND }}-intento-${{ github.run_attempt }}
+          path: ${{ env.OUT }}
+          if-no-files-found: ignore
+
+      - name: Comentar en el Pull Request
+        env:
+          VERDICT: ${{ steps.verdict.outputs.verdict }}
+        run: |
+          gh pr comment "$PR_NUMBER" --body-file "$OUT/comentario.md"
+          if [ "$VERDICT" = "rechazado" ]; then
+            gh pr edit "$PR_NUMBER" --add-label bug
+          else
+            gh pr edit "$PR_NUMBER" --remove-label bug || true
+          fi
+
+      - name: Marcar el check como fallido
+        if: steps.verdict.outputs.verdict == 'rechazado' && github.event_name == 'pull_request'
+        run: |
+          echo "El tester rechazó el Pull Request. Ver el comentario en el PR."
+          exit 1
