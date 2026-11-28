@@ -4,7 +4,9 @@ import type { CityMap } from '../game/cityMap'
 import { setSpeed, togglePause, type ShiftClock, isOver } from '../game/clock'
 import { reorderStops } from '../game/movement'
 import { canShareTrip } from '../game/pickups'
-import { waitingAt, type Order, type OrderQueue, type OrderSettings } from '../game/orders'
+import { fullTrip } from '../game/tripFill'
+import { keepIfSame, selectedOrderIds, tripIds, waitingQueue } from './selection'
+import { waitingAt, type OrderQueue, type OrderSettings } from '../game/orders'
 import type { Random } from '../game/random'
 import type { Rider } from '../game/riders'
 import { advanceShift, capacityOf, dispatchOrders, movementAt, reassignAndStart, shiftSettingsFrom, streetConditionsAt } from '../game/shift'
@@ -31,6 +33,8 @@ interface ShiftState {
   selectedOrderId: string | null
   /** More pending orders of the same restaurant added to the trip with Shift, in delivery order. */
   addedOrderIds: readonly string[]
+  /** Orders of the picked one's restaurant the player left out of the trip (Shift + click). */
+  excludedOrderIds: readonly string[]
   /** Free rider the player picked, waiting for an order. */
   selectedRiderId: string | null
   /**
@@ -49,7 +53,7 @@ interface ShiftState {
    * `fill` (Shift + tap), for as many of its orders as the vehicle carries. Returns false (and changes nothing)
    * when no rider is picked or nothing waits there.
    */
-  sendRiderTo: (restaurantId: string, fill?: boolean) => boolean
+  sendRiderTo: (restaurantId: string, onlyOne?: boolean) => boolean
   /** Changes the order of a busy rider's remaining stops (drag and drop in the rider card). */
   reorderStops: (riderNumber: number, orderIds: readonly string[]) => void
   /** Calls left this shift to extend a customer's deadline. */
@@ -108,7 +112,8 @@ function refusalFor(state: Pick<ShiftState, 'refusal'>, rider: Rider, count: num
   return reason ? { refusal: { riderId: rider.id, reason, seq: (state.refusal?.seq ?? 0) + 1 } } : undefined
 }
 
-const NOTHING_SELECTED = { selectedOrderId: null, addedOrderIds: NO_ORDERS, selectedRiderId: null, refusal: null }
+const NOTHING_SELECTED = { selectedOrderId: null, addedOrderIds: NO_ORDERS, excludedOrderIds: NO_ORDERS, selectedRiderId: null, refusal: null }
+const NEW_PICK = { addedOrderIds: NO_ORDERS, excludedOrderIds: NO_ORDERS }
 
 /** The prototype's rules. Vehicle speeds are the same in every level, so the interface reads them from here. */
 export const settings = shiftSettingsFrom(prototype)
@@ -132,11 +137,6 @@ export function levelEvents(): readonly ShiftEvent[] {
   return levelSettings.events
 }
 
-/** Every order picked for the next trip: the first one and the ones added with Shift. */
-export function selectedOrderIds(state: Pick<ShiftState, 'selectedOrderId' | 'addedOrderIds'>): string[] {
-  return state.selectedOrderId ? [state.selectedOrderId, ...state.addedOrderIds] : []
-}
-
 // The random stream of the current shift (orders keep drawing from it as they appear).
 let random: Random
 
@@ -148,6 +148,7 @@ type ShiftData = Pick<
   | 'orderQueue'
   | 'selectedOrderId'
   | 'addedOrderIds'
+  | 'excludedOrderIds'
   | 'selectedRiderId'
   | 'callsLeft'
   | 'levelId'
@@ -188,6 +189,7 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
         orderQueue: next.orderQueue,
         selectedOrderId: firstOpen ? state.selectedOrderId : null,
         addedOrderIds: keepIfSame(state.addedOrderIds, firstLeft ? state.addedOrderIds.filter(stillPending) : NO_ORDERS),
+        excludedOrderIds: keepIfSame(state.excludedOrderIds, firstLeft ? state.excludedOrderIds.filter(stillPending) : NO_ORDERS),
         selectedRiderId: rider?.status === 'idle' ? state.selectedRiderId : null,
       }
     }),
@@ -208,25 +210,33 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
       const order = state.orderQueue.orders.find((candidate) => candidate.id === orderId)
       if (add && state.selectedOrderId && orderId !== state.selectedOrderId) {
         if (state.addedOrderIds.includes(orderId)) return { addedOrderIds: state.addedOrderIds.filter((id) => id !== orderId) }
-        // Orders of the same restaurant, or of restaurants close together (Kødbyen…), go on one trip.
+        // The trip already takes the orders waiting at the same restaurant: Shift + click leaves one out (or back in).
+        const first = state.orderQueue.orders.find((candidate) => candidate.id === state.selectedOrderId)
+        if (order?.status === 'pending' && order.restaurantId === first?.restaurantId) {
+          const excluded = state.excludedOrderIds.includes(orderId)
+          return { excludedOrderIds: excluded ? state.excludedOrderIds.filter((id) => id !== orderId) : [...state.excludedOrderIds, orderId] }
+        }
+        // Orders of restaurants close together (Kødbyen…) can join the trip too.
         const trip = [state.selectedOrderId, ...state.addedOrderIds].flatMap((id) => state.orderQueue.orders.find((candidate) => candidate.id === id) ?? [])
         if (order?.status !== 'pending' || trip.length === 0 || !canShareTrip(state.map, [...trip, order])) return state
         return { addedOrderIds: [...state.addedOrderIds, orderId] }
       }
-      if (orderId === state.selectedOrderId) return { selectedOrderId: null, addedOrderIds: NO_ORDERS, refusal: null }
+      if (orderId === state.selectedOrderId) return { selectedOrderId: null, ...NEW_PICK, refusal: null }
       if (!order || isOver(state.clock)) return state
       if (order.status === 'assigned' && state.selectedRiderId) {
         // Rider first, then an order already going with someone else: it is reassigned to the rider.
         const result = reassignAndStart(state.map, state.orderQueue, state.riders, orderId, state.selectedRiderId, prototype.tools.reassignPenaltySec, state.clock.elapsedSec)
         return result ? { ...result, ...NOTHING_SELECTED } : state
       }
-      if (order.status === 'assigned' || order.status === 'pickedUp') return { selectedOrderId: orderId, addedOrderIds: NO_ORDERS, selectedRiderId: null }
+      if (order.status === 'assigned' || order.status === 'pickedUp') return { selectedOrderId: orderId, ...NEW_PICK, selectedRiderId: null }
       if (order.status !== 'pending') return state
-      if (state.selectedRiderId) {
-        const result = dispatchOrders(state.map, state.orderQueue, state.riders, [orderId], state.selectedRiderId)
+      const pickedRider = state.riders.find((candidate) => candidate.id === state.selectedRiderId)
+      if (pickedRider) {
+        const trip = fullTrip(state.orderQueue.orders, [orderId], NO_ORDERS, capacityOf(pickedRider.vehicle))
+        const result = dispatchOrders(state.map, state.orderQueue, state.riders, trip, pickedRider.id)
         return result ? { ...result, ...NOTHING_SELECTED } : state
       }
-      return { selectedOrderId: orderId, addedOrderIds: NO_ORDERS, refusal: null }
+      return { selectedOrderId: orderId, ...NEW_PICK, refusal: null }
     }),
   pickRider: (riderNumber) =>
     set((state) => {
@@ -241,20 +251,23 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
       // The food is already on its way: that order can only get a call to its customer.
       if (first?.status === 'pickedUp') return state
       if (picked.length > 0) {
-        const result = dispatchOrders(state.map, state.orderQueue, state.riders, picked, rider.id)
+        // The rider takes the others waiting at that restaurant too, as many as fit.
+        const trip = tripIds(state, capacityOf(rider.vehicle))
+        const result = dispatchOrders(state.map, state.orderQueue, state.riders, trip, rider.id)
         return result ? { ...result, ...NOTHING_SELECTED } : (refusalFor(state, rider, picked.length) ?? state)
       }
       if (rider.status !== 'idle') return state
       // Picking a rider who just went free counts as having seen them.
       return { selectedRiderId: rider.id === state.selectedRiderId ? null : rider.id, freeSince: markSeen(state.freeSince, rider.id) }
     }),
-  sendRiderTo: (restaurantId, fill = false) => {
+  sendRiderTo: (restaurantId, onlyOne = false) => {
     const state = get()
     const rider = state.riders.find((candidate) => candidate.id === state.selectedRiderId)
     const waiting = waitingAt(state.orderQueue.orders, restaurantId)
     if (!rider || waiting.length === 0 || isOver(state.clock)) return false
-    const take = fill ? waiting.slice(0, capacityOf(rider.vehicle)) : waiting.slice(0, 1)
-    const result = dispatchOrders(state.map, state.orderQueue, state.riders, take.map((order) => order.id), rider.id)
+    // Every order waiting there that fits (with Shift, just the most urgent one).
+    const take = onlyOne ? [waiting[0].id] : fullTrip(state.orderQueue.orders, [waiting[0].id], NO_ORDERS, capacityOf(rider.vehicle))
+    const result = dispatchOrders(state.map, state.orderQueue, state.riders, take, rider.id)
     if (!result) return false
     set({ ...result, ...NOTHING_SELECTED })
     return true
@@ -292,12 +305,4 @@ export const useShiftStore = create<ShiftState>()((set, get) => ({
     }),
 }))
 
-/** Orders waiting for a rider, as the queue shows them: the closest deadline first. */
-export function waitingQueue(orders: readonly Order[]): Order[] {
-  return orders.filter((order) => order.status === 'pending').sort((a, b) => a.deadlineAtSec - b.deadlineAtSec)
-}
-
-/** The previous list when nothing changed, so watchers don't redo work for an equal list. */
-function keepIfSame(previous: readonly string[], next: readonly string[]): readonly string[] {
-  return previous.length === next.length && previous.every((id, index) => id === next[index]) ? previous : next
-}
+export { selectedOrderIds, tripIds, tripOf, waitingQueue } from './selection'

@@ -7,7 +7,7 @@ const STEP_MS = 1000
 // The fastest clock speed: the whole shift takes a third of the time.
 const FAST = Math.max(...clockSpeeds)
 // Orders sent out before stopping: the rest is cancelled, and the average lands between losing and winning.
-const DISPATCHED = 8
+const DISPATCHED = 6
 
 test('con un promedio entre 3 y 4, el resultado dice "Casi" y qué nivel abriría, con la barra de estrellas', async ({
   page,
@@ -32,7 +32,9 @@ test('con un promedio entre 3 y 4, el resultado dice "Casi" y qué nivel abrirí
       const before = await orders.count()
       await page.keyboard.press((await first.getAttribute('data-rider-number')) ?? '1')
       // A rider without battery for the trip goes to recharge instead: then the order stays.
-      if ((await orders.count()) < before) sent++
+      // Cuenta cada pedido que salió (un repartidor se lleva los de su restaurante que entren, #134).
+      const after = await orders.count()
+      if (after < before) sent += before - after
       else await page.keyboard.press('Escape')
     } else {
       await page.keyboard.press('Escape')

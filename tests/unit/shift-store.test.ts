@@ -4,7 +4,7 @@ import { createClock } from '../../src/game/clock'
 import { speedOf } from '../../src/game/movement'
 import { createOrderQueue, type Order } from '../../src/game/orders'
 import { canShareTrip } from '../../src/game/pickups'
-import { orderSettings, settings, useShiftStore } from '../../src/store/shiftStore'
+import { orderSettings, settings, tripIds, useShiftStore } from '../../src/store/shiftStore'
 
 const interval = prototype.orders.spawnIntervalSec
 const orderCount = () => useShiftStore.getState().orderQueue.orders.length
@@ -363,21 +363,23 @@ describe('varios pedidos por viaje', () => {
     throw new Error('Nunca hubo dos pedidos del mismo restaurante.')
   }
 
-  test('Shift + clic suma un pedido del mismo restaurante; uno de un restaurante lejano no entra', () => {
+  test('elegir un pedido arma el viaje con los demás de su restaurante; Shift + clic saca uno y lo vuelve a poner', () => {
     const [a, b] = twoFromOneRestaurant()
     const { selectOrder } = useShiftStore.getState()
     selectOrder(a.id)
+    expect(tripIds(useShiftStore.getState())).toEqual([a.id, b.id])
     selectOrder(b.id, true)
-    expect(useShiftStore.getState()).toMatchObject({ selectedOrderId: a.id, addedOrderIds: [b.id] })
+    expect(useShiftStore.getState()).toMatchObject({ selectedOrderId: a.id, excludedOrderIds: [b.id] })
+    expect(tripIds(useShiftStore.getState())).toEqual([a.id])
+    selectOrder(b.id, true)
+    expect(tripIds(useShiftStore.getState())).toEqual([a.id, b.id])
+    // Uno de un restaurante lejano no entra.
     const { map, orderQueue } = useShiftStore.getState()
     const far = orderQueue.orders.find((order) => order.status === 'pending' && !canShareTrip(map, [a, order]))
     if (far) {
       selectOrder(far.id, true)
-      expect(useShiftStore.getState().addedOrderIds).toEqual([b.id])
+      expect(useShiftStore.getState().addedOrderIds).toEqual([])
     }
-    // Volver a sumar el mismo lo saca.
-    selectOrder(b.id, true)
-    expect(useShiftStore.getState().addedOrderIds).toEqual([])
   })
 
   test('Shift + clic suma un pedido de un restaurante cercano, y la bici pasa por los dos', () => {
@@ -402,23 +404,47 @@ describe('varios pedidos por viaje', () => {
     expect(useShiftStore.getState().riders[0]).toMatchObject({ status: 'toRestaurant', orderIds: [a.id, b.id] })
   })
 
-  test('la bici lleva los dos; la patineta, que lleva uno, no los acepta', () => {
+  test('la bici se lleva los dos del restaurante; la patineta, que lleva uno, sale con el elegido', () => {
+    const [a, b] = twoFromOneRestaurant()
+    const { selectOrder, pickRider } = useShiftStore.getState()
+    selectOrder(a.id)
+    pickRider(1) // bici
+    expect(useShiftStore.getState().riders[0]).toMatchObject({ status: 'toRestaurant', orderIds: [a.id, b.id] })
+    expect(useShiftStore.getState()).toMatchObject({ selectedOrderId: null, addedOrderIds: [], excludedOrderIds: [] })
+  })
+
+  test('la patineta, que lleva uno, sale con el pedido elegido y deja el otro esperando', () => {
+    const [a, b] = twoFromOneRestaurant()
+    const { selectOrder, pickRider } = useShiftStore.getState()
+    selectOrder(b.id)
+    pickRider(2) // patineta
+    expect(useShiftStore.getState().riders[1]).toMatchObject({ status: 'toRestaurant', orderIds: [b.id] })
+    expect(useShiftStore.getState().orderQueue.orders.find((order) => order.id === a.id)?.status).toBe('pending')
+  })
+
+  test('el pedido que se saca con Shift se queda esperando', () => {
     const [a, b] = twoFromOneRestaurant()
     const { selectOrder, pickRider } = useShiftStore.getState()
     selectOrder(a.id)
     selectOrder(b.id, true)
-    pickRider(2) // patineta
-    expect(useShiftStore.getState().riders[1].status).toBe('idle')
     pickRider(1) // bici
-    expect(useShiftStore.getState().riders[0]).toMatchObject({ status: 'toRestaurant', orderIds: [a.id, b.id] })
-    expect(useShiftStore.getState()).toMatchObject({ selectedOrderId: null, addedOrderIds: [] })
+    expect(useShiftStore.getState().riders[0].orderIds).toEqual([a.id])
+    expect(useShiftStore.getState().orderQueue.orders.find((order) => order.id === b.id)?.status).toBe('pending')
   })
 
-  test('repartidor y después Shift + restaurante: lleva tantos como entran en su vehículo', () => {
+  test('repartidor y después restaurante: lleva tantos como entran en su vehículo; con Shift, uno solo', () => {
+    const [a] = twoFromOneRestaurant()
+    const { pickRider, sendRiderTo } = useShiftStore.getState()
+    pickRider(1)
+    expect(sendRiderTo(a.restaurantId)).toBe(true)
+    expect(useShiftStore.getState().riders[0].orderIds).toHaveLength(2)
+  })
+
+  test('repartidor y después Shift + restaurante: lleva solo el más urgente', () => {
     const [a] = twoFromOneRestaurant()
     const { pickRider, sendRiderTo } = useShiftStore.getState()
     pickRider(1)
     expect(sendRiderTo(a.restaurantId, true)).toBe(true)
-    expect(useShiftStore.getState().riders[0].orderIds).toHaveLength(2)
+    expect(useShiftStore.getState().riders[0].orderIds).toHaveLength(1)
   })
 })

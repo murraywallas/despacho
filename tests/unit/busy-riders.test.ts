@@ -147,8 +147,9 @@ describe('asignar a un repartidor ocupado o lleno', () => {
       }),
     )
     useShiftStore.setState({ orderQueue: { ...store.orderQueue, orders } })
+    // Dos pedidos elegidos a mano (uno sumado con Shift, como uno de un restaurante cercano).
     useShiftStore.getState().selectOrder('o1')
-    useShiftStore.getState().selectOrder('o2', true)
+    useShiftStore.setState({ addedOrderIds: ['o2'] })
     // Rider 2 is the skateboard: it carries one.
     const skateboard = store.riders.find((rider) => rider.vehicle === 'skateboard')!
     useShiftStore.getState().pickRider(skateboard.number)

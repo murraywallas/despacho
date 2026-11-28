@@ -38,7 +38,13 @@ describe('pilar 1 con los números de balance.json', () => {
     const results = play(triageBot)
     expect(results.outcome).toBe('win')
     expect(results.average).toBeLessThan(prototype.rating.max)
-    expect(results.cancelled).toBeGreaterThan(0)
+    // En varios turnos, alguno llega tarde o se cancela (#134: medido en 8 turnos, no en uno).
+    const seeds = [11, 23, 37, 41, 59, 67, 73, 89]
+    const missed = seeds.reduce((sum, seed) => {
+      const shift = play(triageBot, prototype, seed)
+      return sum + shift.late + shift.cancelled
+    }, 0)
+    expect(missed).toBeGreaterThan(0)
   })
 
   test('en varios turnos distintos, pensar paga', () => {

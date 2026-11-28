@@ -3,7 +3,7 @@ import { longestRideMs, prototype, SHIFT_URL } from './balance.ts'
 
 test.describe.configure({ timeout: 120_000 }) // Simula minutos de turno cuadro por cuadro.
 
-test('la bici arma un viaje de 2 pedidos con Shift, se cambia el orden y entrega los dos', async ({ page }) => {
+test('la bici se lleva los 2 pedidos del restaurante (Shift saca uno), se cambia el orden y entrega los dos', async ({ page }) => {
   await page.clock.install()
   await page.goto(SHIFT_URL)
   const map = page.getByRole('region', { name: /^Mapa de Nørrebro/ })
@@ -18,9 +18,14 @@ test('la bici arma un viaje de 2 pedidos con Shift, se cambia el orden y entrega
 
   const popup = map.getByTestId('map-popup')
   const popupOrders = popup.getByTestId('popup-order')
+  // Elegir uno ya suma el otro que espera ahí (#134).
   await popupOrders.nth(0).click()
+  await expect(popup).toContainText('2 pedidos en el viaje')
+  await expect(popupOrders.nth(1)).toHaveAttribute('aria-pressed', 'true')
+  // Shift + clic lo saca del viaje, y otra vez lo vuelve a poner.
   await popupOrders.nth(1).click({ modifiers: ['Shift'] })
-  await expect(popup).toContainText('2 pedidos elegidos')
+  await expect(popupOrders.nth(1)).toHaveAttribute('aria-pressed', 'false')
+  await popupOrders.nth(1).click({ modifiers: ['Shift'] })
   await expect(popupOrders.nth(1)).toHaveAttribute('aria-pressed', 'true')
 
   // Antes de confirmar: cuándo llegaría cada uno, parada por parada, y los clientes numerados en el mapa.
@@ -33,11 +38,12 @@ test('la bici arma un viaje de 2 pedidos con Shift, se cambia el orden y entrega
   // La barra nombra los dos pedidos.
   await expect(page.getByTestId('selection-bar')).toContainText(/Pedidos #\d+ y #\d+/)
 
-  // Solo la bici lleva 2: es la única que aparece para elegir.
+  // Solo la bici lleva los 2; el skate y el monopatín se llevarían uno, y lo dicen.
   const riders = popup.getByTestId('popup-rider')
-  await expect(riders).toHaveCount(1)
-  await expect(riders.first()).toContainText('Repartidor 1')
-  await riders.first().click()
+  await expect(riders.filter({ hasText: 'lleva 1' })).toHaveCount(2)
+  const bike = riders.filter({ hasText: 'Repartidor 1' })
+  await expect(bike).not.toContainText('lleva')
+  await bike.click()
 
   const card = page.getByRole('complementary', { name: /Repartidores/ }).locator('[data-rider-number="1"]')
   await expect(card).toContainText('2 pedidos')

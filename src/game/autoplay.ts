@@ -10,6 +10,7 @@ import { parkingSecOf } from './parking'
 import { batteryShare, hasBatteryFor, isLowBattery, sendToCharge, tripMeters } from './battery'
 import { createAreaShift } from './levels'
 import { canShareTrip } from './pickups'
+import { fullTrip } from './tripFill'
 import { tripArrivals } from './stops'
 import type { Order } from './orders'
 import { DEFAULT_NEIGHBORHOOD } from './neighborhoods'
@@ -158,7 +159,9 @@ export function autoplay(
           }
           continue
         }
-        const orderIds = [pick.orderId, ...(pick.withOrderIds ?? [])]
+        // The rider takes every order waiting at that restaurant that fits, as in the game.
+        const rider = shift.riders.find((candidate) => candidate.id === pick.riderId)
+        const orderIds = fullTrip(shift.orderQueue.orders, [pick.orderId, ...(pick.withOrderIds ?? [])], [], rider ? capacityOf(rider.vehicle) : 1)
         const result = dispatchOrders(shift.map, shift.orderQueue, shift.riders, orderIds, pick.riderId)
         if (!result) break
         shift = { ...shift, ...result }

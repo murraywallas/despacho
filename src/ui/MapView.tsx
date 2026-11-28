@@ -16,7 +16,8 @@ import { panelInsets } from './panelInsets'
 import { useDeliveryFx } from './useDeliveryFx'
 import { addRouteLayers, AREA_SOURCE, CLOSURE_SOURCE, PREVIEW_SOURCE, ROUTES_SOURCE } from '../map/routeLayers'
 import { usePointerStore } from '../store/pointerStore'
-import { closedStretchesAt, selectedOrderIds, useShiftStore } from '../store/shiftStore'
+import { closedStretchesAt, useShiftStore } from '../store/shiftStore'
+import { useTrip } from './useTrip'
 import { MapMarkerContent } from './MapMarkerContent'
 import { RestaurantPopup } from './RestaurantPopup'
 import { restaurantName } from './restaurantName'
@@ -135,11 +136,8 @@ export function MapView({ map, orders, riders, selectedOrderId }: MapViewProps) 
     }
   }, [streets, palette])
 
-  const addedOrderIds = useShiftStore((state) => state.addedOrderIds)
-  const pickedIds = useMemo(
-    () => selectedOrderIds({ selectedOrderId, addedOrderIds }),
-    [selectedOrderId, addedOrderIds],
-  )
+  // The whole trip: the order picked and the others waiting at its restaurant that go with it.
+  const pickedIds = useTrip().ids
   const hoveredOrderId = usePointerStore((state) => state.hoveredOrderId)
   const selection = useMemo(
     () => ({ orderIds: pickedIds, riderId: selectedRiderId, hoveredOrderId }),

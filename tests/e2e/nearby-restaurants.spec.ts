@@ -22,8 +22,8 @@ test('con Shift se suma un pedido de un restaurante cercano: la barra nombra los
         if (waiting[other] === waiting[first]) continue
         await cards.nth(first).getByRole('button').first().click()
         await cards.nth(other).getByRole('button').first().click({ modifiers: ['Shift'] })
-        // Si los restaurantes quedan cerca, la barra pasa a nombrar dos pedidos.
-        if (/Pedidos #\d+ y #\d+/.test((await bar.textContent()) ?? '')) pair = [waiting[first], waiting[other]]
+        // Si los restaurantes quedan cerca, la barra nombra los dos.
+        if (((await bar.textContent()) ?? '').includes(`${waiting[first]} y ${waiting[other]}`)) pair = [waiting[first], waiting[other]]
         else await page.keyboard.press('Escape')
       }
     }
@@ -36,7 +36,7 @@ test('con Shift se suma un pedido de un restaurante cercano: la barra nombra los
   await expect(page.locator('.map-marker--restaurant.map-marker--selected')).toHaveCount(2)
   // La tarjeta del restaurante cuenta el viaje entero: dos paradas, y solo la bici, que lleva 2, para elegir.
   const popup = page.getByTestId('map-popup')
-  await expect(popup).toContainText('2 pedidos elegidos')
+  await expect(popup).toContainText('2 pedidos en el viaje')
   await expect(popup.getByTestId('popup-trip-stop')).toHaveCount(2)
   await expect(popup.getByTestId('popup-rider')).toHaveCount(1)
   await page.keyboard.press('1') // la bici lleva 2

@@ -97,7 +97,7 @@
     "tipPerStarKr": 4,
     "startingKr": 700,
     "startingRiders": 3,
-    "hireRiderKr": 300
+    "hireRiderKr": 325
   },
   "vehicles": {
     "bike": {
@@ -531,7 +531,7 @@
         "e_scooter",
         "e_scooter"
       ],
-      "spawnIntervalSec": 7,
+      "spawnIntervalSec": 6,
       "peakFromSec": 85,
       "peakToSec": 235,
       "peakIntervalSec": 4,
@@ -607,9 +607,9 @@
       "spawnIntervalSec": 8,
       "peakFromSec": 85,
       "peakToSec": 235,
-      "peakIntervalSec": 5,
+      "peakIntervalSec": 4,
       "deadlineSec": 126,
-      "seed": 603,
+      "seed": 607,
       "light": "night",
       "minCustomerDistanceM": 1100
     }
