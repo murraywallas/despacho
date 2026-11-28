@@ -16,9 +16,9 @@ const env = (globalThis as { process?: { env: Record<string, string | undefined>
 const SHIFTS = Number(env.SHIFTS ?? tuning.botShiftsPerLevel)
 const PERCENT = 100
 
-/** Average stars of a level over many shifts (seeds 1…SHIFTS), with the fleet the garage suggests. */
-function levelAverage(levelId: string): number {
-  const balance = withFleet(balanceFor(levelId), suggestedFleetOf(levelId))
+/** Average stars of a level over many shifts (seeds 1…SHIFTS), with the fleet the garage suggests (and extras). */
+function levelAverage(levelId: string, fleet: readonly string[] = suggestedFleetOf(levelId)): number {
+  const balance = withFleet(balanceFor(levelId), fleet)
   const options = { reactionSec: 3, picksPerLook: 1, stepSec: 0.25 }
   let sum = 0
   for (let seed = 1; seed <= SHIFTS; seed++) {
@@ -46,6 +46,15 @@ test('recorrido', () => {
   for (const [vehicle, share] of shares) {
     lines.push(`- ${vehicle}: ${fixed(share * PERCENT, 0)} % (${game.deliveredBy[vehicle]})`)
     if (share > tuning.maxVehicleSharePct) problems.push(`${vehicle}: ${fixed(share * PERCENT, 0)} % de los pedidos (máximo ${fixed(tuning.maxVehicleSharePct * PERCENT, 0)} %)`)
+  }
+  // #146: a rich player who spends the money on extra riders. Does any level stop being hard?
+  const rich = playCampaign(careful, { spendOnExtras: true })
+  lines.push('', '## Gastando la plata en repartidores extra (#146)', '', `Terminó: ${rich.finished ? 'sí' : 'no'} · caja final ${Math.round(rich.moneyKr)} kr`, '')
+  lines.push(`| Nivel | Extra | Estrellas por turno | Promedio en ${SHIFTS} turnos | Caja |`, '|---|---|---|---|---|')
+  for (const report of rich.levels) {
+    const average = levelAverage(report.levelId, report.fleet)
+    if (average > tuning.tooEasyAbove) problems.push(`${report.levelId} con ${report.extras} extra: muy fácil (${fixed(average)})`)
+    lines.push(`| ${report.levelId} | ${report.extras} | ${report.stars.map((stars) => fixed(stars)).join(' · ')} | ${fixed(average)} | ${Math.round(report.moneyKr)} |`)
   }
   lines.push('', '## Problemas', '', ...(problems.length > 0 ? problems.map((problem) => `- ${problem}`) : ['Ninguno.']))
   console.log(lines.join('\n'))

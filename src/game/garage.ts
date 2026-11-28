@@ -12,15 +12,19 @@ export interface GarageRules {
   readonly vehicles: readonly string[]
 }
 
-/** What the player can choose in a level, with this many extra riders hired. Vehicles on strike can't be chosen. */
+/**
+ * What the player can choose in a level, with this many extra riders hired, of which at most maxExtra go out in a
+ * shift (#146). Vehicles on strike can't be chosen.
+ */
 export function garageRules(
   levelFleet: readonly string[],
   neighborhoodVehicles: readonly string[],
   extraRiders: number,
   struck: readonly string[] = [],
+  maxExtra = Infinity,
 ): GarageRules {
   return {
-    maxRiders: Math.max(1, levelFleet.length + extraRiders),
+    maxRiders: Math.max(1, levelFleet.length + Math.min(extraRiders, maxExtra)),
     vehicles: neighborhoodVehicles.filter((vehicle) => !struck.includes(vehicle)),
   }
 }
@@ -59,13 +63,17 @@ export function canStart(
   return fleet.length === 1 || extraKr === 0 || extraKr + salariesKr <= moneyKr
 }
 
-/** Hiring one extra rider (beyond each level's own fleet): costs hireKr once and stays forever. Undefined when the money is not enough. */
+/**
+ * Hiring one extra rider (beyond each level's own fleet): costs hireKr once and stays forever. Undefined when the
+ * money is not enough, or when as many are hired as can go out in a shift (maxExtra, #146).
+ */
 export function hireRider(
   moneyKr: number,
   hired: number,
   hireKr: number,
+  maxExtra = Infinity,
 ): { moneyKr: number; hired: number } | undefined {
-  if (moneyKr < hireKr) return undefined
+  if (moneyKr < hireKr || hired >= maxExtra) return undefined
   return { moneyKr: moneyKr - hireKr, hired: hired + 1 }
 }
 

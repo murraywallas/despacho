@@ -266,7 +266,7 @@
   "garage.remove": "Sacar a {rider} de este turno",
   "garage.add": "Sumar un repartidor",
   "garage.suggested": "Usar la flota sugerida",
-  "garage.hireNote": "La flota del nivel ({count} repartidores) sale gratis. Un repartidor extra se contrata una vez y queda para siempre; su vehículo se paga cada turno.",
+  "garage.hireNote": "La flota del nivel ({count} repartidores) sale gratis. Además pueden salir hasta {max} extra por turno: se contratan una vez y quedan para siempre; su vehículo se paga cada turno.",
   "garage.hire": "Contratar un repartidor extra · {cost}",
   "garage.tooExpensive": "Lo que agregaste cuesta más de lo que hay en caja. Volvé a la flota del nivel, que sale gratis, o sacá repartidores extra.",
   "garage.onCredit": "Sale un solo repartidor sin plata para pagarlo: la caja va a quedar en negativo.",

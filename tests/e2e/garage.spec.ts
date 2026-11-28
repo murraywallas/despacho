@@ -68,7 +68,7 @@ test('sin plata, la flota del nivel sale igual; lo que se agrega sin poder pagar
   await expect(garage.getByTestId('garage-warning')).toHaveCount(0)
 })
 
-test('contratar suma un repartidor extra, que paga su vehículo', async ({ page }) => {
+test('contratar suma un repartidor extra, que paga su vehículo, hasta el tope por turno', async ({ page }) => {
   const briefing = await dinnerWith(page, PLENTY_KR)
   await briefing.getByRole('button', { name: 'Garage' }).click()
   const garage = page.getByTestId('garage')
@@ -76,7 +76,10 @@ test('contratar suma un repartidor extra, que paga su vehículo', async ({ page 
   await expect(garage.getByTestId('garage-vehicle')).toHaveCount(4)
   await garage.getByRole('button', { name: /^Contratar un repartidor extra/ }).click()
   await expect(garage.getByTestId('garage-hired')).toHaveText('1')
+  // Con el tope de extras por turno (#146) ya no se contrata más.
+  await expect(garage.getByTestId('garage-hire')).toHaveCount(0)
   await garage.getByRole('button', { name: 'Sumar un repartidor' }).click()
+  await expect(garage.getByRole('button', { name: 'Sumar un repartidor' })).toHaveCount(0)
   await expect(garage.getByTestId('garage-vehicle')).toHaveCount(5)
   await expect(garage.getByTestId('garage-extra')).toHaveCount(1)
   await expect(garage.getByTestId('garage-cost')).toHaveText(kr(vehicleCostKr('bike')))

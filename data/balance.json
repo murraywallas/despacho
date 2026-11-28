@@ -97,7 +97,8 @@
     "tipPerStarKr": 4,
     "startingKr": 700,
     "startingRiders": 3,
-    "hireRiderKr": 325
+    "hireRiderKr": 325,
+    "maxExtraRiders": 1
   },
   "vehicles": {
     "bike": {

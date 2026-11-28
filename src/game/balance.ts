@@ -200,10 +200,12 @@ export interface EconomyBalance {
   readonly tipPerStarKr: number
   /** Money the player starts the game with, in kr. */
   readonly startingKr: number
-  /** Riders the player has hired when the game starts. */
-  readonly startingRiders: number
-  /** What hiring one more rider costs, once, in kr. */
+  /** No longer used (#141): each level's own fleet goes out free. */
+  readonly startingRiders?: number
+  /** What hiring one extra rider costs, once, in kr. */
   readonly hireRiderKr: number
+  /** Extra riders that can go out in a shift, beyond the level's own fleet (#146). */
+  readonly maxExtraRiders: number
 }
 
 export const economy: EconomyBalance = data.economy

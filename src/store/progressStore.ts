@@ -39,7 +39,7 @@ export const useProgressStore = create<ProgressState>()(
       earn: (profitKr) => set((state) => ({ moneyKr: state.moneyKr + profitKr })),
       hire: () =>
         set((state) => {
-          const hired = hireRider(state.moneyKr, state.hired, economy.hireRiderKr)
+          const hired = hireRider(state.moneyKr, state.hired, economy.hireRiderKr, economy.maxExtraRiders)
           return hired ? { moneyKr: hired.moneyKr, hired: hired.hired } : state
         }),
       chooseFleet: (levelId, fleet) => set((state) => ({ fleets: { ...state.fleets, [levelId]: [...fleet] } })),

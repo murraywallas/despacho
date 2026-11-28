@@ -135,3 +135,15 @@ describe('flota sugerida con mal tiempo anunciado', () => {
     expect(weatherAdvice(['skateboard'], rain, kinds, rows, ['skateboard', 'rollers'])).toBeUndefined()
   })
 })
+
+describe('tope de repartidores extra (#146)', () => {
+  test('pueden salir hasta maxExtra extra, aunque haya más contratados', () => {
+    expect(garageRules(['bike', 'bike'], ['bike'], 3, [], 1).maxRiders).toBe(3)
+    expect(garageRules(['bike', 'bike'], ['bike'], 0, [], 1).maxRiders).toBe(2)
+  })
+
+  test('no se contrata más allá del tope', () => {
+    expect(hireRider(5000, 0, 300, 1)).toEqual({ moneyKr: 4700, hired: 1 })
+    expect(hireRider(5000, 1, 300, 1)).toBeUndefined()
+  })
+})

@@ -31,8 +31,10 @@ export interface LevelReport {
   readonly stars: readonly number[]
   /** Cash after the last try. */
   readonly moneyKr: number
-  /** Fleet of the last try. */
+  /** Fleet of the last try (the level's own, plus the extra riders taken out). */
   readonly fleet: readonly string[]
+  /** Extra riders taken out in the last try, beyond the level's own fleet. */
+  readonly extras: number
   /** Real minutes of play of all the tries (the closing at its faster clock included). */
   readonly minutes: number
 }
@@ -56,6 +58,11 @@ export interface CampaignOptions {
   readonly maxTries?: number
   /** The fleet the player takes out in each level (default: the one the garage suggests). */
   readonly fleetFor?: (levelId: string) => string[]
+  /**
+   * A rich player (#146): before each shift, hires every extra rider the money pays for and the rules allow (once,
+   * for good) and takes out every extra it can pay for that shift (vehicles and salaries), on the level's first vehicle.
+   */
+  readonly spendOnExtras?: boolean
 }
 
 const DEFAULT_MAX_TRIES = 8
@@ -75,6 +82,7 @@ export function playCampaign(botOf: (levelId: string) => Bot, options: CampaignO
   const maxTries = options.maxTries ?? DEFAULT_MAX_TRIES
   const fleetFor = options.fleetFor ?? suggestedFleetOf
   let moneyKr = economy.startingKr
+  let hired = 0
   let xp: number[] = []
   let lowestKr = moneyKr
   let fleetKr = 0
@@ -99,8 +107,19 @@ export function playCampaign(botOf: (levelId: string) => Bot, options: CampaignO
     let realSec = 0
     tries[levelId] = 0
     while (Math.max(0, ...stars) < progression.unlockAvgRating && tries[levelId] < maxTries) {
-      // The level's own fleet goes out complete and free (#141): only the salaries are paid.
-      fleet = [...levelFleet]
+      // The level's own fleet goes out complete and free (#141): only the salaries are paid. Extras pay their vehicle.
+      const extraVehicle = levelFleet[0]
+      const costWith = (extras: number) =>
+        extras * costOf(extraVehicle) + salariesKr(xp, levelFleet.length + extras, rules)
+      if (options.spendOnExtras) {
+        while (hired < economy.maxExtraRiders && moneyKr >= economy.hireRiderKr + costWith(hired + 1)) {
+          moneyKr -= economy.hireRiderKr
+          hired++
+        }
+      }
+      let extras = options.spendOnExtras ? hired : 0
+      while (extras > 0 && costWith(extras) > moneyKr) extras--
+      fleet = [...levelFleet, ...Array.from({ length: extras }, () => extraVehicle)]
       const salaries = salariesKr(xp, fleet.length, rules)
       fleetKr = Math.max(fleetKr, salaries)
       const balance = withFleet(balanceFor(levelId), fleet)
@@ -121,7 +140,15 @@ export function playCampaign(botOf: (levelId: string) => Bot, options: CampaignO
         if (vehicle) deliveredBy[vehicle] = (deliveredBy[vehicle] ?? 0) + 1
       }
     }
-    reports.push({ levelId, tries: tries[levelId], stars, moneyKr, fleet, minutes: realSec / SECONDS_PER_MINUTE })
+    reports.push({
+      levelId,
+      tries: tries[levelId],
+      stars,
+      moneyKr,
+      fleet,
+      extras: fleet.length - levelFleet.length,
+      minutes: realSec / SECONDS_PER_MINUTE,
+    })
     if (Math.max(0, ...stars) < progression.unlockAvgRating) return result(false)
   }
   return result(true)
