@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openLevels } from './title.ts'
 import { SHIFT_URL } from './balance.ts'
 
 test('Esc sin nada elegido abre el menú de pausa y frena el juego; Esc lo cierra y sigue', async ({ page }) => {
@@ -51,7 +52,7 @@ test('movimiento reducido desde el menú, aunque el sistema no lo pida', async (
 test('inicio y briefing sobre el mapa del barrio; el briefing marca los restaurantes y los trade-offs de la flota', async ({
   page,
 }) => {
-  await page.goto('/')
+  await openLevels(page)
   await expect(page.getByTestId('city-map')).toBeVisible()
   await page.getByTestId('level-card').first().click()
   await expect(page.getByTestId('backdrop-map')).toBeVisible()

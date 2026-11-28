@@ -328,5 +328,8 @@
   "guide.waitNext": "Wait a moment: the next order reaches the queue on the left in a few seconds.",
   "language.label": "Language",
   "language.en": "English",
-  "language.es": "Español"
+  "language.es": "Español",
+  "title.eyebrow": "Delivery dispatch · Copenhagen",
+  "title.tagline": "You run the dispatch desk: orders come in, you pick who takes them and plan the trips so the food gets there hot and on time.",
+  "title.play": "Play"
 }

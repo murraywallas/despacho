@@ -1,4 +1,5 @@
 ﻿import { expect, test, type Page } from '@playwright/test'
+import { openLevels } from './title.ts'
 import { fleetCostKr, startingKr } from './balance.ts'
 
 test.describe.configure({ timeout: 60_000 }) // Varios turnos y pantallas por test: con la máquina cargada, 30 s no alcanzan.
@@ -7,7 +8,7 @@ test.describe.configure({ timeout: 60_000 }) // Varios turnos y pantallas por te
 const kr = (amount: number) => `${amount < 0 ? '−' : ''}${Math.abs(amount).toLocaleString('es-AR')} kr`
 
 test('en el garage se cambia el skate por un monopatín eléctrico, y el turno sale con él en el mapa', async ({ page }) => {
-  await page.goto('/')
+  await openLevels(page)
   await page.getByTestId('level-card').first().click()
   const briefing = page.getByTestId('briefing')
   await expect(briefing.getByTestId('briefing-cost')).toContainText(`${kr(fleetCostKr)} por turno`)
@@ -41,7 +42,7 @@ async function dinnerWith(page: Page, moneyKr: number) {
       localStorage.setItem('despacho-progress', JSON.stringify({ state, version: 0 }))
     }
   }, moneyKr)
-  await page.goto('/')
+  await openLevels(page)
   await page.getByTestId('level-card').nth(1).click()
   return page.getByTestId('briefing')
 }

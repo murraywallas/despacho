@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openLevels } from './title.ts'
 
 test.describe.configure({ timeout: 120_000 }) // Simula minutos de turno cuadro por cuadro.
 
@@ -14,7 +15,7 @@ test('el Almuerzo de Vesterbro anuncia el pedido de oficina; con la bici de carg
     }
   })
   await page.clock.install()
-  await page.goto('/')
+  await openLevels(page)
   await page.getByTestId('neighborhood').filter({ hasText: 'Vesterbro' }).click()
   await page.locator('[data-level="vesterbro_lunch"]').click()
 

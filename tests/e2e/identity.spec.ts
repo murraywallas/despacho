@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test'
+import { openLevels } from './title.ts'
 import { prototype, SHIFT_URL } from './balance.ts'
 
 test.describe.configure({ timeout: 90_000 }) // Simula minutos de turno cuadro por cuadro.
 
 /** From the start screen into the first level, the way a player does it (the guide only shows then). */
 async function startLunch(page: Page) {
-  await page.goto('/')
+  await openLevels(page)
   await page.getByTestId('level-card').first().click()
   await page.getByRole('button', { name: 'Empezar turno' }).click()
 }

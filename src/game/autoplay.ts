@@ -132,6 +132,24 @@ export interface AutoplayOptions {
   readonly xp?: readonly number[]
 }
 
+/**
+ * Does what the bot picked: sends a rider to recharge, or dispatches the order (the rider takes every order waiting
+ * at that restaurant that fits, as in the game). Undefined when the dispatch can't be done.
+ */
+export function applyPick(shift: ShiftSnapshot, pick: BotPick | BotRecharge, settings: ShiftSettings): ShiftSnapshot | undefined {
+  if ('rechargeRiderId' in pick) {
+    const rechargeSec = settings.movement.rechargeSec ?? 0
+    return {
+      ...shift,
+      riders: shift.riders.map((rider) => (rider.id === pick.rechargeRiderId ? sendToCharge(shift.map, rider, rechargeSec) : rider)),
+    }
+  }
+  const rider = shift.riders.find((candidate) => candidate.id === pick.riderId)
+  const orderIds = fullTrip(shift.orderQueue.orders, [pick.orderId, ...(pick.withOrderIds ?? [])], [], rider ? capacityOf(rider.vehicle) : 1)
+  const result = dispatchOrders(shift.map, shift.orderQueue, shift.riders, orderIds, pick.riderId)
+  return result ? { ...shift, ...result } : undefined
+}
+
 /** Plays a whole shift at normal speed with the given bot, on a neighborhood's streets, and returns how it ended. */
 export function autoplay(
   balance: PrototypeBalance,
@@ -150,21 +168,9 @@ export function autoplay(
       nextLookSec = shift.clock.elapsedSec + options.reactionSec
       for (let picks = 0; picks < options.picksPerLook; picks++) {
         const pick = bot(shift, settingsAt(settings, shift.clock.elapsedSec))
-        if (!pick) break
-        if ('rechargeRiderId' in pick) {
-          const rechargeSec = settings.movement.rechargeSec ?? 0
-          shift = {
-            ...shift,
-            riders: shift.riders.map((rider) => (rider.id === pick.rechargeRiderId ? sendToCharge(shift.map, rider, rechargeSec) : rider)),
-          }
-          continue
-        }
-        // The rider takes every order waiting at that restaurant that fits, as in the game.
-        const rider = shift.riders.find((candidate) => candidate.id === pick.riderId)
-        const orderIds = fullTrip(shift.orderQueue.orders, [pick.orderId, ...(pick.withOrderIds ?? [])], [], rider ? capacityOf(rider.vehicle) : 1)
-        const result = dispatchOrders(shift.map, shift.orderQueue, shift.riders, orderIds, pick.riderId)
-        if (!result) break
-        shift = { ...shift, ...result }
+        const next = pick && applyPick(shift, pick, settings)
+        if (!next) break
+        shift = next
       }
     }
     shift = advanceShift(shift, options.stepSec, created.random, settings)

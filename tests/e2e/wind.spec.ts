@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { openLevels } from './title.ts'
 
 test.describe.configure({ timeout: 90_000 })
 
@@ -13,7 +14,7 @@ test('el almuerzo de Frederiksberg avisa el viento del oeste, y en el turno una 
     }
   })
   await page.clock.install()
-  await page.goto('/')
+  await openLevels(page)
   await page.getByTestId('neighborhood').filter({ hasText: 'Frederiksberg' }).click()
   await page.locator('[data-level="frederiksberg_lunch"]').click()
 

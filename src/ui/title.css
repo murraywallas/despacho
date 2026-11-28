@@ -1,0 +1,90 @@
+/* The title screen: Copenhagen moving behind the game's name. */
+.title {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background: var(--map-bg);
+  color: var(--ink);
+}
+
+.title-map {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-map);
+}
+
+/* Darker on the left, where the card is, so the text reads over the moving map. */
+.title__shade {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-map);
+  pointer-events: none;
+  background: linear-gradient(90deg, rgb(5 11 22 / 0.75) 0%, rgb(5 11 22 / 0.35) 45%, rgb(5 11 22 / 0) 70%);
+}
+
+.title__card {
+  position: absolute;
+  top: 50%;
+  left: clamp(16px, 6vw, 96px);
+  z-index: var(--z-panels);
+  width: min(420px, calc(100% - 32px));
+  padding: 28px 28px 24px;
+  border-radius: var(--radius);
+  transform: translateY(-50%);
+}
+
+.title__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title__eyebrow {
+  margin: 0;
+  font-size: calc(12px * var(--text-scale));
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-quiet);
+}
+
+.title__name {
+  margin: 14px 0 8px;
+  font-family: var(--font-mono);
+  font-size: calc(52px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.title__tagline {
+  margin: 0 0 22px;
+  font-size: calc(16px * var(--text-scale));
+  line-height: 1.45;
+  color: var(--ink-quiet);
+}
+
+.title__play {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 26px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: calc(17px * var(--text-scale));
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.title__play:hover {
+  filter: brightness(1.05);
+}
+
+.title__play:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}

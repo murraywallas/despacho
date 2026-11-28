@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test'
+import { openLevels } from './title.ts'
 import { SHIFT_URL } from './balance.ts'
 
 test.describe('con el navegador en inglés', () => {
   test.use({ locale: 'en-US' })
 
   test('arranca en inglés; ES lo pasa a español y queda guardado al recargar', async ({ page }) => {
-    await page.goto('/')
+    await openLevels(page)
     const switcher = page.getByTestId('language-switch')
     await expect(page.locator('html')).toHaveAttribute('lang', 'en')
     await expect(page.getByTestId('neighborhood-status')).toContainText('Each shift opens with')
@@ -32,7 +33,7 @@ test.describe('con el navegador en inglés', () => {
 })
 
 test('con el navegador en español arranca en español, y EN lo pasa a inglés', async ({ page }) => {
-  await page.goto('/')
+  await openLevels(page)
   await expect(page.getByTestId('neighborhood-status')).toContainText('Cada turno se abre con')
   await page.getByTestId('language-switch').getByRole('button', { name: 'English' }).click()
   await expect(page.getByTestId('neighborhood-status')).toContainText('Each shift opens with')
