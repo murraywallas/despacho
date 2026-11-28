@@ -9,6 +9,7 @@ import './operatorTools.css'
 import { Keycap } from './Keycap'
 import { restaurantName } from './restaurantName'
 import { useNeighborhood } from './useNeighborhood'
+import { useTrip } from './useTrip'
 
 /** "A y B", "A, B y C": a list, the Spanish way. */
 function listNames(names: readonly string[]): string {
@@ -31,14 +32,15 @@ export function SelectionBar() {
   const neighborhood = useNeighborhood()
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
-  const addedOrderIds = useShiftStore((state) => state.addedOrderIds)
+  const trip = useTrip().orders
   const callsLeft = useShiftStore((state) => state.callsLeft)
   const callCustomer = useShiftStore((state) => state.callCustomer)
   const clearSelection = useShiftStore((state) => state.clearSelection)
 
   const order = orders.find((candidate) => candidate.id === selectedOrderId)
   if (!order) return null
-  const picked = [order, ...addedOrderIds.flatMap((id) => orders.filter((candidate) => candidate.id === id))]
+  // The whole trip when the order waits for a rider; just the order when it is already on its way.
+  const picked = order.status === 'pending' && trip.length > 0 ? trip : [order]
   // The trip's restaurants: one, or a few close together.
   const tripRestaurants = [...new Set(picked.map((candidate) => candidate.restaurantId))].flatMap(
     (id) => restaurants.find((candidate) => candidate.id === id) ?? [],
@@ -60,7 +62,7 @@ export function SelectionBar() {
     <div className="selection-bar" role="status" aria-live="polite" data-testid="selection-bar">
       <div className="selection-bar__text">
         <span className="selection-bar__title">
-          {addedOrderIds.length === 0
+          {picked.length < 2
             ? t('orders.number', { number: order.number })
             : t('selection.orders', { numbers: listNumbers(picked) })}
           {tripRestaurants.length > 0 && ` · ${listNames(tripRestaurants.map((restaurant) => restaurantName(restaurant, neighborhood)))}`}

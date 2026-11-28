@@ -29,7 +29,8 @@ test('al cierre, la comida en camino se entrega igual (con el reloj en la hora d
     const number = await first.getAttribute('data-rider-number')
     const before = await orders.count()
     await page.keyboard.press(number ?? '1')
-    await expect(orders).toHaveCount(before - 1)
+    // Sale con ese pedido (y los demás de su restaurante que entren, #134).
+    await expect.poll(() => orders.count()).toBeLessThan(before)
   }
   await page.keyboard.press('Space')
 

@@ -90,14 +90,22 @@ describe('pilar 1 con repartidores al nivel máximo', () => {
   const options = { reactionSec: 3, picksPerLook: 1, stepSec: 0.25 }
   const MAX_XP = experience.xpPerLevel * experience.maxLevel
   const veterans = Array.from({ length: 10 }, () => MAX_XP)
+  // #134: el promedio de 8 turnos, no uno solo: un turno suelto cambia mucho con cualquier número.
+  const seeds = [11, 23, 37, 41, 59, 67, 73, 89]
+  const average = (levelId: string, bot: typeof firstComeBot) =>
+    seeds.reduce((sum, seed) => {
+      const balance = balanceFor(levelId)
+      const end = autoplay(balance, shiftSettingsFrom(balance), seed, bot, { ...options, xp: veterans }, neighborhoodOf(levelId))
+      return sum + (summarizeShift(end.orderQueue.orders, prototype.heat, prototype.rating, shiftBalance).average ?? 0)
+    }, 0) / seeds.length
   const play = (levelId: string, bot: typeof firstComeBot) => {
     const balance = balanceFor(levelId)
     const end = autoplay(balance, shiftSettingsFrom(balance), balance.seed, bot, { ...options, xp: veterans }, neighborhoodOf(levelId))
     return summarizeShift(end.orderQueue.orders, prototype.heat, prototype.rating, shiftBalance)
   }
 
-  test('con todos al nivel máximo, despachar sin pensar no gana todos los turnos: ningún viernes', () => {
-    const won = levelIds.filter((levelId) => play(levelId, firstComeBot).outcome === 'win')
+  test('con todos al nivel máximo, despachar sin pensar no gana en promedio todos los niveles: ningún viernes', { timeout: 120_000 }, () => {
+    const won = levelIds.filter((levelId) => average(levelId, firstComeBot) >= shiftBalance.winAtLeast)
     expect(won.length).toBeLessThan(levelIds.length)
     for (const area of levelNeighborhoods()) expect(won).not.toContain(levelsOf(area).at(-1))
   })

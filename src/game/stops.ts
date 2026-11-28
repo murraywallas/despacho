@@ -81,7 +81,8 @@ export interface DeliveryOption extends RankedRider {
 
 /**
  * Free riders whose vehicle carries the whole trip and whose battery (if any) lasts it, by when the first order would reach its customer (ties: lower
- * number first). Riders who can't get there at all are left out.
+ * number first). Riders who can't get there at all are left out. `tripOf` gives each rider's own trip (a bigger
+ * vehicle takes more of the orders waiting at the restaurant); without it, every rider takes `trip`.
  */
 export function rankByDelivery(
   map: CityMap,
@@ -89,13 +90,15 @@ export function rankByDelivery(
   trip: readonly Order[],
   speeds: Speeds,
   nowSec: number,
+  tripOf: (rider: Rider) => readonly Order[] = () => trip,
 ): DeliveryOption[] {
   const [first] = trip
   if (!first) return []
   return rankRiders(map, riders, first, speeds, trip.length)
-    .filter((ranked) => ranked.rider.batteryM === undefined || hasBatteryFor(ranked.rider, tripMeters(map, ranked.rider, trip)))
+    .filter((ranked) => capacityOf(ranked.rider.vehicle) >= tripOf(ranked.rider).length)
+    .filter((ranked) => ranked.rider.batteryM === undefined || hasBatteryFor(ranked.rider, tripMeters(map, ranked.rider, tripOf(ranked.rider))))
     .flatMap((ranked) => {
-      const eta = plannedEtas(map, ranked.rider, trip, speeds, nowSec)[0]
+      const eta = plannedEtas(map, ranked.rider, tripOf(ranked.rider), speeds, nowSec)[0]
       if (!eta || !Number.isFinite(eta.atSec)) return []
       return [{ ...ranked, deliverAtSec: eta.atSec, late: eta.atSec > first.deadlineAtSec }]
     })

@@ -6,6 +6,7 @@ import { isReady } from '../game/rating'
 import { t, type TextKey } from '../i18n'
 import { usePointerStore } from '../store/pointerStore'
 import { useShiftStore, waitingQueue } from '../store/shiftStore'
+import { useTrip } from './useTrip'
 import { FoodHeat } from './FoodHeat'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
@@ -124,7 +125,8 @@ export function OrderPanel() {
   const neighborhood = useNeighborhood()
   const nowSec = useShiftStore((state) => state.clock.elapsedSec)
   const selectedOrderId = useShiftStore((state) => state.selectedOrderId)
-  const addedOrderIds = useShiftStore((state) => state.addedOrderIds)
+  // The orders of the trip being put together (the picked one and the others of its restaurant that go with it).
+  const trip = useTrip().ids
   const selectOrder = useShiftStore((state) => state.selectOrder)
   const dispatchByDrop = useShiftStore((state) => state.dispatchByDrop)
   const pending = waitingQueue(orders)
@@ -159,7 +161,7 @@ export function OrderPanel() {
               order={order}
               nowSec={nowSec}
               restaurantName={nameOf(order.restaurantId)}
-              selected={order.id === selectedOrderId || addedOrderIds.includes(order.id)}
+              selected={order.id === selectedOrderId || trip.includes(order.id)}
               onSelect={selectOrder}
               onDropRider={dispatchByDrop}
             />

@@ -237,10 +237,8 @@ describe('pilar 1 en cada nivel', () => {
     expect(suggestedFleetOf('vesterbro_dinner')).not.toEqual(fleetOf(balanceFor('vesterbro_dinner')))
     const wins = seeds.filter((seed) => play('vesterbro_dinner', batchingBot, seed).outcome === 'win').length
     expect(wins).toBeGreaterThanOrEqual(seeds.length / 2)
-    // Despachar sin pensar sigue sin ganar, ni siquiera con esa flota.
-    const careless = withFleet(balanceFor('vesterbro_dinner'), suggestedFleetOf('vesterbro_dinner'))
-    const end = autoplay(careless, shiftSettingsFrom(careless), careless.seed, firstComeBot, options, 'vesterbro')
-    expect(summarizeShift(end.orderQueue.orders, careless.heat, careless.rating, shiftBalance).outcome).not.toBe('win')
+    // Despachar sin pensar sigue sin ganar en promedio, ni siquiera con esa flota (#134: en 8 turnos, no en uno).
+    expect(averageOf('vesterbro_dinner', firstComeBot)).toBeLessThan(shiftBalance.winAtLeast)
   })
 
   test.each(levelsOf('vesterbro'))('%s: juntar dos pedidos del mismo restaurante saca más estrellas que llevarlos de a uno', { timeout: 120_000 }, (levelId) => {

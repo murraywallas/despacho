@@ -15,6 +15,7 @@ import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
 import { restaurantName } from './restaurantName'
 import { useNeighborhood } from './useNeighborhood'
+import { useTrip } from './useTrip'
 
 
 interface RestaurantPopupProps {
@@ -44,13 +45,18 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
   const waiting = waitingAt(orders, restaurant.id)
   const selectedOrder = waiting.find((order) => order.id === selectedOrderId)
   const selectedRider = riders.find((rider) => rider.id === selectedRiderId)
-  // The trip in delivery order: the picked order, then the ones added with Shift (here, or at a restaurant close by).
-  const trip = selectedOrder
+  // The orders the player picked: this one, then the ones added with Shift (at a restaurant close by).
+  const chosen = selectedOrder
     ? [selectedOrder, ...addedOrderIds.flatMap((id) => orders.find((order) => order.id === id && order.status === 'pending') ?? [])]
     : []
+  // The whole trip: a rider takes the others waiting here too, as many as fit (each rider, their own).
+  const fullTrip = useTrip()
+  const trip = selectedOrder ? fullTrip.orders : []
   const picked = trip.length
-  const ranked = rankByDelivery(map, riders, trip, speedsAt(nowSec), nowSec)
-  const isPicked = (id: string) => id === selectedOrderId || addedOrderIds.includes(id)
+  const ranked = rankByDelivery(map, riders, chosen, speedsAt(nowSec), nowSec, fullTrip.of)
+  const isPicked = (id: string) => id === selectedOrderId || fullTrip.ids.includes(id)
+  // The stops shown: those of the first rider who takes the whole trip (or of the first one, if nobody does).
+  const shownRider = (ranked.find((entry) => fullTrip.of(entry.rider).length === picked) ?? ranked[0])?.rider
   // Nobody can take it now: who to wait for.
   const waitFor =
     selectedOrder && ranked.length === 0
@@ -117,8 +123,8 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
           {(picked > 1 || waiting.length > 1) && (
             <p className="map-popup__note">{picked > 1 ? t('map.pickedCount', { count: picked }) : t('orders.addHint')}</p>
           )}
-          {picked > 1 && ranked[0] && (
-            <TripArrivals map={map} rider={ranked[0].rider} trip={trip} speeds={speedsAt(nowSec)} nowSec={nowSec} />
+          {picked > 1 && shownRider && (
+            <TripArrivals map={map} rider={shownRider} trip={fullTrip.of(shownRider)} speeds={speedsAt(nowSec)} nowSec={nowSec} />
           )}
           <p className="map-popup__note">{ranked.length > 0 ? t('map.closestRiders') : t('map.noFreeRiders')}</p>
           {waitFor && (
@@ -142,6 +148,10 @@ export function RestaurantPopup({ restaurant, onClose, onDispatched }: Restauran
                   }}
                 >
                   <span>{t('riders.name', { number: rider.number })}</span>
+                  {/* A smaller vehicle takes only part of the trip: say how many. */}
+                  {fullTrip.of(rider).length < picked && (
+                    <span className="map-popup__takes">{t('map.riderTakes', { count: fullTrip.of(rider).length })}</span>
+                  )}
                   <DeliveryEta className="map-popup__eta" inSec={deliverAtSec - nowSec} late={late} />
                 </button>
               </li>

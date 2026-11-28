@@ -9,6 +9,7 @@ import { t } from '../i18n'
 import { usePointerStore } from '../store/pointerStore'
 import { useProgressStore } from '../store/progressStore'
 import { selectedOrderIds, speedsAt, useShiftStore } from '../store/shiftStore'
+import { useTrip } from './useTrip'
 import { RiderCard } from './RiderCard'
 import { useAttention } from './useAttention'
 
@@ -41,6 +42,7 @@ export function RiderPanel() {
     return at === undefined ? undefined : Math.max(0, at - nowSec)
   }
   const selectedOrder = orders.find((order) => order.id === selectedOrderId)
+  const trip = useTrip()
   // A picked-up order can't change hands; an assigned one is being reassigned.
   const onTheWay = selectedOrder?.status === 'pickedUp'
   const idle = riders.filter((rider) => rider.status === 'idle').length
@@ -54,14 +56,15 @@ export function RiderPanel() {
         ? { ...selectedOrder, deadlineAtSec: selectedOrder.deadlineAtSec - prototype.tools.reassignPenaltySec }
         : selectedOrder
     const added = addedOrderIds.flatMap((id) => orders.find((order) => order.id === id) ?? [])
-    return rankByDelivery(map, riders, [first, ...added], speedsAt(nowSec), nowSec)
-  }, [map, riders, orders, selectedOrder, addedOrderIds, onTheWay, nowSec])
+    // Each rider takes the others waiting at that restaurant too, as many as fit in their vehicle.
+    const tripOf = selectedOrder.status === 'pending' ? trip.of : undefined
+    return rankByDelivery(map, riders, [first, ...added], speedsAt(nowSec), nowSec, tripOf)
+  }, [map, riders, orders, selectedOrder, addedOrderIds, onTheWay, nowSec, trip])
   const deliveryOf = new Map(ranked.map((entry) => [entry.rider.id, { inSec: entry.deliverAtSec - nowSec, late: entry.late }]))
   const fits = (rider: Rider) => capacityOf(rider.vehicle) >= Math.max(1, count)
   // Free and big enough, but the battery won't last the trip (rider, restaurant and every customer).
-  const pickedTrip = selectedOrder ? [selectedOrder, ...addedOrderIds.flatMap((id) => orders.find((order) => order.id === id) ?? [])] : []
   const lacksBattery = (rider: Rider) =>
-    rider.batteryM !== undefined && pickedTrip.length > 0 && !hasBatteryFor(rider, tripMeters(map, rider, pickedTrip))
+    rider.batteryM !== undefined && selectedOrder !== undefined && !hasBatteryFor(rider, tripMeters(map, rider, trip.of(rider)))
   // Dragging an order: free riders whose vehicle carries the trip (the whole batch, if the order is in it).
   const draggedCount =
     draggedOrderId && selectedOrderIds({ selectedOrderId, addedOrderIds }).includes(draggedOrderId) ? count : 1

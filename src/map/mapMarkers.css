@@ -309,6 +309,12 @@
 }
 
 .map-popup__order:hover,
+/* "lleva 1": a rider who takes only part of the trip. */
+.map-popup__takes {
+  color: #9fb3d1;
+  font-size: 12px;
+}
+
 .map-popup__rider:hover {
   border-color: #4fd1ff;
 }
