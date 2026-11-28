@@ -266,7 +266,7 @@
   "garage.remove": "Take {rider} off this shift",
   "garage.add": "Add a rider",
   "garage.suggested": "Use the suggested fleet",
-  "garage.hireNote": "The level's fleet ({count} riders) goes out free. An extra rider is hired once and stays for good; their vehicle is paid every shift.",
+  "garage.hireNote": "The level's fleet ({count} riders) goes out free. Up to {max} extra can go out each shift as well: they are hired once and stay for good; their vehicle is paid every shift.",
   "garage.hire": "Hire an extra rider · {cost}",
   "garage.tooExpensive": "What you added costs more than the cash you have. Go back to the level's fleet, which is free, or take extra riders off.",
   "garage.onCredit": "A single rider goes out without the money to pay them: your cash will go negative.",

@@ -35,6 +35,8 @@ export interface Garage {
   /** The fleet can be paid with the money in hand (or it is a single rider). */
   readonly canStart: boolean
   readonly hireKr: number
+  /** As many extra riders are hired as can go out in a shift: no more hiring (#146). */
+  readonly hiredAll: boolean
   readonly setFleet: (fleet: readonly string[]) => void
   readonly hire: () => void
 }
@@ -50,7 +52,7 @@ export function useGarage(levelId: string): Garage {
   const balance = balanceFor(levelId)
   const levelFleet = fleetOf(balance)
   const struck = struckOf(levels[levelId])
-  const rules = garageRules(levelFleet, neighborhoods[levels[levelId].neighborhood]?.vehicles ?? levelFleet, hired, struck)
+  const rules = garageRules(levelFleet, neighborhoods[levels[levelId].neighborhood]?.vehicles ?? levelFleet, hired, struck, economy.maxExtraRiders)
   const advice = weatherAdvice(suggestedFleet(levelFleet, rules), balance.events ?? [], eventKinds, vehicles, rules.vehicles)
   const suggested = advice?.fleet ?? suggestedFleet(levelFleet, rules)
   const fleet = chosenFleet(saved, suggested, rules)
@@ -70,6 +72,7 @@ export function useGarage(levelId: string): Garage {
     hired,
     canStart: canStart(fleet, moneyKr, vehicleCostKr, salaries, base),
     hireKr: economy.hireRiderKr,
+    hiredAll: hired >= economy.maxExtraRiders,
     setFleet: (next) => chooseFleet(levelId, next),
     hire,
   }

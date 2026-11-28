@@ -1,5 +1,5 @@
 import { ArrowLeft, Plus, RotateCcw, UserPlus, X } from 'lucide-react'
-import { levels, vehicles } from '../game/balance'
+import { economy, levels, vehicles } from '../game/balance'
 import { neighborhoodOf } from '../game/levels'
 import { locale, t } from '../i18n'
 import { useScreenStore } from '../store/screenStore'
@@ -150,17 +150,19 @@ function Garage({ levelId }: { levelId: string }) {
         </div>
 
         <div className="garage__hire">
-          <p>{t('garage.hireNote', { count: garage.base.length })}</p>
-          <button
-            type="button"
-            className="briefing__back"
-            onClick={garage.hire}
-            disabled={garage.moneyKr < garage.hireKr}
-            data-testid="garage-hire"
-          >
-            <UserPlus size={16} aria-hidden />
-            {t('garage.hire', { cost: formatKr(garage.hireKr) })}
-          </button>
+          <p>{t('garage.hireNote', { count: garage.base.length, max: economy.maxExtraRiders })}</p>
+          {!garage.hiredAll && (
+            <button
+              type="button"
+              className="briefing__back"
+              onClick={garage.hire}
+              disabled={garage.moneyKr < garage.hireKr}
+              data-testid="garage-hire"
+            >
+              <UserPlus size={16} aria-hidden />
+              {t('garage.hire', { cost: formatKr(garage.hireKr) })}
+            </button>
+          )}
         </div>
 
         {!garage.canStart && (
