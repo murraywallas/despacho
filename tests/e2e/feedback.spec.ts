@@ -6,9 +6,10 @@ import { longestRideMs, prototype, SHIFT_URL } from './balance.ts'
 test.describe.configure({ timeout: 120_000 }) // Simula minutos de turno cuadro por cuadro.
 
 /** Advances the page clock in small steps until the locator has the text (or gives up after maxMs). */
-async function runUntil(page: Page, locator: Locator, text: string, maxMs: number) {
+async function runUntil(page: Page, locator: Locator, text: string | RegExp, maxMs: number) {
+  const has = (content: string) => (typeof text === 'string' ? content.includes(text) : text.test(content))
   for (let waited = 0; waited <= maxMs; waited += 500) {
-    if ((await locator.textContent())?.includes(text)) return
+    if (has((await locator.textContent()) ?? '')) return
     await page.clock.runFor(500)
   }
   await expect(locator).toContainText(text)
@@ -46,7 +47,8 @@ test('la radio cuenta el pedido nuevo, la salida del restaurante y la entrega, c
   await page.keyboard.press(closest)
 
   await runUntil(page, radio, `Repartidor ${closest} · salió de`, longestRideMs + prototype.kitchen.cookSec * 1000)
-  await runUntil(page, radio, '#1 · entregado a tiempo', longestRideMs + 2000)
+  // La entrega nombra al cliente y su dirección (#136).
+  await runUntil(page, radio, /#1 · entregado a .+, a tiempo/, longestRideMs + 2000)
   const fx = await page.evaluate(() => (window as unknown as { deliveryFx: string[] }).deliveryFx)
   // One effect, the celebrating one (on time and warm). MapLibre adds its own marker classes.
   expect(fx).toHaveLength(1)

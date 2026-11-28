@@ -5,6 +5,10 @@
 import frederiksberg from '../../data/streets/frederiksberg.json'
 import norrebro from '../../data/streets/norrebro.json'
 import vesterbro from '../../data/streets/vesterbro.json'
+import frederiksbergAddresses from '../../data/streets/frederiksberg.addresses.json'
+import norrebroAddresses from '../../data/streets/norrebro.addresses.json'
+import vesterbroAddresses from '../../data/streets/vesterbro.addresses.json'
+import type { AddressBookFile } from './addressBook'
 import closures from '../../data/closures.json'
 import type { Closure } from './closures'
 import { routing, vehicles } from './balance'
@@ -12,6 +16,13 @@ import { bikeProfile, createNetwork, vehicleProfile, type StreetNetwork } from '
 import type { LonLat, StreetGraphFile } from './streetGraph'
 
 /** Neighborhoods with streets, by the id of the Barrios tab. */
+/** Real addresses of each neighborhood (npm run addresses): where customers live, for show. */
+export const ADDRESSES: Readonly<Record<string, AddressBookFile>> = {
+  norrebro: norrebroAddresses as unknown as AddressBookFile,
+  vesterbro: vesterbroAddresses as unknown as AddressBookFile,
+  frederiksberg: frederiksbergAddresses as unknown as AddressBookFile,
+}
+
 export const STREETS: Readonly<Record<string, StreetGraphFile>> = {
   norrebro: norrebro as unknown as StreetGraphFile,
   vesterbro: vesterbro as unknown as StreetGraphFile,

@@ -331,5 +331,8 @@
   "language.es": "Español",
   "title.eyebrow": "Central de delivery · Copenhague",
   "title.tagline": "Sos el operador de la central: llegan pedidos, elegís quién los lleva y armás los viajes para que la comida llegue caliente y a tiempo.",
-  "title.play": "Jugar"
+  "title.play": "Jugar",
+  "radio.deliveredTo": "{orders} · entregado a {customer}, a tiempo",
+  "radio.deliveredLateTo": "{orders} · entregado a {customer}, tarde",
+  "radio.deliveredColdTo": "{orders} · entregado a {customer}, frío"
 }

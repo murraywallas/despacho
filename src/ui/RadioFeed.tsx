@@ -6,6 +6,8 @@ import { useRadioStore } from '../store/radioStore'
 import { useShiftStore } from '../store/shiftStore'
 import { formatGameTime } from './formatClock'
 import { gameTimeOf } from './levelText'
+import { customerFor } from './customerText'
+import { addressLine } from '../game/customers'
 import { radioText } from './radioText'
 
 /** Lines on screen at once: the radio tells what just happened, it is not a log to read. */
@@ -31,6 +33,15 @@ export function RadioFeed() {
   const neighborhood = neighborhoodOf(levelId)
   const time = gameTimeOf(levelId)
   const shown = entries.slice(-SHOWN)
+  const map = useShiftStore((state) => state.map)
+  const orders = useShiftStore((state) => state.orderQueue.orders)
+  // "Mette Hansen (Jagtvej 34)": who got a delivery, by its order number.
+  const customerOfNumber = (number: number) => {
+    const order = orders.find((candidate) => candidate.number === number)
+    if (!order) return undefined
+    const customer = customerFor(map, order, neighborhood)
+    return customer.address ? `${customer.name} (${addressLine(customer.address)})` : customer.name
+  }
 
   return (
     <section className={`radio${hidden ? ' radio--hidden' : ''}`} aria-label={t('radio.title')}>
@@ -53,7 +64,7 @@ export function RadioFeed() {
               <li key={id} className={`radio__line radio__line--${item.kind}${item.mood ? ` radio__line--${item.mood}` : ''}`}>
                 <span className="radio__time">{formatGameTime(item.atSec, time)}</span>
                 <Icon size={ICON_SIZE} aria-hidden className="radio__icon" />
-                <span className="radio__text">{radioText(item, restaurants, neighborhood)}</span>
+                <span className="radio__text">{radioText(item, restaurants, neighborhood, customerOfNumber)}</span>
               </li>
             )
           })}

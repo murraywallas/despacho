@@ -30,6 +30,8 @@ export interface MapMarker {
   readonly highlighted?: boolean
   /** Customers only: how urgent their order is (the dot takes its color and, when late, another shape). */
   readonly urgency?: Urgency
+  /** Customers only: who ordered and where ("Mette Hansen · Jagtvej 34"). */
+  readonly detail?: string
   /** Customers only: with two or more orders picked for one trip, which stop of it this one is (1, 2…). */
   readonly stop?: number
   /** Restaurants only: orders waiting for a rider there, and how urgent the most urgent one is. */

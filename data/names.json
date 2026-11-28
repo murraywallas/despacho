@@ -1,0 +1,14 @@
+{
+  "comment": "Nombres y apellidos comunes en Dinamarca, para clientes inventados. Se combinan al azar: no son personas reales.",
+  "first": [
+    "Mette", "Lars", "Søren", "Anne", "Jens", "Hanne", "Peter", "Kirsten", "Henrik", "Lone",
+    "Mikkel", "Freja", "Emil", "Ida", "Oliver", "Clara", "Noah", "Alma", "Magnus", "Ella",
+    "Sofie", "Mads", "Karen", "Rasmus", "Line", "Frederik", "Maja", "Anders", "Camilla", "Thomas",
+    "Signe", "Jonas", "Astrid", "Christian", "Laura", "Mathias", "Nanna", "Kasper", "Julie", "Tobias"
+  ],
+  "last": [
+    "Nielsen", "Jensen", "Hansen", "Pedersen", "Andersen", "Christensen", "Larsen", "Sørensen", "Rasmussen", "Jørgensen",
+    "Petersen", "Madsen", "Kristensen", "Olsen", "Thomsen", "Christiansen", "Poulsen", "Johansen", "Møller", "Mortensen",
+    "Knudsen", "Jakobsen", "Mikkelsen", "Olesen", "Frederiksen", "Laursen", "Henriksen", "Lund", "Schmidt", "Holm"
+  ]
+}

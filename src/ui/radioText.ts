@@ -9,7 +9,12 @@ function numbers(item: RadioItem): string {
 }
 
 /** One line of the radio, in words. */
-export function radioText(item: RadioItem, restaurants: readonly Restaurant[], neighborhood?: string): string {
+export function radioText(
+  item: RadioItem,
+  restaurants: readonly Restaurant[],
+  neighborhood?: string,
+  customerOf: (orderNumber: number) => string | undefined = () => undefined,
+): string {
   const restaurant = restaurants.find((candidate) => candidate.id === item.restaurantId)
   const place = restaurant ? restaurantName(restaurant, neighborhood) : ''
   const many = item.orderNumbers.length > 1
@@ -18,10 +23,18 @@ export function radioText(item: RadioItem, restaurants: readonly Restaurant[], n
       return many ? t('radio.newOrders', { count: item.orderNumbers.length }) : t('radio.newOrder', { orders: numbers(item), place })
     case 'pickedUp':
       return t('radio.pickedUp', { rider: item.riderNumber ?? '?', orders: numbers(item), place })
-    case 'delivered':
+    case 'delivered': {
+      // One delivery: who got it ("#4 · entregado a Mette Hansen (Jagtvej 34), a tiempo").
+      const customer = many ? undefined : customerOf(item.orderNumbers[0])
+      if (customer) {
+        if (item.mood === 'late') return t('radio.deliveredLateTo', { orders: numbers(item), customer })
+        if (item.mood === 'cold') return t('radio.deliveredColdTo', { orders: numbers(item), customer })
+        return t('radio.deliveredTo', { orders: numbers(item), customer })
+      }
       if (item.mood === 'late') return t('radio.deliveredLate', { orders: numbers(item) })
       if (item.mood === 'cold') return t('radio.deliveredCold', { orders: numbers(item) })
       return t('radio.delivered', { orders: numbers(item) })
+    }
     case 'riderFree':
       return t('radio.riderFree', { rider: item.riderNumber ?? '?' })
     case 'late':
