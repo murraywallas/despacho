@@ -17,6 +17,8 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'retain-on-failure',
+    // The game starts in the browser's language: the tests play in Spanish (language.spec.ts tries English).
+    locale: 'es-AR',
   },
   projects: [
     {

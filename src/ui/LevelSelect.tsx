@@ -7,6 +7,7 @@ import { useProgressStore } from '../store/progressStore'
 import { useScreenStore } from '../store/screenStore'
 import { CityMap, type CityArea } from './CityMap'
 import { RestartGame } from './RestartGame'
+import { LanguageSwitch } from './LanguageSwitch'
 import { formatRating } from './formatRating'
 import { levelHours, levelName, levelTagline, neighborhoodName, PANEL_INSET } from './levelText'
 import './levels.css'
@@ -40,7 +41,10 @@ export function LevelSelect() {
       <CityMap areas={areas} selected={neighborhood} onSelect={setNeighborhood} leftInset={PANEL_INSET} stars={stars} />
       <div className="levels__panel floating-panel">
         <header className="levels__header">
-          <p className="levels__app">{t('app.title')}</p>
+          <div className="levels__top">
+            <p className="levels__app">{t('app.title')}</p>
+            <LanguageSwitch />
+          </div>
           <h1 className="levels__title" id="levels-title">
             {neighborhoodName(neighborhood)}
           </h1>

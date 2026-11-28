@@ -1,5 +1,5 @@
 ﻿import { eventKinds } from '../game/balance'
-import { hasText, t } from '../i18n'
+import { hasText, locale, t } from '../i18n'
 import { VEHICLE_TEXT } from './VehicleIcon'
 import { gameMinutes } from './formatClock'
 import { gameTime } from './gameTime'
@@ -40,7 +40,7 @@ export function eventEffect(event: {
   const from = event.directionDeg === undefined ? '' : windFromName(event.directionDeg)
   const route = event.closure === undefined ? '' : closureName(event.closure)
   const vehicleKey = event.vehicle === undefined ? undefined : VEHICLE_TEXT[event.vehicle]
-  const vehicle = vehicleKey ? t(vehicleKey).toLocaleLowerCase('es') : (event.vehicle ?? '')
+  const vehicle = vehicleKey ? t(vehicleKey).toLocaleLowerCase(locale()) : (event.vehicle ?? '')
   // A big order: how many come at once, and their deadline.
   const kind = eventKinds[event.event]
   const count = kind?.bulkOrders ?? 0

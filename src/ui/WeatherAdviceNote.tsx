@@ -1,5 +1,5 @@
 import type { WeatherAdvice } from '../game/garage'
-import { t } from '../i18n'
+import { locale, t } from '../i18n'
 import { EventIcon } from './EventNotices'
 import { eventName } from './eventText'
 import { VEHICLE_TEXT } from './VehicleIcon'
@@ -7,7 +7,7 @@ import { VEHICLE_TEXT } from './VehicleIcon'
 /** "skate": a vehicle's name in lower case, for the middle of a sentence. */
 function lowerName(vehicle: string): string {
   const key = VEHICLE_TEXT[vehicle]
-  return (key ? t(key) : vehicle).toLocaleLowerCase('es')
+  return (key ? t(key) : vehicle).toLocaleLowerCase(locale())
 }
 
 /** "skate y rollers": a list the Spanish way. */

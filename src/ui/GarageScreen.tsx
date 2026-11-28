@@ -1,7 +1,7 @@
 import { ArrowLeft, Plus, RotateCcw, UserPlus, X } from 'lucide-react'
 import { levels, vehicles } from '../game/balance'
 import { neighborhoodOf } from '../game/levels'
-import { t } from '../i18n'
+import { locale, t } from '../i18n'
 import { useScreenStore } from '../store/screenStore'
 import { formatKr } from './formatKr'
 import { BackdropMap } from './BackdropMap'
@@ -61,7 +61,7 @@ function Garage({ levelId }: { levelId: string }) {
 
         {garage.struck.map((vehicle) => (
           <p key={vehicle} className="garage__warning" data-testid="garage-strike">
-            {t('garage.strike', { vehicle: vehicleName(vehicle).toLocaleLowerCase('es') })}
+            {t('garage.strike', { vehicle: vehicleName(vehicle).toLocaleLowerCase(locale()) })}
           </p>
         ))}
 
